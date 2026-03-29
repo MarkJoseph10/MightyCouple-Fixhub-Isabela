@@ -1,0 +1,65 @@
+import { Product } from "../models/Product.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { getProvider } from "../services/dropshipping/providerFactory.js";
+import { createSlug } from "../utils/createSlug.js";
+
+export const connectSupplier = asyncHandler(async (req, res) => {
+  const { provider } = req.body;
+  const service = getProvider(provider);
+  const result = await service.connect(req.body.credentials || {});
+
+  res.json({
+    message: `${provider} connected successfully`,
+    ...result
+  });
+});
+
+export const importSupplierProducts = asyncHandler(async (req, res) => {
+  const { provider } = req.body;
+  const service = getProvider(provider);
+  const importedProducts = await service.importProducts();
+  const createdProducts = [];
+
+  for (const product of importedProducts) {
+    const existing = await Product.findOne({ sku: product.sku });
+
+    if (existing) {
+      continue;
+    }
+
+    createdProducts.push(
+      await Product.create({
+        ...product,
+        slug: createSlug(product.name),
+        status: "active"
+      })
+    );
+  }
+
+  res.status(201).json({
+    provider,
+    importedCount: createdProducts.length,
+    products: createdProducts
+  });
+});
+
+export const syncSupplierProducts = asyncHandler(async (req, res) => {
+  const { provider } = req.body;
+  const service = getProvider(provider);
+  const result = await service.syncProducts();
+
+  await Product.updateMany(
+    { "supplier.provider": provider },
+    {
+      $set: {
+        "supplier.syncedAt": new Date()
+      }
+    }
+  );
+
+  res.json({
+    message: "Supplier sync completed",
+    ...result
+  });
+});
+
