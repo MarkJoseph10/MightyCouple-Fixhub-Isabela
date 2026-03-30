@@ -280,6 +280,91 @@ These are inserted automatically on first backend start:
   - Email: `agbayanimarkjoseph10@gmail.com`
   - Password: `KeyCode10@`
 
+## Deployment guide
+
+This repo now includes a root `render.yaml` file so you can deploy the frontend and backend as separate Render services from the same repository.
+
+### Recommended production setup
+
+- Frontend: Render static site
+- Backend: Render web service
+- Database: MongoDB Atlas
+
+### 1. Push the project to GitHub
+
+Render imports directly from GitHub, so make sure the latest version of this project is pushed to the repository you want to deploy.
+
+### 2. Create a MongoDB Atlas database
+
+Create an Atlas cluster, then:
+
+- Create a database user
+- Add network access for your deployment
+- Copy the connection string
+
+Use the connection string as your backend `MONGO_URI`.
+
+### 3. Create the Render Blueprint
+
+In Render:
+
+1. Click `New +`
+2. Choose `Blueprint`
+3. Select your GitHub repository
+4. Render will detect the root `render.yaml`
+
+That Blueprint creates:
+
+- `shopverse-api` for the Express backend
+- `shopverse-web` for the React frontend
+
+### 4. Set backend environment variables in Render
+
+Add these values to `shopverse-api`:
+
+```env
+MONGO_URI=mongodb+srv://<username>:<password>@<cluster-url>/shopverse?retryWrites=true&w=majority
+JWT_SECRET=replace-this-with-a-long-secret
+CLIENT_URL=https://shopverse-web.onrender.com
+STRIPE_SECRET_KEY=
+CJ_API_KEY=
+ALIEXPRESS_APP_KEY=
+SPOCKET_API_KEY=
+```
+
+If you want both local development and the live frontend to work with the same backend, `CLIENT_URL` can contain multiple comma-separated origins:
+
+```env
+CLIENT_URL=http://localhost:5173,https://shopverse-web.onrender.com
+```
+
+### 5. Set frontend environment variables in Render
+
+Add this value to `shopverse-web`:
+
+```env
+VITE_API_URL=https://shopverse-api.onrender.com/api
+```
+
+### 6. Redeploy after URLs are known
+
+Deploy the backend first, copy its Render URL, then update `VITE_API_URL` in the frontend service and deploy the frontend.
+
+After the frontend URL is live, update `CLIENT_URL` in the backend service and redeploy the backend once more.
+
+### 7. Test the live app
+
+Check these URLs after deployment:
+
+- Frontend home page
+- Backend health check: `https://your-backend.onrender.com/api/health`
+- Login using the seeded admin account
+- Product creation and checkout flow
+
+### Production note about uploads
+
+The current upload system stores files on the backend server's local disk (`backend/uploads`). This is fine for local development, but on many cloud hosts those files can be lost after redeploys or instance restarts. For long-term production use, move uploads to a storage service such as Cloudinary or Amazon S3.
+
 ## Suggested next upgrades
 
 - Replace the current tracked manual flows for GCash, Maya, PayPal, and bank transfer with real gateway integrations

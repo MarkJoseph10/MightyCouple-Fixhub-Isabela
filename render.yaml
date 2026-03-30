@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: shopverse-api
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: CJ_API_KEY
+        sync: false
+      - key: ALIEXPRESS_APP_KEY
+        sync: false
+      - key: SPOCKET_API_KEY
+        sync: false
+
+  - type: web
+    name: shopverse-web
+    runtime: static
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        sync: false
