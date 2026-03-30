@@ -274,7 +274,7 @@ This should start:
 
 ### 7. Seeded demo accounts
 
-These are inserted automatically on first backend start:
+For local development, these are inserted automatically on first backend start when `ADMIN_EMAIL` and `ADMIN_PASSWORD` are not set:
 
 - Admin
   - Email: `agbayanimarkjoseph10@gmail.com`
@@ -326,6 +326,9 @@ Add these values to `shopverse-api`:
 MONGO_URI=mongodb+srv://<username>:<password>@<cluster-url>/shopverse?retryWrites=true&w=majority
 JWT_SECRET=replace-this-with-a-long-secret
 CLIENT_URL=https://shopverse-web.onrender.com
+ADMIN_NAME=ShopVerse Admin
+ADMIN_EMAIL=your-admin-email@example.com
+ADMIN_PASSWORD=replace-this-with-a-strong-password
 STRIPE_SECRET_KEY=
 CJ_API_KEY=
 ALIEXPRESS_APP_KEY=
@@ -358,7 +361,7 @@ Check these URLs after deployment:
 
 - Frontend home page
 - Backend health check: `https://your-backend.onrender.com/api/health`
-- Login using the seeded admin account
+- Login using the custom `ADMIN_EMAIL` and `ADMIN_PASSWORD` you set in Render
 - Product creation and checkout flow
 
 ### Production note about uploads
