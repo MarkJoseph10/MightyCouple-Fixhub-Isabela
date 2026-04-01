@@ -1348,6 +1348,15 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     }
   }
 
+  if (
+    order.orderType === "installment" &&
+    order.installment?.enabled &&
+    ["processing", "packed", "shipped", "out_for_delivery"].includes(normalizedNextStatus) &&
+    !isInstallmentReadyForShipment(order)
+  ) {
+    throw new ApiError(400, "This installment cannot move to shipping stages until release requirements are completed");
+  }
+
   if (status && status !== order.status) {
     order.status = status;
     order.timeline.push(createTimeline(status));

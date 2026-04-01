@@ -79,6 +79,14 @@ function getAllowedInstallmentFulfillmentStatuses(order) {
     return ["cancelled"];
   }
 
+  if (currentStatus === "delivered") {
+    return ["delivered"];
+  }
+
+  if (["shipped", "out_for_delivery"].includes(currentStatus)) {
+    return [currentStatus, "delivered"];
+  }
+
   const statuses = shipmentMeta.readyToShip
     ? ["processing", "packed", "shipped", "out_for_delivery", "delivered"]
     : ["pending", "verified", "paid", "processing"];
