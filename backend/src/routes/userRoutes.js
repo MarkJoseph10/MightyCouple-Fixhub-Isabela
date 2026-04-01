@@ -18,6 +18,7 @@ import { authorize, protect } from "../middleware/auth.js";
 
 const router = Router();
 
+// Seller appeal endpoints stay under /api/users to reuse the authenticated user context.
 router.get("/", protect, authorize("admin"), getUsers);
 router.post("/seller/apply", protect, applyAsSeller);
 router.get("/seller/me", protect, getMySellerProfile);
