@@ -6,6 +6,7 @@ import { useAuth } from "./AuthContext";
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
+  const storedSelectionRaw = localStorage.getItem("shopverse-cart-selected");
   const { isAuthenticated } = useAuth();
   const [items, setItems] = useState(() => {
     const saved = localStorage.getItem("shopverse-cart");
@@ -16,14 +17,14 @@ export function CartProvider({ children }) {
       cartKey: item.cartKey || (item.variantId ? `${item._id}:${item.variantId}` : item._id),
       variantId: item.variantId || "",
       variantLabel: item.variantLabel || "",
-        bundleEligible: item.bundleEligible !== false
+      bundleEligible: item.bundleEligible !== false
     }));
   });
   const [selectedCartKeys, setSelectedCartKeys] = useState(() => {
-    const saved = localStorage.getItem("shopverse-cart-selected");
-    const parsed = saved ? JSON.parse(saved) : null;
+    const parsed = storedSelectionRaw ? JSON.parse(storedSelectionRaw) : null;
     return Array.isArray(parsed) ? parsed : [];
   });
+  const [selectionInitialized, setSelectionInitialized] = useState(() => Boolean(storedSelectionRaw));
 
   useEffect(() => {
     localStorage.setItem("shopverse-cart", JSON.stringify(items));
@@ -31,14 +32,18 @@ export function CartProvider({ children }) {
 
   useEffect(() => {
     const availableKeys = new Set(items.map((item) => item.cartKey));
-    setSelectedCartKeys((current) => {
-      const next = current.filter((key) => availableKeys.has(key));
-      if (!next.length && items.length) {
-        return items.map((item) => item.cartKey);
-      }
-      return next;
-    });
-  }, [items]);
+    const filteredKeys = selectedCartKeys.filter((key) => availableKeys.has(key));
+
+    if (!filteredKeys.length && items.length && !selectionInitialized) {
+      setSelectedCartKeys(items.map((item) => item.cartKey));
+      setSelectionInitialized(true);
+      return;
+    }
+
+    if (filteredKeys.length !== selectedCartKeys.length) {
+      setSelectedCartKeys(filteredKeys);
+    }
+  }, [items, selectedCartKeys, selectionInitialized]);
 
   useEffect(() => {
     localStorage.setItem("shopverse-cart-selected", JSON.stringify(selectedCartKeys));
@@ -116,6 +121,7 @@ export function CartProvider({ children }) {
         setSelectedCartKeys(items.map((item) => item.cartKey));
       },
       clearSelection() {
+        setSelectionInitialized(true);
         setSelectedCartKeys([]);
       },
       updateQuantity(cartKey, quantity) {

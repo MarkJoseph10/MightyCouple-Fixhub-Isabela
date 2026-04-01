@@ -1049,7 +1049,9 @@ export const reviewInstallmentPayment = asyncHandler(async (req, res) => {
     throw new ApiError(400, "This order is not an installment transaction");
   }
 
-  const payment = (order.installment.payments || []).find((entry) => entry._id === req.params.paymentId);
+  const payment = (order.installment.payments || []).find(
+    (entry) => String(entry._id) === String(req.params.paymentId)
+  );
 
   if (!payment) {
     throw new ApiError(404, "Installment payment not found");
@@ -1240,6 +1242,7 @@ export const updateInstallmentStatus = asyncHandler(async (req, res) => {
   const action = String(req.body.action || "").trim().toLowerCase();
   const note = String(req.body.note || "").trim();
   const scheduleSequence = Number(req.body.scheduleSequence || 0);
+  let shouldRecalculate = true;
 
   if (action === "cancel") {
     order.installment.status = "cancelled";
@@ -1275,6 +1278,7 @@ export const updateInstallmentStatus = asyncHandler(async (req, res) => {
     order.installment.status = "completed";
     order.installment.amountPaid = Number(order.installment.totalWithServiceFee || 0);
     order.installment.remainingBalance = 0;
+    order.installment.nextDueDate = null;
     order.installment.schedule = (order.installment.schedule || []).map((entry) => ({
       ...entry,
       status: "paid",
@@ -1282,11 +1286,14 @@ export const updateInstallmentStatus = asyncHandler(async (req, res) => {
     }));
     order.status = "delivered";
     order.timeline.push(createTimeline("delivered", "Installment manually marked as completed"));
+    shouldRecalculate = false;
   } else {
     throw new ApiError(400, "Unsupported installment action");
   }
 
-  recalculateInstallmentState(order);
+  if (shouldRecalculate) {
+    recalculateInstallmentState(order);
+  }
   await order.save();
 
   res.json({
