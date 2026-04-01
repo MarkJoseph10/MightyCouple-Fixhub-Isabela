@@ -442,6 +442,7 @@ export const reviewSellerAppeal = asyncHandler(async (req, res) => {
       currentStage: "good_standing",
       suspendedAt: null,
       suspendedUntil: null,
+      terminatedAt: null,
       lastReason: adminNote || sellerProfile.discipline?.lastReason || ""
     };
     user.sellerApplication.status = "approved";

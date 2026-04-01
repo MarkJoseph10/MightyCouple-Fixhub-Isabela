@@ -17,7 +17,7 @@ export default function AuthPage() {
   const [formLoading, setFormLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState("");
   const redirectedMessage = location.state?.message || "";
-  const redirectTo = location.state?.from || "";
+  const redirectTo = location.state?.from || new URLSearchParams(location.search).get("from") || "";
   const sessionExpired = new URLSearchParams(location.search).get("session") === "expired";
 
   useEffect(() => {

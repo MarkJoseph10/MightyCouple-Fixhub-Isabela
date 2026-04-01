@@ -51,11 +51,19 @@ export function normalizeSellerSuspensionState(user) {
     user.sellerProfile.isActive = true;
     user.sellerProfile.statusNote = "Seller access has been automatically restored after the suspension period.";
     user.sellerApplication.status = "approved";
+    user.sellerProfile.appeal = {
+      status: "none",
+      message: "",
+      submittedAt: null,
+      reviewedAt: null,
+      adminNote: ""
+    };
     user.sellerProfile.discipline = {
       ...discipline,
       currentStage: "good_standing",
       suspendedAt: null,
-      suspendedUntil: null
+      suspendedUntil: null,
+      terminatedAt: null
     };
     return true;
   }
