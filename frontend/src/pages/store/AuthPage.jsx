@@ -169,8 +169,8 @@ export default function AuthPage() {
     clearTimeout(facebookTimeoutRef.current);
     facebookTimeoutRef.current = setTimeout(() => {
       setSocialLoading("");
-      setError("Facebook sign-in is taking too long. Please try again.");
-    }, 15000);
+      setError("Facebook sign-in is taking too long. Check the popup window, allow popups, then try again.");
+    }, 45000);
 
     window.FB.login(
       async (response) => {
@@ -319,6 +319,11 @@ export default function AuthPage() {
             ) : null}
             {facebookAppId && !facebookReady ? (
               <p className="mt-3 text-center text-xs text-slate-500">Loading Facebook sign-in...</p>
+            ) : null}
+            {facebookAppId && facebookReady ? (
+              <p className="mt-3 text-center text-xs text-slate-500">
+                If no Meta popup appears, allow popups for this site before trying Facebook sign-in again.
+              </p>
             ) : null}
           </div>
         ) : null}
