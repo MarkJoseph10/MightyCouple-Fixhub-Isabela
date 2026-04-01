@@ -254,6 +254,14 @@ function getNextInstallmentScheduleItem(installment) {
   return (installment?.schedule || []).find((entry) => entry.status !== "paid" && entry.status !== "cancelled") || null;
 }
 
+function isInstallmentReadyForShipment(order) {
+  if (!order?.installment?.enabled || order.installment.status === "cancelled") {
+    return false;
+  }
+
+  return Boolean(order.installment.releasedEarly || Number(order.installment.remainingBalance || 0) <= 0);
+}
+
 function recalculateInstallmentState(order) {
   if (!order?.installment?.enabled) {
     return;
@@ -1110,8 +1118,14 @@ export const reviewInstallmentPayment = asyncHandler(async (req, res) => {
   recalculateInstallmentState(order);
 
   if (order.installment.status === "completed") {
-    order.status = "delivered";
-    order.timeline.push(createTimeline("delivered", "Installment fully paid and completed"));
+    order.payment.status = "paid";
+
+    if (["pending", "verified", "paid"].includes(String(order.status || "").toLowerCase())) {
+      order.status = "processing";
+      order.timeline.push(createTimeline("processing", "Installment fully paid and ready for shipment"));
+    } else {
+      order.timeline.push(createTimeline("paid", "Installment fully paid and ready for shipment"));
+    }
   }
 
   order.notes = [order.notes, `Installment payment ${decision}${adminNote ? `: ${adminNote}` : "."}`]
@@ -1279,13 +1293,16 @@ export const updateInstallmentStatus = asyncHandler(async (req, res) => {
     order.installment.amountPaid = Number(order.installment.totalWithServiceFee || 0);
     order.installment.remainingBalance = 0;
     order.installment.nextDueDate = null;
+    order.payment.status = "paid";
     order.installment.schedule = (order.installment.schedule || []).map((entry) => ({
       ...entry,
       status: "paid",
       paidAt: entry.paidAt || new Date()
     }));
-    order.status = "delivered";
-    order.timeline.push(createTimeline("delivered", "Installment manually marked as completed"));
+    if (["pending", "verified", "paid"].includes(String(order.status || "").toLowerCase())) {
+      order.status = "processing";
+    }
+    order.timeline.push(createTimeline("processing", "Installment manually marked as fully paid and ready for shipment"));
     shouldRecalculate = false;
   } else {
     throw new ApiError(400, "Unsupported installment action");
@@ -1316,7 +1333,10 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
   const normalizedPaymentStatus = String(paymentStatus || order.payment?.status || "").trim().toLowerCase();
 
   if (normalizedNextStatus === "delivered") {
-    const canDeliverByPayment = normalizedPaymentStatus === "paid" || String(order.payment?.method || "").toLowerCase() === "cod";
+    const canDeliverByPayment =
+      normalizedPaymentStatus === "paid" ||
+      String(order.payment?.method || "").toLowerCase() === "cod" ||
+      (order.orderType === "installment" && isInstallmentReadyForShipment(order));
     const canDeliverByStage = ["shipped", "out_for_delivery"].includes(String(order.status || "").toLowerCase());
 
     if (!canDeliverByPayment) {

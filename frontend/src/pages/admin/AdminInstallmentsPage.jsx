@@ -19,6 +19,77 @@ const sections = [
   { key: "cancelled", label: "Cancelled" }
 ];
 
+function getInstallmentShipmentMeta(order) {
+  const status = String(order?.status || "").toLowerCase();
+  const installment = order?.installment || {};
+  const readyToShip = Boolean(installment.releasedEarly || Number(installment.remainingBalance || 0) <= 0);
+
+  if (status === "delivered") {
+    return {
+      label: "Delivered",
+      detail: "Installment item is already delivered.",
+      tone: "text-emerald-200",
+      readyToShip: true
+    };
+  }
+
+  if (["shipped", "out_for_delivery"].includes(status)) {
+    return {
+      label: status === "out_for_delivery" ? "Out for delivery" : "Shipped",
+      detail: "Item is already in transit.",
+      tone: "text-cyan-200",
+      readyToShip: true
+    };
+  }
+
+  if (["processing", "packed", "verified", "paid"].includes(status) && readyToShip) {
+    return {
+      label: "Ready to ship",
+      detail: "Release requirements are complete. Admin can now continue fulfillment from this screen.",
+      tone: "text-amber-200",
+      readyToShip: true
+    };
+  }
+
+  if (readyToShip) {
+    return {
+      label: "Ready to ship",
+      detail: "Full payment or approved early release is complete. Shipment can be prepared now.",
+      tone: "text-amber-200",
+      readyToShip: true
+    };
+  }
+
+  return {
+    label: "Awaiting release",
+    detail:
+      installment.releaseCondition === "admin_approved_early_release"
+        ? "Still waiting for full payment or admin-approved early release before shipment."
+        : "Still waiting for full installment payment before shipment.",
+    tone: "text-slate-300",
+    readyToShip: false
+  };
+}
+
+function getAllowedInstallmentFulfillmentStatuses(order) {
+  const currentStatus = String(order?.status || "").toLowerCase();
+  const shipmentMeta = getInstallmentShipmentMeta(order);
+
+  if (currentStatus === "cancelled") {
+    return ["cancelled"];
+  }
+
+  const statuses = shipmentMeta.readyToShip
+    ? ["processing", "packed", "shipped", "out_for_delivery", "delivered"]
+    : ["pending", "verified", "paid", "processing"];
+
+  if (!statuses.includes(currentStatus) && currentStatus) {
+    statuses.unshift(currentStatus);
+  }
+
+  return [...new Set(statuses)];
+}
+
 export default function AdminInstallmentsPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -100,6 +171,17 @@ export default function AdminInstallmentsPage() {
     }
   }
 
+  async function updateFulfillmentStatus(orderId, status) {
+    try {
+      const { data } = await api.patch(`/orders/${orderId}/status`, { status });
+      setOrders((current) => current.map((order) => (order._id === orderId ? data : order)));
+      setMessage("Installment fulfillment updated.");
+      setError("");
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to update installment fulfillment.");
+    }
+  }
+
   return (
     <div className="space-y-8 pb-10">
       <section className="rounded-[32px] border border-white/10 bg-slate-950/70 p-6 shadow-[0_25px_80px_rgba(15,23,42,0.45)] backdrop-blur">
@@ -160,6 +242,7 @@ export default function AdminInstallmentsPage() {
           const progress = getInstallmentProgress(order);
           const dueMeta = getInstallmentDueMeta(order.installment);
           const nextSchedule = (order.installment?.schedule || []).find((entry) => entry.status !== "paid" && entry.status !== "cancelled");
+          const shipmentMeta = getInstallmentShipmentMeta(order);
 
           return (
             <section key={order._id} className="rounded-[32px] border border-white/10 bg-slate-950/60 p-6">
@@ -201,6 +284,7 @@ export default function AdminInstallmentsPage() {
                 <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
                   <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Progress</p>
                   <p className="mt-2 text-2xl font-semibold text-white">{progress}%</p>
+                  <p className={`mt-2 text-sm ${shipmentMeta.tone}`}>{shipmentMeta.label}</p>
                 </div>
               </div>
 
@@ -329,6 +413,32 @@ export default function AdminInstallmentsPage() {
                     <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
                       <ShieldAlert size={16} className="text-rose-300" />
                       Admin controls
+                    </div>
+                    <div className="mt-4 rounded-[22px] border border-white/10 bg-slate-950/20 px-4 py-4">
+                      <p className="text-xs uppercase tracking-[0.26em] text-slate-500">Shipment readiness</p>
+                      <p className={`mt-3 text-lg font-semibold ${shipmentMeta.tone}`}>{shipmentMeta.label}</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-300">{shipmentMeta.detail}</p>
+                    </div>
+                    <div className="mt-4 space-y-2 text-sm text-slate-300">
+                      <span className="block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                        Fulfillment status
+                      </span>
+                      <select
+                        value={order.status || "pending"}
+                        onChange={(event) => updateFulfillmentStatus(order._id, event.target.value)}
+                        className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm text-white outline-none"
+                      >
+                        {getAllowedInstallmentFulfillmentStatuses(order).map((status) => (
+                          <option key={status} value={status}>
+                            {status.replaceAll("_", " ")}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs leading-5 text-slate-500">
+                        {shipmentMeta.readyToShip
+                          ? "This installment can now move through packing, shipping, and delivery."
+                          : "Shipment stays limited until full payment clears or early release is approved."}
+                      </p>
                     </div>
                     <textarea
                       value={adminNotes[order._id] || ""}

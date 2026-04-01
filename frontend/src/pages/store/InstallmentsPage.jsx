@@ -1,5 +1,6 @@
-import { CalendarClock, CheckCircle2, Upload } from "lucide-react";
+import { CalendarClock, CheckCircle2, PackageCheck, Truck, Upload } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "../../api/client";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import { peso } from "../../utils/commerce";
@@ -9,7 +10,7 @@ import {
   getInstallmentProgress,
   getInstallmentStatusTone
 } from "../../utils/installments";
-import { getOrderReference } from "../../utils/orders";
+import { buildTrackOrderUrl, getOrderReference } from "../../utils/orders";
 
 const initialDraft = {
   amount: "",
@@ -17,6 +18,58 @@ const initialDraft = {
   paymentDate: "",
   proof: null
 };
+
+function getInstallmentShippingMeta(order) {
+  const status = String(order?.status || "").toLowerCase();
+  const installment = order?.installment || {};
+  const readyToShip = Boolean(installment.releasedEarly || Number(installment.remainingBalance || 0) <= 0);
+
+  if (status === "delivered") {
+    return {
+      label: "Delivered",
+      tone: "text-emerald-200",
+      detail: "Your installment item has been delivered.",
+      canTrack: true
+    };
+  }
+
+  if (["shipped", "out_for_delivery"].includes(status)) {
+    return {
+      label: status === "out_for_delivery" ? "Out for delivery" : "Shipped",
+      tone: "text-cyan-200",
+      detail: "Your item is already in transit. You can continue tracking it from the order tracker.",
+      canTrack: true
+    };
+  }
+
+  if (["processing", "packed", "verified", "paid"].includes(status) && readyToShip) {
+    return {
+      label: "Preparing for shipment",
+      tone: "text-amber-200",
+      detail: "Your installment has cleared release requirements and the store can now prepare it for shipping.",
+      canTrack: true
+    };
+  }
+
+  if (readyToShip) {
+    return {
+      label: "Ready to ship",
+      tone: "text-amber-200",
+      detail: "Your payment requirement is complete. The item is now waiting for admin shipping action.",
+      canTrack: true
+    };
+  }
+
+  return {
+    label: "Awaiting release",
+    tone: "text-slate-300",
+    detail:
+      installment.releaseCondition === "admin_approved_early_release"
+        ? "Your item can only be released after full payment or when admin approves early release."
+        : "Your item will be released after full installment payment is completed.",
+    canTrack: false
+  };
+}
 
 export default function InstallmentsPage() {
   const [installments, setInstallments] = useState(null);
@@ -115,6 +168,8 @@ export default function InstallmentsPage() {
           const dueMeta = getInstallmentDueMeta(order.installment);
           const draft = drafts[order._id] || initialDraft;
           const pendingVerification = order.installment?.payments?.some((payment) => payment.status === "pending_verification");
+          const shippingMeta = getInstallmentShippingMeta(order);
+          const trackUrl = buildTrackOrderUrl(getOrderReference(order), order.shippingAddress?.email || "");
 
           return (
             <section key={order._id} className="glass-panel rounded-[32px] p-6 shadow-ambient">
@@ -163,6 +218,34 @@ export default function InstallmentsPage() {
                   <span>{order.installment?.frequency === "monthly" ? "Monthly" : "Weekly"} x {order.installment?.paymentCount}</span>
                   <span>Grace period: {order.installment?.gracePeriodDays} day(s)</span>
                   <span className={dueMeta.tone}>{dueMeta.label}</span>
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-[26px] border border-white/10 bg-white/5 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
+                      <PackageCheck size={16} className="text-cyan-300" />
+                      Release and shipping
+                    </div>
+                    <p className={`mt-3 text-lg font-semibold ${shippingMeta.tone}`}>{shippingMeta.label}</p>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">{shippingMeta.detail}</p>
+                    <div className="mt-3 flex flex-wrap gap-4 text-sm text-slate-400">
+                      <span>
+                        Release condition: {order.installment?.releaseCondition === "admin_approved_early_release" ? "Full payment or admin-approved early release" : "After full payment"}
+                      </span>
+                      <span>Order status: {String(order.status || "pending").replaceAll("_", " ")}</span>
+                    </div>
+                  </div>
+                  {shippingMeta.canTrack ? (
+                    <Link
+                      to={trackUrl}
+                      className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition hover:bg-white/10"
+                    >
+                      <Truck size={16} className="mr-2" />
+                      Track installment item
+                    </Link>
+                  ) : null}
                 </div>
               </div>
 
