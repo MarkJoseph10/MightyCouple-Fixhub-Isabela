@@ -1,4 +1,4 @@
-import { Heart, LogOut, ShoppingBag } from "lucide-react";
+import { Heart, LayoutDashboard, LogOut, ShoppingBag } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
@@ -52,7 +52,6 @@ export default function Navbar() {
           {user && <NavLink to="/installments" className={navPillClass}>Installments</NavLink>}
           {user && !isAdmin && !isSeller && <NavLink to="/become-seller" className={navPillClass}>Become Seller</NavLink>}
           {isSeller && <NavLink to="/seller" className={navPillClass}>Seller Hub</NavLink>}
-          {isAdmin && <NavLink to="/admin" className={navPillClass}>Dashboard</NavLink>}
           </nav>
 
           <div className="order-2 ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2 lg:order-3 lg:ml-0">
@@ -64,6 +63,11 @@ export default function Navbar() {
               <ShoppingBag size={16} />
               <span>{itemCount}</span>
             </Link>
+            {isAdmin && (
+              <Link to="/admin" className="glass-panel inline-flex h-9 min-w-[2.8rem] items-center justify-center rounded-full px-2.5 text-sm text-white sm:h-10 sm:min-w-[3rem] sm:px-3" aria-label="Dashboard">
+                <LayoutDashboard size={16} />
+              </Link>
+            )}
             {user ? (
               <button onClick={logout} className="inline-flex h-9 items-center rounded-full bg-white/10 px-3 py-2 text-sm text-slate-100 sm:h-10 sm:px-4">
                 <LogOut size={16} className="mr-2" />
