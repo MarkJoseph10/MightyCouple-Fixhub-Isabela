@@ -66,6 +66,10 @@ function extractProductListV2Rows(listData) {
   return asArray(listData?.list || listData?.records || listData?.items || listData);
 }
 
+function extractLegacyProductRows(listData) {
+  return asArray(listData?.list || listData?.records || listData?.items || listData);
+}
+
 function pickFirst(...values) {
   return values.find((value) => value !== undefined && value !== null && String(value).trim() !== "");
 }
@@ -379,7 +383,21 @@ export class CJDropshippingService extends BaseProvider {
       }
     });
 
-    const rows = extractProductListV2Rows(listData);
+    let rows = extractProductListV2Rows(listData);
+
+    // Fall back to the documented legacy list endpoint if V2 returns no rows for this account/query.
+    if (!rows.length) {
+      const legacyData = await this.request("/product/list", {
+        params: {
+          pageNum: page,
+          pageSize: size,
+          ...(keyword ? { productName: keyword } : {})
+        }
+      });
+
+      rows = extractLegacyProductRows(legacyData);
+    }
+
     const importedProducts = [];
 
     for (const row of rows) {
