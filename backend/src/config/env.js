@@ -24,6 +24,8 @@ export const env = {
   cloudinaryUrl: process.env.CLOUDINARY_URL || "",
   stripeSecretKey: process.env.STRIPE_SECRET_KEY || "",
   cjApiKey: process.env.CJ_API_KEY || "",
+  cjPhpExchangeRate: Number(process.env.CJ_PHP_EXCHANGE_RATE || 58),
+  cjMarkupPercent: Number(process.env.CJ_MARKUP_PERCENT || 15),
   aliExpressAppKey: process.env.ALIEXPRESS_APP_KEY || "",
   spocketApiKey: process.env.SPOCKET_API_KEY || ""
 };

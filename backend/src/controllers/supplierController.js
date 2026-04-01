@@ -17,7 +17,7 @@ export const connectSupplier = asyncHandler(async (req, res) => {
 export const importSupplierProducts = asyncHandler(async (req, res) => {
   const { provider } = req.body;
   const service = getProvider(provider);
-  const importedProducts = await service.importProducts();
+  const importedProducts = await service.importProducts(req.body || {});
   const createdProducts = [];
 
   for (const product of importedProducts) {
@@ -46,7 +46,40 @@ export const importSupplierProducts = asyncHandler(async (req, res) => {
 export const syncSupplierProducts = asyncHandler(async (req, res) => {
   const { provider } = req.body;
   const service = getProvider(provider);
-  const result = await service.syncProducts();
+  const existingProducts = await Product.find({ "supplier.provider": provider });
+  const result = await service.syncProducts({
+    ...(req.body || {}),
+    products: existingProducts.map((product) => ({
+      _id: product._id,
+      supplier: product.supplier,
+      sku: product.sku
+    }))
+  });
+
+  const updates = Array.isArray(result.products) ? result.products : [];
+
+  for (const update of updates) {
+    await Product.updateOne(
+      { "supplier.provider": provider, "supplier.supplierId": update.supplierId },
+      {
+        $set: {
+          name: update.name,
+          shortDescription: update.shortDescription,
+          description: update.description,
+          category: update.category,
+          price: update.price,
+          costPrice: update.costPrice,
+          compareAtPrice: update.compareAtPrice,
+          stock: update.stock,
+          images: update.images,
+          tags: update.tags,
+          attributes: update.attributes,
+          variants: update.variants,
+          supplier: update.supplier
+        }
+      }
+    );
+  }
 
   await Product.updateMany(
     { "supplier.provider": provider },
@@ -62,4 +95,3 @@ export const syncSupplierProducts = asyncHandler(async (req, res) => {
     ...result
   });
 });
-
