@@ -9,7 +9,7 @@ import { useWishlist } from "../../context/WishlistContext";
 import { peso } from "../../utils/commerce";
 import { resolveMediaUrl } from "../../utils/media";
 
-export default function ProductCard({ product, onAddToCart }) {
+export default function ProductCard({ product, onAddToCart, compact = false }) {
   const location = useLocation();
   const { isAuthenticated } = useAuth();
   const { isWishlisted, toggleWishlist } = useWishlist();
@@ -46,7 +46,7 @@ export default function ProductCard({ product, onAddToCart }) {
           whileHover={{ y: -4 }}
           className="group glass-panel flex h-full flex-col overflow-hidden rounded-[26px] shadow-ambient transition duration-300 hover:shadow-[0_24px_72px_rgba(37,99,235,0.18)]"
         >
-          <div className="relative flex h-[188px] items-center justify-center overflow-hidden bg-slate-950/30 sm:h-[200px]">
+          <div className={`relative flex items-center justify-center overflow-hidden bg-slate-950/30 ${compact ? "h-[156px] sm:h-[168px]" : "h-[188px] sm:h-[200px]"}`}>
             <img
               src={resolveMediaUrl(product.images?.[0]?.url)}
               alt={product.images?.[0]?.alt || product.name}
@@ -81,11 +81,11 @@ export default function ProductCard({ product, onAddToCart }) {
               <Heart size={16} fill={wished ? "currentColor" : "none"} />
             </button>
           </div>
-          <div className="flex flex-1 flex-col gap-3 p-3.5">
+          <div className={`flex flex-1 flex-col gap-3 ${compact ? "p-3" : "p-3.5"}`}>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0 flex-1">
-                <h3 className="min-h-[2.6rem] break-words text-[1rem] font-semibold leading-snug text-white">{product.name}</h3>
-                <p className="mt-1.5 min-h-[3.3rem] text-sm leading-5 text-slate-300">{product.shortDescription}</p>
+                <h3 className={`break-words font-semibold leading-snug text-white ${compact ? "min-h-[2.3rem] text-[0.95rem]" : "min-h-[2.6rem] text-[1rem]"}`}>{product.name}</h3>
+                <p className={`mt-1.5 text-sm text-slate-300 ${compact ? "min-h-[2.6rem] leading-5" : "min-h-[3.3rem] leading-5"}`}>{product.shortDescription}</p>
                 <div className="mt-2.5 flex flex-wrap gap-2">
                   <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs text-emerald-200">
                     {product.condition || "Affordable tech"}
@@ -101,11 +101,11 @@ export default function ProductCard({ product, onAddToCart }) {
                 {product.compareAtPrice > product.price && (
                   <p className="text-xs text-slate-500 line-through">{peso(product.compareAtPrice)}</p>
                 )}
-                <strong className="text-base text-brand-50 sm:text-lg">{peso(product.priceFrom || product.price)}</strong>
+                <strong className={`text-brand-50 ${compact ? "text-sm sm:text-base" : "text-base sm:text-lg"}`}>{peso(product.priceFrom || product.price)}</strong>
                 {isLowStock ? <span className="mt-1 text-xs font-medium text-amber-200">Low stock</span> : null}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 rounded-[22px] border border-white/10 bg-white/5 p-2.5 text-xs text-slate-200 sm:grid-cols-3">
+            <div className={`grid grid-cols-2 gap-2 rounded-[22px] border border-white/10 bg-white/5 text-xs text-slate-200 sm:grid-cols-3 ${compact ? "p-2" : "p-2.5"}`}>
               <div className="flex min-w-0 items-center gap-2 rounded-2xl bg-slate-950/20 px-3 py-2">
                 <Users size={14} className="text-orange-300" />
                 <span>{product.soldCount || 0} sold</span>
@@ -124,14 +124,14 @@ export default function ProductCard({ product, onAddToCart }) {
                 onClick={handleAddClick}
                 disabled={!availableStock}
                 title={!isAuthenticated ? "Please log in to add items to your cart." : ""}
-                className="inline-flex min-h-[46px] flex-1 items-center justify-center rounded-2xl bg-brand-500 px-4 py-3 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+                className={`inline-flex flex-1 items-center justify-center rounded-2xl bg-brand-500 px-4 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60 ${compact ? "min-h-[42px] py-2.5" : "min-h-[46px] py-3"}`}
               >
                 <ShoppingBag size={16} className="mr-2" />
                 {availableStock ? (isAuthenticated ? "Add to cart" : "Log in to add") : "Sold out"}
               </button>
               <Link
                 to={`/product/${product.slug}`}
-                className="inline-flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-2xl border border-white/10 text-sm text-slate-100 transition duration-300 hover:border-brand-500/40 hover:bg-white/5"
+                className={`inline-flex shrink-0 items-center justify-center rounded-2xl border border-white/10 text-sm text-slate-100 transition duration-300 hover:border-brand-500/40 hover:bg-white/5 ${compact ? "h-[42px] w-[42px]" : "h-[46px] w-[46px]"}`}
               >
                 <ArrowRight size={16} />
               </Link>

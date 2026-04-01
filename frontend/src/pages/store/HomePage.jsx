@@ -366,9 +366,9 @@ export default function HomePage() {
               See all products
             </a>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {bestSellers.map((product) => (
-              <ProductCard key={`best-seller-${product._id}`} product={product} onAddToCart={addToCart} />
+              <ProductCard key={`best-seller-${product._id}`} product={product} onAddToCart={addToCart} compact />
             ))}
           </div>
         </section>
