@@ -28,13 +28,28 @@ function validatePassword(password) {
   }
 }
 
-async function verifyGoogleCredential(credential) {
+async function verifyGoogleCredential({ credential, accessToken }) {
   if (!env.googleClientId) {
     throw new ApiError(500, "Google login is not configured on the server");
   }
 
-  if (!credential) {
+  if (!credential && !accessToken) {
     throw new ApiError(400, "Google credential is required");
+  }
+
+  if (accessToken) {
+    const response = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    });
+    const payload = await response.json();
+
+    if (!response.ok || !payload?.email || !payload?.sub) {
+      throw new ApiError(401, payload?.error_description || payload?.message || "Unable to verify Google account");
+    }
+
+    return payload;
   }
 
   const ticket = await googleClient.verifyIdToken({
@@ -122,7 +137,10 @@ export const registerUser = asyncHandler(async (req, res) => {
 });
 
 export const loginWithGoogle = asyncHandler(async (req, res) => {
-  const payload = await verifyGoogleCredential(req.body?.credential);
+  const payload = await verifyGoogleCredential({
+    credential: req.body?.credential,
+    accessToken: req.body?.accessToken
+  });
   const email = String(payload.email || "").trim().toLowerCase();
 
   let user = await User.findOne({ email });

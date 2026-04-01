@@ -1,48 +1,21 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Facebook, Mail } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 const initialForm = { name: "", email: "", password: "" };
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 const facebookAppId = import.meta.env.VITE_FACEBOOK_APP_ID || "";
 
-function loadGoogleScript() {
-  return new Promise((resolve, reject) => {
-    if (window.google?.accounts?.id) {
-      resolve(window.google);
-      return;
-    }
-
-    const existingScript = document.querySelector('script[data-google-identity="true"]');
-
-    if (existingScript) {
-      existingScript.addEventListener("load", () => resolve(window.google), { once: true });
-      existingScript.addEventListener("error", reject, { once: true });
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    script.dataset.googleIdentity = "true";
-    script.onload = () => resolve(window.google);
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
-}
-
 export default function AuthPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { login, loginWithGoogle, register } = useAuth();
+  const { login, register } = useAuth();
   const [mode, setMode] = useState("login");
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
   const [formLoading, setFormLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState("");
-  const [googleReady, setGoogleReady] = useState(false);
-  const googleButtonRef = useRef(null);
   const redirectedMessage = location.state?.message || "";
   const redirectTo = location.state?.from || "";
 
@@ -52,56 +25,30 @@ export default function AuthPage() {
     setSocialLoading("");
   }, [mode]);
 
-  useEffect(() => {
-    if (mode !== "login" || !googleClientId || !googleButtonRef.current) {
-      return undefined;
+  function handleGoogleLogin() {
+    if (!googleClientId) {
+      setError("Google login is not configured yet.");
+      return;
     }
 
-    let cancelled = false;
-
-    loadGoogleScript()
-      .then((google) => {
-        if (cancelled || !google?.accounts?.id || !googleButtonRef.current) {
-          return;
-        }
-
-        google.accounts.id.initialize({
-          client_id: googleClientId,
-          callback: async (response) => {
-            setSocialLoading("google");
-            setError("");
-
-            try {
-              const result = await loginWithGoogle({ credential: response.credential });
-              const fallbackTarget = result?.user?.role === "admin" ? "/admin" : "/";
-              navigate(redirectTo || fallbackTarget, { replace: true });
-            } catch (requestError) {
-              setError(requestError.response?.data?.message || "Google sign-in failed.");
-            } finally {
-              setSocialLoading("");
-            }
-          }
-        });
-        googleButtonRef.current.innerHTML = "";
-        google.accounts.id.renderButton(googleButtonRef.current, {
-          theme: "outline",
-          size: "large",
-          shape: "pill",
-          width: 360,
-          text: "continue_with"
-        });
-        setGoogleReady(true);
+    const callbackUrl = `${window.location.origin}/auth/google/callback`;
+    const statePayload = window.btoa(
+      JSON.stringify({
+        redirectTo
       })
-      .catch(() => {
-        if (!cancelled) {
-          setGoogleReady(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [loginWithGoogle, mode, navigate, redirectTo]);
+    );
+    const googleUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    googleUrl.searchParams.set("client_id", googleClientId);
+    googleUrl.searchParams.set("redirect_uri", callbackUrl);
+    googleUrl.searchParams.set("response_type", "token");
+    googleUrl.searchParams.set("scope", "openid email profile");
+    googleUrl.searchParams.set("include_granted_scopes", "true");
+    googleUrl.searchParams.set("prompt", "select_account");
+    googleUrl.searchParams.set("state", statePayload);
+    setError("");
+    setSocialLoading("google");
+    window.location.assign(googleUrl.toString());
+  }
 
   function handleFacebookLogin() {
     if (!facebookAppId) {
@@ -222,25 +169,34 @@ export default function AuthPage() {
               <span className="h-px flex-1 bg-white/10" />
             </div>
             {googleClientId ? (
-              <div className="mt-4 flex justify-center">
-                <div ref={googleButtonRef} className="min-h-[44px] min-w-[260px]" />
-              </div>
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={Boolean(formLoading) || Boolean(socialLoading)}
+                className="mt-4 flex w-full items-center justify-center gap-3 rounded-2xl border border-white/15 bg-white/5 px-5 py-3 font-semibold text-white transition hover:bg-white/10 disabled:opacity-60"
+              >
+                <Mail size={18} className="text-[#EA4335]" />
+                <span>{socialLoading === "google" ? "Redirecting to Google..." : "Continue with Google"}</span>
+              </button>
             ) : (
               <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
                 Google login is not configured yet. Add the Google client ID to enable it.
               </div>
             )}
-            {googleClientId && !googleReady ? (
-              <p className="mt-3 text-center text-xs text-slate-500">Loading Google sign-in...</p>
+            {googleClientId ? (
+              <p className="mt-3 text-center text-xs text-slate-500">
+                Google login opens in a secure redirect flow and returns you to this page after approval.
+              </p>
             ) : null}
             {facebookAppId ? (
               <button
                 type="button"
                 onClick={handleFacebookLogin}
                 disabled={Boolean(formLoading) || Boolean(socialLoading)}
-                className="mt-4 flex w-full items-center justify-center rounded-2xl border border-[#1877F2]/30 bg-[#1877F2]/10 px-5 py-3 font-semibold text-[#E8F1FF] transition hover:bg-[#1877F2]/20 disabled:opacity-60"
+                className="mt-4 flex w-full items-center justify-center gap-3 rounded-2xl border border-[#1877F2]/30 bg-[#1877F2]/10 px-5 py-3 font-semibold text-[#E8F1FF] transition hover:bg-[#1877F2]/20 disabled:opacity-60"
               >
-                {socialLoading === "facebook" ? "Redirecting to Facebook..." : "Continue with Facebook"}
+                <Facebook size={18} className="text-[#1877F2]" />
+                <span>{socialLoading === "facebook" ? "Redirecting to Facebook..." : "Continue with Facebook"}</span>
               </button>
             ) : null}
             {facebookAppId ? (
