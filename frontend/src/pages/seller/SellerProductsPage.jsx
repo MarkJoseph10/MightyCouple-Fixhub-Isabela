@@ -21,6 +21,7 @@ import { useEffect, useMemo, useState } from "react";
 import api from "../../api/client";
 import TagInput from "../../components/admin/TagInput";
 import { peso } from "../../utils/commerce";
+import { resolveMediaUrl } from "../../utils/media";
 
 const mediaBaseUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace("/api", "");
 const maxVideoSizeBytes = 20 * 1024 * 1024;
@@ -77,11 +78,7 @@ const initialForm = {
 };
 
 function withAbsoluteUrl(url = "") {
-  if (!url) {
-    return "";
-  }
-
-  return url.startsWith("http") ? url : `${mediaBaseUrl}${url}`;
+  return resolveMediaUrl(url);
 }
 
 function buildFallbackTagSuggestions(products = []) {

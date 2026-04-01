@@ -1,15 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../api/client";
 import { peso } from "../../utils/commerce";
+import { resolveMediaUrl } from "../../utils/media";
 
 const mediaBaseUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace("/api", "");
 
 function withAbsoluteUrl(url = "") {
-  if (!url) {
-    return "";
-  }
-
-  return url.startsWith("http") ? url : `${mediaBaseUrl}${url}`;
+  return resolveMediaUrl(url);
 }
 
 function StatusBadge({ value }) {

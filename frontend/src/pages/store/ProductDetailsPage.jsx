@@ -12,6 +12,7 @@ import { useStoreSettings } from "../../context/StoreSettingsContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { peso } from "../../utils/commerce";
 import { calculateInstallmentPlan, formatInstallmentBreakdown } from "../../utils/installments";
+import { resolveMediaUrl } from "../../utils/media";
 import { pushRecentlyViewed } from "../../utils/recentlyViewed";
 
 const initialReviewForm = {
@@ -22,11 +23,7 @@ const initialReviewForm = {
 const mediaBaseUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace("/api", "");
 
 function withAbsoluteUrl(url = "") {
-  if (!url) {
-    return "";
-  }
-
-  return url.startsWith("http") ? url : `${mediaBaseUrl}${url}`;
+  return resolveMediaUrl(url);
 }
 
 export default function ProductDetailsPage() {
