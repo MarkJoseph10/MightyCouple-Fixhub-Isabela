@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import {
   ArrowRight,
   BadgeDollarSign,
+  ChevronLeft,
+  ChevronRight,
   Gift,
   Mail,
   SearchCheck,
@@ -32,6 +34,8 @@ export default function HomePage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [sort, setSort] = useState("popular");
+  const [perPage, setPerPage] = useState(15);
+  const [currentPage, setCurrentPage] = useState(1);
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterStatus, setNewsletterStatus] = useState("");
   const [recentlyViewed, setRecentlyViewed] = useState([]);
@@ -67,6 +71,10 @@ export default function HomePage() {
     const timer = setTimeout(loadProducts, 200);
     return () => clearTimeout(timer);
   }, [search, category, sort]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, category, sort, perPage]);
 
   async function handleNewsletterSubscribe(event) {
     event.preventDefault();
@@ -136,6 +144,22 @@ export default function HomePage() {
     settings.paymentOptions?.stripe !== false ? "Stripe" : null,
     settings.paymentOptions?.paypal !== false ? "PayPal" : null
   ].filter(Boolean);
+  const totalPages = Math.max(1, Math.ceil(products.length / perPage));
+  const paginatedProducts = products.slice((currentPage - 1) * perPage, currentPage * perPage);
+  const visiblePageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1).filter((page) => {
+    if (totalPages <= 7) {
+      return true;
+    }
+
+    return Math.abs(page - currentPage) <= 1 || page === 1 || page === totalPages;
+  });
+
+  function handleResetCatalogFilters() {
+    setSearch("");
+    setCategory("All");
+    setSort("popular");
+    setPerPage(15);
+  }
 
   return (
     <div className="space-y-7 py-4 sm:py-5 lg:py-6">
@@ -365,23 +389,50 @@ export default function HomePage() {
           search={search}
           category={category}
           sort={sort}
+          perPage={perPage}
+          resultCount={products.length}
           categories={categories}
           onSearchChange={setSearch}
           onCategoryChange={setCategory}
           onSortChange={setSort}
+          onPerPageChange={setPerPage}
+          onReset={handleResetCatalogFilters}
         />
+
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-slate-400">Visible shortcuts:</span>
+            {["Phones", "Laptops", "Accessories", "Wearables", "Gaming"].map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setCategory(item)}
+                className={`rounded-full px-3 py-1.5 text-xs transition ${
+                  category === item
+                    ? "bg-brand-500 text-white"
+                    : "border border-white/10 bg-slate-950/30 text-slate-200 hover:bg-white/10"
+                }`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-slate-400">
+            Page {currentPage} of {totalPages}
+          </p>
+        </div>
 
         {error && <div className="rounded-3xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-200">{error}</div>}
 
         {loading ? (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {[...Array(6)].map((_, index) => (
-              <div key={index} className="glass-panel h-[390px] animate-pulse rounded-[26px]" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+            {[...Array(10)].map((_, index) => (
+              <div key={index} className="glass-panel h-[360px] animate-pulse rounded-[26px]" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {products.map((product) => (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+            {paginatedProducts.map((product) => (
               <ProductCard key={product._id} product={product} onAddToCart={addToCart} />
             ))}
           </div>
@@ -391,6 +442,56 @@ export default function HomePage() {
           <div className="glass-panel rounded-[28px] p-8 text-center shadow-ambient">
             <p className="text-lg font-medium text-white">No products matched your filters.</p>
             <p className="mt-2 text-sm text-slate-400">Try another search, category, or sorting option.</p>
+          </div>
+        )}
+
+        {!loading && products.length > 0 && (
+          <div className="flex flex-col gap-3 rounded-[26px] border border-white/10 bg-white/5 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-slate-300">
+              Showing {(currentPage - 1) * perPage + 1}-
+              {Math.min(currentPage * perPage, products.length)} of {products.length} products
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={currentPage === 1}
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/30 px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10 disabled:opacity-50"
+              >
+                <ChevronLeft size={16} />
+                Prev
+              </button>
+              {visiblePageNumbers.map((pageNumber, index) => {
+                const previous = visiblePageNumbers[index - 1];
+                const showGap = previous && pageNumber - previous > 1;
+
+                return (
+                  <div key={pageNumber} className="flex items-center gap-2">
+                    {showGap ? <span className="px-1 text-slate-500">...</span> : null}
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(pageNumber)}
+                      className={`rounded-full px-3 py-2 text-sm transition ${
+                        currentPage === pageNumber
+                          ? "bg-brand-500 text-white"
+                          : "border border-white/10 bg-slate-950/30 text-slate-200 hover:bg-white/10"
+                      }`}
+                    >
+                      {pageNumber}
+                    </button>
+                  </div>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                disabled={currentPage === totalPages}
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/30 px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10 disabled:opacity-50"
+              >
+                Next
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
         )}
       </section>

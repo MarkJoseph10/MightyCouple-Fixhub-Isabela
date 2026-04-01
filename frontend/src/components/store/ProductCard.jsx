@@ -46,7 +46,7 @@ export default function ProductCard({ product, onAddToCart }) {
           whileHover={{ y: -4 }}
           className="group glass-panel flex h-full flex-col overflow-hidden rounded-[26px] shadow-ambient transition duration-300 hover:shadow-[0_24px_72px_rgba(37,99,235,0.18)]"
         >
-          <div className="relative flex h-[220px] items-center justify-center overflow-hidden bg-slate-950/30 sm:h-[240px]">
+          <div className="relative flex h-[188px] items-center justify-center overflow-hidden bg-slate-950/30 sm:h-[200px]">
             <img
               src={resolveMediaUrl(product.images?.[0]?.url)}
               alt={product.images?.[0]?.alt || product.name}
@@ -81,11 +81,11 @@ export default function ProductCard({ product, onAddToCart }) {
               <Heart size={16} fill={wished ? "currentColor" : "none"} />
             </button>
           </div>
-          <div className="flex flex-1 flex-col gap-3 p-4">
+          <div className="flex flex-1 flex-col gap-3 p-3.5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0 flex-1">
-                <h3 className="min-h-[3rem] break-words text-[1.05rem] font-semibold leading-snug text-white">{product.name}</h3>
-                <p className="mt-1.5 min-h-[4rem] text-sm leading-6 text-slate-300">{product.shortDescription}</p>
+                <h3 className="min-h-[2.6rem] break-words text-[1rem] font-semibold leading-snug text-white">{product.name}</h3>
+                <p className="mt-1.5 min-h-[3.3rem] text-sm leading-5 text-slate-300">{product.shortDescription}</p>
                 <div className="mt-2.5 flex flex-wrap gap-2">
                   <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs text-emerald-200">
                     {product.condition || "Affordable tech"}
