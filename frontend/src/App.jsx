@@ -10,6 +10,7 @@ import DropshippingPage from "./pages/admin/DropshippingPage";
 import ProductsPage from "./pages/admin/ProductsPage";
 import SellerLayout from "./layouts/SellerLayout";
 import AuthPage from "./pages/store/AuthPage";
+import FacebookAuthCallbackPage from "./pages/store/FacebookAuthCallbackPage";
 import CartPage from "./pages/store/CartPage";
 import CheckoutPage from "./pages/store/CheckoutPage";
 import ContactPage from "./pages/store/ContactPage";
@@ -38,6 +39,7 @@ export default function App() {
           <Route element={<StoreLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/auth/facebook/callback" element={<FacebookAuthCallbackPage />} />
             <Route path="/product/:slug" element={<ProductDetailsPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route

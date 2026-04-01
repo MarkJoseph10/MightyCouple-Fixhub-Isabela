@@ -35,24 +35,16 @@ function loadGoogleScript() {
 export default function AuthPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { login, loginWithGoogle, loginWithFacebook, register } = useAuth();
+  const { login, loginWithGoogle, register } = useAuth();
   const [mode, setMode] = useState("login");
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
   const [formLoading, setFormLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState("");
   const [googleReady, setGoogleReady] = useState(false);
-  const [facebookReady, setFacebookReady] = useState(false);
   const googleButtonRef = useRef(null);
-  const facebookTimeoutRef = useRef(null);
   const redirectedMessage = location.state?.message || "";
   const redirectTo = location.state?.from || "";
-
-  useEffect(() => {
-    return () => {
-      clearTimeout(facebookTimeoutRef.current);
-    };
-  }, []);
 
   useEffect(() => {
     setError("");
@@ -111,97 +103,31 @@ export default function AuthPage() {
     };
   }, [loginWithGoogle, mode, navigate, redirectTo]);
 
-  useEffect(() => {
-    if (mode !== "login" || !facebookAppId) {
-      return undefined;
-    }
-
-    let cancelled = false;
-
-    function initializeFacebook() {
-      if (!window.FB) {
-        return;
-      }
-
-      window.FB.init({
-        appId: facebookAppId,
-        cookie: false,
-        xfbml: false,
-        version: "v23.0"
-      });
-      if (!cancelled) {
-        setFacebookReady(true);
-      }
-    }
-
-    if (window.FB) {
-      initializeFacebook();
-      return undefined;
-    }
-
-    window.fbAsyncInit = initializeFacebook;
-
-    const existingScript = document.querySelector('script[data-facebook-sdk="true"]');
-    if (!existingScript) {
-      const script = document.createElement("script");
-      script.src = "https://connect.facebook.net/en_US/sdk.js";
-      script.async = true;
-      script.defer = true;
-      script.crossOrigin = "anonymous";
-      script.dataset.facebookSdk = "true";
-      document.body.appendChild(script);
-    }
-
-    return () => {
-      cancelled = true;
-    };
-  }, [facebookAppId, mode]);
-
-  async function handleFacebookLogin() {
-    if (!window.FB) {
-      setError("Facebook login is still loading. Please try again.");
+  function handleFacebookLogin() {
+    if (!facebookAppId) {
+      setError("Facebook login is not configured yet.");
       return;
     }
 
-    setFormLoading(false);
-    setSocialLoading("facebook");
-    setError("");
-    clearTimeout(facebookTimeoutRef.current);
-    facebookTimeoutRef.current = setTimeout(() => {
-      setSocialLoading("");
-      setError("Facebook sign-in is taking too long. Check the popup window, allow popups, then try again.");
-    }, 45000);
-
-    window.FB.login(
-      async (response) => {
-        clearTimeout(facebookTimeoutRef.current);
-        if (!response?.authResponse?.accessToken) {
-          setSocialLoading("");
-          setError("Facebook sign-in was cancelled.");
-          return;
-        }
-
-        try {
-          const result = await loginWithFacebook({
-            accessToken: response.authResponse.accessToken
-          });
-          const fallbackTarget = result?.user?.role === "admin" ? "/admin" : "/";
-          navigate(redirectTo || fallbackTarget, { replace: true });
-        } catch (requestError) {
-          setError(requestError.response?.data?.message || "Facebook sign-in failed.");
-        } finally {
-          setSocialLoading("");
-        }
-      },
-      {
-        scope: "public_profile,email"
-      }
+    const callbackUrl = `${window.location.origin}/auth/facebook/callback`;
+    const statePayload = window.btoa(
+      JSON.stringify({
+        redirectTo
+      })
     );
+    const facebookUrl = new URL("https://www.facebook.com/v23.0/dialog/oauth");
+    facebookUrl.searchParams.set("client_id", facebookAppId);
+    facebookUrl.searchParams.set("redirect_uri", callbackUrl);
+    facebookUrl.searchParams.set("response_type", "token");
+    facebookUrl.searchParams.set("scope", "public_profile,email");
+    facebookUrl.searchParams.set("state", statePayload);
+    setError("");
+    setSocialLoading("facebook");
+    window.location.assign(facebookUrl.toString());
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
-    clearTimeout(facebookTimeoutRef.current);
     setSocialLoading("");
     setFormLoading(true);
     setError("");
@@ -311,18 +237,15 @@ export default function AuthPage() {
               <button
                 type="button"
                 onClick={handleFacebookLogin}
-                disabled={Boolean(formLoading) || Boolean(socialLoading) || !facebookReady}
+                disabled={Boolean(formLoading) || Boolean(socialLoading)}
                 className="mt-4 flex w-full items-center justify-center rounded-2xl border border-[#1877F2]/30 bg-[#1877F2]/10 px-5 py-3 font-semibold text-[#E8F1FF] transition hover:bg-[#1877F2]/20 disabled:opacity-60"
               >
-                {socialLoading === "facebook" ? "Connecting Facebook..." : "Continue with Facebook"}
+                {socialLoading === "facebook" ? "Redirecting to Facebook..." : "Continue with Facebook"}
               </button>
             ) : null}
-            {facebookAppId && !facebookReady ? (
-              <p className="mt-3 text-center text-xs text-slate-500">Loading Facebook sign-in...</p>
-            ) : null}
-            {facebookAppId && facebookReady ? (
+            {facebookAppId ? (
               <p className="mt-3 text-center text-xs text-slate-500">
-                If no Meta popup appears, allow popups for this site before trying Facebook sign-in again.
+                Facebook login opens in a secure redirect flow and returns you to this page after approval.
               </p>
             ) : null}
           </div>
