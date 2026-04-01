@@ -44,9 +44,6 @@ export default function Navbar() {
 
           <nav className="order-3 flex w-full flex-wrap items-center gap-1.5 text-[13px] text-slate-300 lg:order-2 lg:min-w-0 lg:flex-nowrap lg:justify-center lg:gap-2 lg:overflow-x-auto lg:pb-1 xl:overflow-visible">
           <NavLink to="/" end className={navPillClass}>Store</NavLink>
-          <NavLink to="/contact" className={navPillClass}>Contact</NavLink>
-          <NavLink to="/wishlist" className={navPillClass}>Wishlist</NavLink>
-          <NavLink to="/cart" className={navPillClass}>Cart</NavLink>
           <NavLink to="/track-order" className={navPillClass}>Track Order</NavLink>
           {user && <NavLink to="/orders" className={navPillClass}>My Orders</NavLink>}
           {user && !isAdmin && !isSeller && <NavLink to="/become-seller" className={navPillClass}>Become Seller</NavLink>}
