@@ -19,11 +19,13 @@ export const importSupplierProducts = asyncHandler(async (req, res) => {
   const service = getProvider(provider);
   const importedProducts = await service.importProducts(req.body || {});
   const createdProducts = [];
+  let skippedDuplicates = 0;
 
   for (const product of importedProducts) {
     const existing = await Product.findOne({ sku: product.sku });
 
     if (existing) {
+      skippedDuplicates += 1;
       continue;
     }
 
@@ -36,9 +38,20 @@ export const importSupplierProducts = asyncHandler(async (req, res) => {
     );
   }
 
+  const fetchedCount = importedProducts.length;
+  const message =
+    fetchedCount === 0
+      ? "No matching products were returned by the supplier."
+      : createdProducts.length === 0
+        ? "All fetched supplier products were skipped because they already exist in your catalog."
+        : "Supplier products imported successfully.";
+
   res.status(201).json({
     provider,
+    message,
+    fetchedCount,
     importedCount: createdProducts.length,
+    skippedDuplicates,
     products: createdProducts
   });
 });
