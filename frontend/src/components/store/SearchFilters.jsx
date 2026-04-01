@@ -5,7 +5,6 @@ export default function SearchFilters({
   category,
   sort = "popular",
   perPage = 15,
-  resultCount = 0,
   categories,
   onSearchChange,
   onCategoryChange,
@@ -16,12 +15,7 @@ export default function SearchFilters({
   return (
     <div className="glass-panel sticky top-20 z-20 rounded-[26px] border border-white/10 p-4 shadow-ambient backdrop-blur">
       <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Search and filter</p>
-          <p className="mt-1 text-sm text-slate-300">
-            {resultCount} product{resultCount === 1 ? "" : "s"} matched
-          </p>
-        </div>
+        <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Search and filter</p>
         <button
           type="button"
           onClick={onReset}

@@ -390,7 +390,6 @@ export default function HomePage() {
           category={category}
           sort={sort}
           perPage={perPage}
-          resultCount={products.length}
           categories={categories}
           onSearchChange={setSearch}
           onCategoryChange={setCategory}
@@ -398,29 +397,6 @@ export default function HomePage() {
           onPerPageChange={setPerPage}
           onReset={handleResetCatalogFilters}
         />
-
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-slate-400">Visible shortcuts:</span>
-            {["Phones", "Laptops", "Accessories", "Wearables", "Gaming"].map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setCategory(item)}
-                className={`rounded-full px-3 py-1.5 text-xs transition ${
-                  category === item
-                    ? "bg-brand-500 text-white"
-                    : "border border-white/10 bg-slate-950/30 text-slate-200 hover:bg-white/10"
-                }`}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-slate-400">
-            Page {currentPage} of {totalPages}
-          </p>
-        </div>
 
         {error && <div className="rounded-3xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-200">{error}</div>}
 
