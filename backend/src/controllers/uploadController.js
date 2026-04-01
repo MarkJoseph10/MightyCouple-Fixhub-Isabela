@@ -17,7 +17,7 @@ function buildUploadResponse(file, type, cloudinaryResult = null) {
   };
 }
 
-function uploadBufferToCloudinary(file, type) {
+export function uploadBufferToCloudinary(file, type) {
   const folder = type === "video" ? "shopverse/videos" : "shopverse/images";
   const resourceType = type === "video" ? "video" : "image";
 

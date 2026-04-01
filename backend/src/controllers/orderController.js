@@ -5,6 +5,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { getOrCreateStoreSettings } from "../services/storeSettingsService.js";
 import { autoCancelStalePendingOrders } from "../services/orderAutomationService.js";
+import { uploadBufferToCloudinary } from "./uploadController.js";
 import {
   calculateCartDiscounts,
   formatVariantLabel,
@@ -131,6 +132,15 @@ function addInstallmentDate(date, frequency, step = 1) {
 
 function roundMoney(value) {
   return Number(Number(value || 0).toFixed(2));
+}
+
+async function uploadProofImage(file) {
+  if (!file) {
+    return "";
+  }
+
+  const result = await uploadBufferToCloudinary(file, "image");
+  return result?.secure_url || "";
 }
 
 function buildInstallmentPlan(total, settings) {
@@ -937,6 +947,7 @@ export const submitInstallmentPayment = asyncHandler(async (req, res) => {
   const amount = roundMoney(req.body.amount);
   const method = String(req.body.method || "").trim();
   const paymentDate = req.body.paymentDate ? new Date(req.body.paymentDate) : new Date();
+  const proofImage = await uploadProofImage(req.file);
 
   if (!amount || amount <= 0) {
     throw new ApiError(400, "Please enter a valid payment amount");
@@ -957,7 +968,7 @@ export const submitInstallmentPayment = asyncHandler(async (req, res) => {
     method,
     phase,
     paymentDate,
-    proofImage: `/uploads/${req.file.filename}`,
+    proofImage,
     status: "pending_verification",
     submittedAt: new Date(),
     scheduleSequence: phase === "installment" ? nextScheduleItem?.sequence || null : null
@@ -1012,7 +1023,7 @@ export const uploadPaymentProof = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Payment is already confirmed for this order");
   }
 
-  order.payment.proofImage = `/uploads/${req.file.filename}`;
+  order.payment.proofImage = await uploadProofImage(req.file);
   order.payment.proofUploadedAt = new Date();
   order.timeline.push(createTimeline("pending", "Payment proof submitted for review"));
   order.notes = [order.notes, "Payment proof uploaded by customer."]
@@ -1133,6 +1144,7 @@ export const requestRefund = asyncHandler(async (req, res) => {
 
   const reason = String(req.body.reason || "").trim().toLowerCase();
   const message = String(req.body.message || "").trim();
+  const proofImage = req.file ? await uploadProofImage(req.file) : "";
 
   if (!reason) {
     throw new ApiError(400, "Please choose a refund reason");
@@ -1142,7 +1154,7 @@ export const requestRefund = asyncHandler(async (req, res) => {
     status: "pending",
     reason,
     message,
-    proofImage: req.file ? `/uploads/${req.file.filename}` : "",
+    proofImage,
     requestedAt: new Date(),
     updatedAt: new Date(),
     adminMessage: ""
