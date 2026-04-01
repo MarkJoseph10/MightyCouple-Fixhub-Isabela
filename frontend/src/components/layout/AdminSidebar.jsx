@@ -1,6 +1,7 @@
 import { Boxes, ChartColumn, CreditCard, PackageSearch, ShoppingCart, Truck, Users } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useStoreSettings } from "../../context/StoreSettingsContext";
+import { resolveMediaUrl } from "../../utils/media";
 
 const links = [
   { to: "/admin", label: "Overview", icon: ChartColumn },
@@ -20,7 +21,7 @@ export default function AdminSidebar({ onNavigate }) {
       <div className="mb-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
         <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-brand-500 to-orange-400 text-sm font-bold text-white">
           {settings.logo?.url ? (
-            <img src={settings.logo.url} alt={settings.logo.alt || settings.storeName} className="h-full w-full object-cover" />
+            <img src={resolveMediaUrl(settings.logo.url)} alt={settings.logo.alt || settings.storeName} className="h-full w-full object-cover" />
           ) : (
             settings.storeName.slice(0, 2).toUpperCase()
           )}

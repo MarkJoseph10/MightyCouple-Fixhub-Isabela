@@ -1,4 +1,5 @@
 import { useStoreSettings } from "../../context/StoreSettingsContext";
+import { resolveMediaUrl } from "../../utils/media";
 
 function clampOverlay(value) {
   const numericValue = Number(value);
@@ -12,7 +13,7 @@ function clampOverlay(value) {
 
 export default function BrandingBackground() {
   const { settings } = useStoreSettings();
-  const backgroundImageUrl = settings.backgroundImage?.url || "/branding/default-background.jpg";
+  const backgroundImageUrl = resolveMediaUrl(settings.backgroundImage?.url || "/branding/default-background.jpg");
   const overlayOpacity = clampOverlay(settings.backgroundOverlay);
 
   return (

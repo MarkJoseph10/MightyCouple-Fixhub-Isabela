@@ -7,6 +7,7 @@ import RefundRequestModal from "../../components/store/RefundRequestModal";
 import { useAuth } from "../../context/AuthContext";
 import { useStoreSettings } from "../../context/StoreSettingsContext";
 import { peso } from "../../utils/commerce";
+import { resolveMediaUrl } from "../../utils/media";
 import { buildTrackOrderUrl, copyText, formatRefundReason, getOrderReference } from "../../utils/orders";
 import { printOrderReceipt } from "../../utils/receipt";
 
@@ -22,7 +23,6 @@ export default function TrackOrderPage() {
   const [proofStatus, setProofStatus] = useState("");
   const [copyStatus, setCopyStatus] = useState("");
   const [refundModalOpen, setRefundModalOpen] = useState(false);
-  const uploadBaseUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace("/api", "");
 
   async function handleTrack(event) {
     event?.preventDefault();
@@ -207,7 +207,7 @@ export default function TrackOrderPage() {
                     <div className="mt-4">
                       <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Uploaded proof</p>
                       <img
-                        src={`${uploadBaseUrl}${order.payment.proofImage}`}
+                        src={resolveMediaUrl(order.payment.proofImage)}
                         alt="Payment proof"
                         className="mt-3 h-40 w-full rounded-2xl object-cover"
                       />
@@ -227,7 +227,7 @@ export default function TrackOrderPage() {
                   {order.refundRequest.adminMessage ? <p className="mt-2 text-sm text-slate-300">Admin update: {order.refundRequest.adminMessage}</p> : null}
                   {order.refundRequest.proofImage ? (
                     <img
-                      src={`${uploadBaseUrl}${order.refundRequest.proofImage}`}
+                      src={resolveMediaUrl(order.refundRequest.proofImage)}
                       alt="Refund proof"
                       className="mt-4 h-40 w-full rounded-2xl object-cover"
                     />

@@ -8,6 +8,7 @@ import RefundRequestModal from "../../components/store/RefundRequestModal";
 import { useAuth } from "../../context/AuthContext";
 import { useStoreSettings } from "../../context/StoreSettingsContext";
 import { peso } from "../../utils/commerce";
+import { resolveMediaUrl } from "../../utils/media";
 import { buildTrackOrderUrl, copyText, formatRefundReason, getOrderReference } from "../../utils/orders";
 import { printOrderReceipt } from "../../utils/receipt";
 
@@ -136,7 +137,7 @@ export default function OrdersPage() {
                   ) : null}
                   {order.refundRequest.proofImage ? (
                     <img
-                      src={`${(import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace("/api", "")}${order.refundRequest.proofImage}`}
+                      src={resolveMediaUrl(order.refundRequest.proofImage)}
                       alt="Refund proof"
                       className="mt-4 h-40 w-full rounded-2xl object-cover"
                     />

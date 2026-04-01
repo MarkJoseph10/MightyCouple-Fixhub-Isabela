@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import api from "../api/client";
+import { resolveMediaUrl } from "../utils/media";
 
 const StoreSettingsContext = createContext(null);
 
@@ -106,7 +107,7 @@ export function StoreSettingsProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const faviconHref = settings.favicon?.url || fallbackSettings.favicon.url;
+    const faviconHref = resolveMediaUrl(settings.favicon?.url || fallbackSettings.favicon.url);
     const faviconType = faviconHref.endsWith(".ico")
       ? "image/x-icon"
       : faviconHref.endsWith(".svg")
