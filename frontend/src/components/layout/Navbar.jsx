@@ -25,8 +25,9 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
-      <div className="page-shell flex flex-wrap items-center justify-between gap-2 py-2.5 sm:gap-3 sm:py-3">
-        <Link to="/" className="group flex min-w-[180px] flex-1 items-center gap-2.5 sm:min-w-[220px] sm:gap-3">
+      <div className="page-shell grid gap-3 py-2.5 sm:gap-3 sm:py-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+        <Link to="/" className="group flex min-w-0 flex-1 items-center gap-2.5 sm:min-w-[220px] sm:gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-brand-500 to-orange-400 font-bold text-white shadow-ambient transition duration-300 group-hover:scale-105">
             {settings.logo?.url ? (
               <img src={settings.logo.url} alt={settings.logo.alt || settings.storeName} className="h-full w-full object-cover" />
@@ -35,25 +36,12 @@ export default function Navbar() {
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="break-words text-[9px] uppercase tracking-[0.16em] text-slate-400 sm:text-[11px]">{settings.storeName}</p>
+            <p className="truncate text-[9px] uppercase tracking-[0.16em] text-slate-400 sm:text-[11px]">{settings.storeName}</p>
             <p className="text-[13px] font-semibold leading-tight text-white sm:text-[0.95rem]">Commerce Platform</p>
           </div>
         </Link>
 
-        <nav className="no-scrollbar order-3 flex w-full flex-nowrap items-center gap-1.5 overflow-x-auto pb-1 text-[13px] text-slate-300 md:order-2 md:min-w-0 md:flex-1 md:gap-2 md:justify-start">
-          <NavLink to="/" end className={navPillClass}>Store</NavLink>
-          <NavLink to="/contact" className={navPillClass}>Contact</NavLink>
-          <NavLink to="/wishlist" className={navPillClass}>Wishlist</NavLink>
-          <NavLink to="/cart" className={navPillClass}>Cart</NavLink>
-          <NavLink to="/track-order" className={navPillClass}>Track</NavLink>
-          {user && <NavLink to="/orders" className={navPillClass}>My Orders</NavLink>}
-          {user && <NavLink to="/installments" className={navPillClass}>My Installments</NavLink>}
-          {user && !isAdmin && !isSeller && <NavLink to="/become-seller" className={navPillClass}>Seller</NavLink>}
-          {isSeller && <NavLink to="/seller" className={navPillClass}>Seller Hub</NavLink>}
-          {isAdmin && <NavLink to="/admin" className={navPillClass}>Dashboard</NavLink>}
-        </nav>
-
-        <div className="order-2 flex shrink-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2 md:order-3">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2">
           <Link to="/wishlist" className="glass-panel hidden items-center gap-2 rounded-full px-3 py-2 text-sm text-white lg:flex">
             <Heart size={16} />
             <span>{wishlistIds.length}</span>
@@ -73,6 +61,20 @@ export default function Navbar() {
             </Link>
           )}
         </div>
+        </div>
+
+        <nav className="flex flex-wrap items-center gap-1.5 text-[13px] text-slate-300 sm:gap-2">
+          <NavLink to="/" end className={navPillClass}>Store</NavLink>
+          <NavLink to="/contact" className={navPillClass}>Contact</NavLink>
+          <NavLink to="/wishlist" className={navPillClass}>Wishlist</NavLink>
+          <NavLink to="/cart" className={navPillClass}>Cart</NavLink>
+          <NavLink to="/track-order" className={navPillClass}>Track Order</NavLink>
+          {user && <NavLink to="/orders" className={navPillClass}>My Orders</NavLink>}
+          {user && <NavLink to="/installments" className={navPillClass}>Installments</NavLink>}
+          {user && !isAdmin && !isSeller && <NavLink to="/become-seller" className={navPillClass}>Become Seller</NavLink>}
+          {isSeller && <NavLink to="/seller" className={navPillClass}>Seller Hub</NavLink>}
+          {isAdmin && <NavLink to="/admin" className={navPillClass}>Dashboard</NavLink>}
+        </nav>
       </div>
     </header>
   );
