@@ -55,6 +55,17 @@ function asArray(value) {
   return [];
 }
 
+function extractProductListV2Rows(listData) {
+  const contentEntries = asArray(listData?.content);
+  const nestedProductLists = contentEntries.flatMap((entry) => asArray(entry?.productList));
+
+  if (nestedProductLists.length) {
+    return nestedProductLists;
+  }
+
+  return asArray(listData?.list || listData?.records || listData?.items || listData);
+}
+
 function pickFirst(...values) {
   return values.find((value) => value !== undefined && value !== null && String(value).trim() !== "");
 }
@@ -368,7 +379,7 @@ export class CJDropshippingService extends BaseProvider {
       }
     });
 
-    const rows = asArray(listData?.list || listData?.records || listData?.items || listData);
+    const rows = extractProductListV2Rows(listData);
     const importedProducts = [];
 
     for (const row of rows) {
