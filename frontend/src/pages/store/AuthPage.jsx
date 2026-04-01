@@ -119,7 +119,7 @@ export default function AuthPage() {
     facebookUrl.searchParams.set("client_id", facebookAppId);
     facebookUrl.searchParams.set("redirect_uri", callbackUrl);
     facebookUrl.searchParams.set("response_type", "token");
-    facebookUrl.searchParams.set("scope", "public_profile,email");
+    facebookUrl.searchParams.set("scope", "public_profile");
     facebookUrl.searchParams.set("state", statePayload);
     setError("");
     setSocialLoading("facebook");

@@ -74,16 +74,12 @@ async function verifyFacebookAccessToken(accessToken) {
   }
 
   const userResponse = await fetch(
-    `https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${encodeURIComponent(accessToken)}`
+    `https://graph.facebook.com/me?fields=id,name,picture.type(large)&access_token=${encodeURIComponent(accessToken)}`
   );
   const userData = await userResponse.json();
 
   if (!userResponse.ok || !userData?.id) {
     throw new ApiError(401, userData?.error?.message || "Unable to fetch Facebook account");
-  }
-
-  if (!userData.email) {
-    throw new ApiError(400, "Facebook account email permission is required");
   }
 
   return userData;
@@ -170,13 +166,22 @@ export const loginWithGoogle = asyncHandler(async (req, res) => {
 export const loginWithFacebook = asyncHandler(async (req, res) => {
   const payload = await verifyFacebookAccessToken(req.body?.accessToken);
   const email = String(payload.email || "").trim().toLowerCase();
+  const fallbackEmail = `${payload.id}@facebook.local`;
 
-  let user = await User.findOne({ email });
+  let user = await User.findOne({ facebookId: payload.id });
+
+  if (!user && email) {
+    user = await User.findOne({ email });
+  }
+
+  if (!user) {
+    user = await User.findOne({ email: fallbackEmail });
+  }
 
   if (!user) {
     user = await User.create({
-      name: payload.name || email.split("@")[0],
-      email,
+      name: payload.name || email.split("@")[0] || `facebook-${payload.id.slice(-6)}`,
+      email: email || fallbackEmail,
       password: "",
       authProvider: "facebook",
       facebookId: payload.id,
@@ -184,9 +189,12 @@ export const loginWithFacebook = asyncHandler(async (req, res) => {
       role: "customer"
     });
   } else {
-    user.name = user.name || payload.name || email.split("@")[0];
+    user.name = user.name || payload.name || email.split("@")[0] || `facebook-${payload.id.slice(-6)}`;
     user.avatar = user.avatar || payload.picture?.data?.url || "";
     user.facebookId = payload.id;
+    if (!user.email && email) {
+      user.email = email;
+    }
     user.authProvider = user.authProvider === "local" && user.password ? "local" : "facebook";
     user.lastLoginAt = new Date();
     await user.save();
