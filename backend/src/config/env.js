@@ -24,6 +24,8 @@ export const env = {
   cloudinaryUrl: process.env.CLOUDINARY_URL || "",
   stripeSecretKey: process.env.STRIPE_SECRET_KEY || "",
   googleClientId: process.env.GOOGLE_CLIENT_ID || "",
+  facebookAppId: process.env.FACEBOOK_APP_ID || "",
+  facebookAppSecret: process.env.FACEBOOK_APP_SECRET || "",
   cjApiKey: process.env.CJ_API_KEY || "",
   cjPhpExchangeRate: Number(process.env.CJ_PHP_EXCHANGE_RATE || 58),
   cjMarkupPercent: Number(process.env.CJ_MARKUP_PERCENT || 15),

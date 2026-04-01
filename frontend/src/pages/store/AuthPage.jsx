@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 
 const initialForm = { name: "", email: "", password: "" };
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+const facebookAppId = import.meta.env.VITE_FACEBOOK_APP_ID || "";
 
 function loadGoogleScript() {
   return new Promise((resolve, reject) => {
@@ -34,12 +35,13 @@ function loadGoogleScript() {
 export default function AuthPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { login, loginWithGoogle, register } = useAuth();
+  const { login, loginWithGoogle, loginWithFacebook, register } = useAuth();
   const [mode, setMode] = useState("login");
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleReady, setGoogleReady] = useState(false);
+  const [facebookReady, setFacebookReady] = useState(false);
   const googleButtonRef = useRef(null);
   const redirectedMessage = location.state?.message || "";
   const redirectTo = location.state?.from || "";
@@ -94,6 +96,87 @@ export default function AuthPage() {
       cancelled = true;
     };
   }, [loginWithGoogle, mode, navigate, redirectTo]);
+
+  useEffect(() => {
+    if (mode !== "login" || !facebookAppId) {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    function initializeFacebook() {
+      if (!window.FB) {
+        return;
+      }
+
+      window.FB.init({
+        appId: facebookAppId,
+        cookie: false,
+        xfbml: false,
+        version: "v23.0"
+      });
+      if (!cancelled) {
+        setFacebookReady(true);
+      }
+    }
+
+    if (window.FB) {
+      initializeFacebook();
+      return undefined;
+    }
+
+    window.fbAsyncInit = initializeFacebook;
+
+    const existingScript = document.querySelector('script[data-facebook-sdk="true"]');
+    if (!existingScript) {
+      const script = document.createElement("script");
+      script.src = "https://connect.facebook.net/en_US/sdk.js";
+      script.async = true;
+      script.defer = true;
+      script.crossOrigin = "anonymous";
+      script.dataset.facebookSdk = "true";
+      document.body.appendChild(script);
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [facebookAppId, mode]);
+
+  async function handleFacebookLogin() {
+    if (!window.FB) {
+      setError("Facebook login is still loading. Please try again.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    window.FB.login(
+      async (response) => {
+        if (!response?.authResponse?.accessToken) {
+          setLoading(false);
+          setError("Facebook sign-in was cancelled.");
+          return;
+        }
+
+        try {
+          const result = await loginWithFacebook({
+            accessToken: response.authResponse.accessToken
+          });
+          const fallbackTarget = result?.user?.role === "admin" ? "/admin" : "/";
+          navigate(redirectTo || fallbackTarget, { replace: true });
+        } catch (requestError) {
+          setError(requestError.response?.data?.message || "Facebook sign-in failed.");
+        } finally {
+          setLoading(false);
+        }
+      },
+      {
+        scope: "public_profile,email"
+      }
+    );
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -200,6 +283,19 @@ export default function AuthPage() {
             )}
             {googleClientId && !googleReady ? (
               <p className="mt-3 text-center text-xs text-slate-500">Loading Google sign-in...</p>
+            ) : null}
+            {facebookAppId ? (
+              <button
+                type="button"
+                onClick={handleFacebookLogin}
+                disabled={loading || !facebookReady}
+                className="mt-4 flex w-full items-center justify-center rounded-2xl border border-[#1877F2]/30 bg-[#1877F2]/10 px-5 py-3 font-semibold text-[#E8F1FF] transition hover:bg-[#1877F2]/20 disabled:opacity-60"
+              >
+                Continue with Facebook
+              </button>
+            ) : null}
+            {facebookAppId && !facebookReady ? (
+              <p className="mt-3 text-center text-xs text-slate-500">Loading Facebook sign-in...</p>
             ) : null}
           </div>
         ) : null}

@@ -60,6 +60,12 @@ export function AuthProvider({ children }) {
         setUser(data.user);
         return data;
       },
+      async loginWithFacebook(payload) {
+        const { data } = await api.post("/auth/facebook", payload);
+        localStorage.setItem("shopverse-token", data.token);
+        setUser(data.user);
+        return data;
+      },
       refreshUser,
       setUserData(nextUser) {
         setUser(nextUser);

@@ -50,6 +50,45 @@ async function verifyGoogleCredential(credential) {
   return payload;
 }
 
+async function verifyFacebookAccessToken(accessToken) {
+  if (!env.facebookAppId || !env.facebookAppSecret) {
+    throw new ApiError(500, "Facebook login is not configured on the server");
+  }
+
+  if (!accessToken) {
+    throw new ApiError(400, "Facebook access token is required");
+  }
+
+  const appAccessToken = `${env.facebookAppId}|${env.facebookAppSecret}`;
+  const debugResponse = await fetch(
+    `https://graph.facebook.com/debug_token?input_token=${encodeURIComponent(accessToken)}&access_token=${encodeURIComponent(appAccessToken)}`
+  );
+  const debugData = await debugResponse.json();
+
+  if (!debugResponse.ok || !debugData?.data?.is_valid) {
+    throw new ApiError(401, debugData?.error?.message || "Unable to verify Facebook account");
+  }
+
+  if (String(debugData.data.app_id || "") !== String(env.facebookAppId)) {
+    throw new ApiError(401, "Facebook app mismatch");
+  }
+
+  const userResponse = await fetch(
+    `https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${encodeURIComponent(accessToken)}`
+  );
+  const userData = await userResponse.json();
+
+  if (!userResponse.ok || !userData?.id) {
+    throw new ApiError(401, userData?.error?.message || "Unable to fetch Facebook account");
+  }
+
+  if (!userData.email) {
+    throw new ApiError(400, "Facebook account email permission is required");
+  }
+
+  return userData;
+}
+
 export const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -123,6 +162,45 @@ export const loginWithGoogle = asyncHandler(async (req, res) => {
 
   res.json({
     message: "Google login successful",
+    token,
+    user: formatUser(user)
+  });
+});
+
+export const loginWithFacebook = asyncHandler(async (req, res) => {
+  const payload = await verifyFacebookAccessToken(req.body?.accessToken);
+  const email = String(payload.email || "").trim().toLowerCase();
+
+  let user = await User.findOne({ email });
+
+  if (!user) {
+    user = await User.create({
+      name: payload.name || email.split("@")[0],
+      email,
+      password: "",
+      authProvider: "facebook",
+      facebookId: payload.id,
+      avatar: payload.picture?.data?.url || "",
+      role: "customer"
+    });
+  } else {
+    user.name = user.name || payload.name || email.split("@")[0];
+    user.avatar = user.avatar || payload.picture?.data?.url || "";
+    user.facebookId = payload.id;
+    user.authProvider = user.authProvider === "local" && user.password ? "local" : "facebook";
+    user.lastLoginAt = new Date();
+    await user.save();
+  }
+
+  if (!user.lastLoginAt) {
+    user.lastLoginAt = new Date();
+    await user.save();
+  }
+
+  const token = createToken(user._id, user.role, env.jwtSecret);
+
+  res.json({
+    message: "Facebook login successful",
     token,
     user: formatUser(user)
   });
