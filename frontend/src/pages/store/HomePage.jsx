@@ -414,7 +414,6 @@ export default function HomePage() {
           onCategoryChange={setCategory}
           onSortChange={setSort}
           onPerPageChange={setPerPage}
-          onReset={handleResetCatalogFilters}
         />
 
         {error && <div className="rounded-3xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-200">{error}</div>}
@@ -442,10 +441,19 @@ export default function HomePage() {
 
         {!loading && products.length > 0 && (
           <div className="flex flex-col gap-3 rounded-[26px] border border-white/10 bg-white/5 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-slate-300">
-              Showing {(currentPage - 1) * perPage + 1}-
-              {Math.min(currentPage * perPage, products.length)} of {products.length} products
-            </p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <p className="text-sm text-slate-300">
+                Showing {(currentPage - 1) * perPage + 1}-
+                {Math.min(currentPage * perPage, products.length)} of {products.length} products
+              </p>
+              <button
+                type="button"
+                onClick={handleResetCatalogFilters}
+                className="w-fit rounded-full border border-white/10 bg-slate-950/30 px-3 py-1.5 text-xs text-slate-200 transition hover:bg-white/10"
+              >
+                Reset filters
+              </button>
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
