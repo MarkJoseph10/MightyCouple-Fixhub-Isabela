@@ -26,45 +26,23 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
-      <div className="page-shell grid gap-3 py-2.5 sm:gap-3 sm:py-3">
-        <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
-        <Link to="/" className="group flex min-w-0 flex-1 items-center gap-2.5 sm:min-w-[220px] sm:gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-brand-500 to-orange-400 font-bold text-white shadow-ambient transition duration-300 group-hover:scale-105">
-            {settings.logo?.url ? (
-              <img src={resolveMediaUrl(settings.logo.url)} alt={settings.logo.alt || settings.storeName} className="h-full w-full object-cover" />
-            ) : (
-              initials || "MC"
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[9px] uppercase tracking-[0.16em] text-slate-400 sm:text-[11px]">{settings.storeName}</p>
-            <p className="text-[13px] font-semibold leading-tight text-white sm:text-[0.95rem]">Commerce Platform</p>
-          </div>
-        </Link>
-
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2">
-          <Link to="/wishlist" className="glass-panel hidden items-center gap-2 rounded-full px-3 py-2 text-sm text-white lg:flex">
-            <Heart size={16} />
-            <span>{wishlistIds.length}</span>
+      <div className="page-shell py-2.5 sm:py-3">
+        <div className="flex flex-wrap items-center gap-3 lg:flex-nowrap">
+          <Link to="/" className="group flex min-w-0 flex-1 items-center gap-2.5 lg:w-[255px] lg:flex-none sm:gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-brand-500 to-orange-400 font-bold text-white shadow-ambient transition duration-300 group-hover:scale-105">
+              {settings.logo?.url ? (
+                <img src={resolveMediaUrl(settings.logo.url)} alt={settings.logo.alt || settings.storeName} className="h-full w-full object-cover" />
+              ) : (
+                initials || "MC"
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-[9px] uppercase tracking-[0.16em] text-slate-400 sm:text-[11px]">{settings.storeName}</p>
+              <p className="text-[13px] font-semibold leading-tight text-white sm:text-[0.95rem]">Commerce Platform</p>
+            </div>
           </Link>
-          <Link to="/cart" className="glass-panel inline-flex h-9 min-w-[2.8rem] items-center justify-center gap-2 rounded-full px-2.5 text-sm text-white sm:h-10 sm:min-w-[3rem] sm:px-3.5">
-            <ShoppingBag size={16} />
-            <span>{itemCount}</span>
-          </Link>
-          {user ? (
-            <button onClick={logout} className="inline-flex h-9 items-center rounded-full bg-white/10 px-2.5 py-2 text-sm text-slate-100 sm:h-10 sm:px-3.5">
-              <LogOut size={16} className="sm:mr-2" />
-              <span className="hidden sm:inline">Logout</span>
-            </button>
-          ) : (
-            <Link to="/auth" className="inline-flex h-10 items-center rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white">
-              Sign in
-            </Link>
-          )}
-        </div>
-        </div>
 
-        <nav className="flex flex-wrap items-center gap-1.5 text-[13px] text-slate-300 sm:gap-2">
+          <nav className="order-3 flex w-full flex-wrap items-center gap-1.5 text-[13px] text-slate-300 lg:order-2 lg:min-w-0 lg:flex-1 lg:flex-nowrap lg:justify-center lg:overflow-x-auto lg:pb-1 xl:overflow-visible sm:gap-2">
           <NavLink to="/" end className={navPillClass}>Store</NavLink>
           <NavLink to="/contact" className={navPillClass}>Contact</NavLink>
           <NavLink to="/wishlist" className={navPillClass}>Wishlist</NavLink>
@@ -75,7 +53,29 @@ export default function Navbar() {
           {user && !isAdmin && !isSeller && <NavLink to="/become-seller" className={navPillClass}>Become Seller</NavLink>}
           {isSeller && <NavLink to="/seller" className={navPillClass}>Seller Hub</NavLink>}
           {isAdmin && <NavLink to="/admin" className={navPillClass}>Dashboard</NavLink>}
-        </nav>
+          </nav>
+
+          <div className="order-2 ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2 lg:order-3">
+            <Link to="/wishlist" className="glass-panel inline-flex h-9 min-w-[2.8rem] items-center justify-center gap-2 rounded-full px-2.5 text-sm text-white sm:h-10 sm:min-w-[3rem] sm:px-3">
+              <Heart size={16} />
+              <span>{wishlistIds.length}</span>
+            </Link>
+            <Link to="/cart" className="glass-panel inline-flex h-9 min-w-[2.8rem] items-center justify-center gap-2 rounded-full px-2.5 text-sm text-white sm:h-10 sm:min-w-[3rem] sm:px-3">
+              <ShoppingBag size={16} />
+              <span>{itemCount}</span>
+            </Link>
+            {user ? (
+              <button onClick={logout} className="inline-flex h-9 items-center rounded-full bg-white/10 px-3 py-2 text-sm text-slate-100 sm:h-10 sm:px-4">
+                <LogOut size={16} className="mr-2" />
+                <span>Logout</span>
+              </button>
+            ) : (
+              <Link to="/auth" className="inline-flex h-10 items-center rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white">
+                Sign in
+              </Link>
+            )}
+          </div>
+        </div>
       </div>
     </header>
   );
