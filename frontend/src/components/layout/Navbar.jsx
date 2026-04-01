@@ -1,4 +1,4 @@
-import { Heart, LayoutDashboard, LogOut, ShoppingBag, Truck } from "lucide-react";
+import { Heart, LogOut, ShoppingBag } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
@@ -62,22 +62,6 @@ export default function Navbar() {
             <ShoppingBag size={16} />
             <span>{itemCount}</span>
           </Link>
-          <Link to="/track-order" className="hidden rounded-full bg-white/10 px-3 py-2 text-sm text-slate-100 xl:inline-flex">
-            <Truck size={16} className="mr-2" />
-            Track
-          </Link>
-          {isAdmin && (
-            <Link to="/admin" className="hidden h-9 items-center rounded-full bg-white/10 px-3 py-2 text-sm text-slate-100 lg:inline-flex sm:h-10 sm:px-3.5">
-              <LayoutDashboard size={16} className="mr-2" />
-              Admin
-            </Link>
-          )}
-          {isSeller && !isAdmin && (
-            <Link to="/seller" className="hidden h-9 items-center rounded-full bg-cyan-500/15 px-3 py-2 text-sm text-cyan-50 lg:inline-flex sm:h-10 sm:px-3.5">
-              <LayoutDashboard size={16} className="mr-2" />
-              Seller
-            </Link>
-          )}
           {user ? (
             <button onClick={logout} className="inline-flex h-9 items-center rounded-full bg-white/10 px-2.5 py-2 text-sm text-slate-100 sm:h-10 sm:px-3.5">
               <LogOut size={16} className="sm:mr-2" />
