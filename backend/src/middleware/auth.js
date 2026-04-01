@@ -58,6 +58,11 @@ export function authorize(...roles) {
       return;
     }
 
+    if (req.user.role === "seller" && req.user.sellerProfile?.isActive === false) {
+      next(new ApiError(403, "Seller access is currently suspended"));
+      return;
+    }
+
     next();
   };
 }

@@ -1,3 +1,5 @@
+import { resolveMediaUrl } from "./media";
+
 const storageKey = "shopverse-recently-viewed";
 
 export function readRecentlyViewed() {
@@ -12,7 +14,7 @@ export function pushRecentlyViewed(product) {
       _id: product._id,
       slug: product.slug,
       name: product.name,
-      image: product.images?.[0]?.url || product.image || "",
+      image: resolveMediaUrl(product.images?.[0]?.url || product.image || ""),
       price: product.priceFrom || product.price || 0,
       shortDescription: product.shortDescription || "",
       rating: product.rating || 0,

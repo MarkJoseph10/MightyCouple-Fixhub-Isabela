@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://shopverse-web.onrender.com/sitemap.xml

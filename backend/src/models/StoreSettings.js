@@ -93,6 +93,14 @@ const orderRulesSchema = new mongoose.Schema(
       type: Number,
       default: 24
     },
+    refundWindowDays: {
+      type: Number,
+      default: 7
+    },
+    refundEligibleStatuses: {
+      type: [String],
+      default: ["delivered", "paid"]
+    },
     guestCheckoutMethods: {
       type: [String],
       default: []
@@ -150,6 +158,46 @@ const metricsSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const installmentSchema = new mongoose.Schema(
+  {
+    enabled: {
+      type: Boolean,
+      default: true
+    },
+    frequency: {
+      type: String,
+      enum: ["weekly", "monthly"],
+      default: "weekly"
+    },
+    paymentCount: {
+      type: Number,
+      default: 8
+    },
+    downPaymentPercent: {
+      type: Number,
+      default: 10
+    },
+    serviceFeePercent: {
+      type: Number,
+      default: 0
+    },
+    gracePeriodDays: {
+      type: Number,
+      default: 3
+    },
+    releaseCondition: {
+      type: String,
+      enum: ["after_full_payment", "admin_approved_early_release"],
+      default: "after_full_payment"
+    },
+    allowDeliveredOrdersRefund: {
+      type: Boolean,
+      default: false
+    }
+  },
+  { _id: false }
+);
+
 const storeSettingsSchema = new mongoose.Schema(
   {
     storeName: {
@@ -160,6 +208,12 @@ const storeSettingsSchema = new mongoose.Schema(
     logo: mediaSchema,
     banner: mediaSchema,
     heroImage: mediaSchema,
+    backgroundImage: mediaSchema,
+    favicon: mediaSchema,
+    backgroundOverlay: {
+      type: Number,
+      default: 0.5
+    },
     shipping: {
       type: shippingSchema,
       default: () => ({})
@@ -182,6 +236,10 @@ const storeSettingsSchema = new mongoose.Schema(
     },
     metrics: {
       type: metricsSchema,
+      default: () => ({})
+    },
+    installment: {
+      type: installmentSchema,
       default: () => ({})
     }
   },

@@ -14,6 +14,15 @@ const defaultSettings = {
     url: "",
     alt: "Mighty Couple hero image"
   },
+  backgroundImage: {
+    url: "/branding/default-background.jpg",
+    alt: "Mighty Couple storefront background"
+  },
+  favicon: {
+    url: "/favicon.svg",
+    alt: "Mighty Couple favicon"
+  },
+  backgroundOverlay: 0.5,
   shipping: {
     mode: "fixed",
     fixedFee: 180,
@@ -51,6 +60,8 @@ const defaultSettings = {
   },
   orderRules: {
     autoCancelUnpaidHours: 24,
+    refundWindowDays: 7,
+    refundEligibleStatuses: ["delivered", "paid"],
     guestCheckoutMethods: []
   },
   promotions: {
@@ -76,6 +87,16 @@ const defaultSettings = {
   metrics: {
     cartAdds: 0,
     lowStockThreshold: 5
+  },
+  installment: {
+    enabled: true,
+    frequency: "weekly",
+    paymentCount: 8,
+    downPaymentPercent: 10,
+    serviceFeePercent: 0,
+    gracePeriodDays: 3,
+    releaseCondition: "after_full_payment",
+    allowDeliveredOrdersRefund: false
   }
 };
 
@@ -103,6 +124,9 @@ export function serializeStoreSettings(settings) {
     logo: readMedia(settings.logo, defaultSettings.logo),
     banner: readMedia(settings.banner, defaultSettings.banner),
     heroImage: readMedia(settings.heroImage, defaultSettings.heroImage),
+    backgroundImage: readMedia(settings.backgroundImage, defaultSettings.backgroundImage),
+    favicon: readMedia(settings.favicon, defaultSettings.favicon),
+    backgroundOverlay: Number(settings.backgroundOverlay ?? defaultSettings.backgroundOverlay),
     shipping: {
       mode: settings.shipping?.mode || defaultSettings.shipping.mode,
       fixedFee: Number(settings.shipping?.fixedFee ?? defaultSettings.shipping.fixedFee),
@@ -144,6 +168,10 @@ export function serializeStoreSettings(settings) {
     },
     orderRules: {
       autoCancelUnpaidHours: Number(settings.orderRules?.autoCancelUnpaidHours ?? defaultSettings.orderRules.autoCancelUnpaidHours),
+      refundWindowDays: Number(settings.orderRules?.refundWindowDays ?? defaultSettings.orderRules.refundWindowDays),
+      refundEligibleStatuses: settings.orderRules?.refundEligibleStatuses?.length
+        ? settings.orderRules.refundEligibleStatuses
+        : defaultSettings.orderRules.refundEligibleStatuses,
       guestCheckoutMethods: settings.orderRules?.guestCheckoutMethods?.length
         ? settings.orderRules.guestCheckoutMethods
         : defaultSettings.orderRules.guestCheckoutMethods
@@ -176,6 +204,16 @@ export function serializeStoreSettings(settings) {
     metrics: {
       cartAdds: Number(settings.metrics?.cartAdds ?? defaultSettings.metrics.cartAdds),
       lowStockThreshold: Number(settings.metrics?.lowStockThreshold ?? defaultSettings.metrics.lowStockThreshold)
+    },
+    installment: {
+      enabled: settings.installment?.enabled ?? defaultSettings.installment.enabled,
+      frequency: settings.installment?.frequency || defaultSettings.installment.frequency,
+      paymentCount: Number(settings.installment?.paymentCount ?? defaultSettings.installment.paymentCount),
+      downPaymentPercent: Number(settings.installment?.downPaymentPercent ?? defaultSettings.installment.downPaymentPercent),
+      serviceFeePercent: Number(settings.installment?.serviceFeePercent ?? defaultSettings.installment.serviceFeePercent),
+      gracePeriodDays: Number(settings.installment?.gracePeriodDays ?? defaultSettings.installment.gracePeriodDays),
+      releaseCondition: settings.installment?.releaseCondition || defaultSettings.installment.releaseCondition,
+      allowDeliveredOrdersRefund: settings.installment?.allowDeliveredOrdersRefund ?? defaultSettings.installment.allowDeliveredOrdersRefund
     }
   };
 }

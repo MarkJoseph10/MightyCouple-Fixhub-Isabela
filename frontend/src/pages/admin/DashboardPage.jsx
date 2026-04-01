@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   BarChart3,
   Boxes,
+  ChevronDown,
   CreditCard,
   Gift,
   ImagePlus,
@@ -23,6 +24,7 @@ import OrderStatusBadge from "../../components/common/OrderStatusBadge";
 import { useAuth } from "../../context/AuthContext";
 import { useStoreSettings } from "../../context/StoreSettingsContext";
 import { peso } from "../../utils/commerce";
+import { getOrderReference } from "../../utils/orders";
 
 const sectionTabs = [
   { id: "overview", label: "Overview", icon: BarChart3 },
@@ -54,6 +56,9 @@ function buildSettingsForm(settings) {
     logoUrl: settings.logo?.url || "",
     bannerUrl: settings.banner?.url || "",
     heroImageUrl: settings.heroImage?.url || "",
+    backgroundImageUrl: settings.backgroundImage?.url || "/branding/default-background.jpg",
+    faviconUrl: settings.favicon?.url || "/favicon.svg",
+    backgroundOverlay: Number(settings.backgroundOverlay ?? 0.5),
     shippingMode: settings.shipping?.mode || "fixed",
     fixedFee: Number(settings.shipping?.fixedFee || 0),
     locationFees: settings.shipping?.locationFees?.length
@@ -87,6 +92,10 @@ function buildSettingsForm(settings) {
       cod: settings.paymentDetails?.proofOfPaymentRequired?.cod === true
     },
     autoCancelUnpaidHours: Number(settings.orderRules?.autoCancelUnpaidHours || 24),
+    refundWindowDays: Number(settings.orderRules?.refundWindowDays || 7),
+    refundEligibleStatuses: settings.orderRules?.refundEligibleStatuses?.length
+      ? settings.orderRules.refundEligibleStatuses
+      : ["delivered", "paid"],
     lowStockThreshold: Number(settings.metrics?.lowStockThreshold || 5),
     bundleEnabled: settings.promotions?.bundle?.enabled === true,
     bundleMinQuantity: Number(settings.promotions?.bundle?.minQuantity || 2),
@@ -99,6 +108,15 @@ function buildSettingsForm(settings) {
     limitedOfferTitle: settings.promotions?.limitedOffer?.title || "Limited time offer",
     limitedOfferEndsAt: settings.promotions?.limitedOffer?.endsAt || "",
     limitedOfferDiscountPercent: Number(settings.promotions?.limitedOffer?.discountPercent || 0),
+    installmentEnabled: settings.installment?.enabled !== false,
+    installmentFrequency: settings.installment?.frequency === "monthly" ? "monthly" : "weekly",
+    installmentPaymentCount: Number(settings.installment?.paymentCount || 8),
+    installmentDownPaymentPercent: Number(settings.installment?.downPaymentPercent || 10),
+    installmentServiceFeePercent: Number(settings.installment?.serviceFeePercent || 0),
+    installmentGracePeriodDays: Number(settings.installment?.gracePeriodDays || 3),
+    installmentReleaseCondition: settings.installment?.releaseCondition === "admin_approved_early_release"
+      ? "admin_approved_early_release"
+      : "after_full_payment",
     promoCodes: settings.promotions?.promoCodes?.length
       ? settings.promotions.promoCodes.map((promo) => ({
           code: promo.code || "",
@@ -180,6 +198,36 @@ function SectionCard({ eyebrow, title, description, children }) {
       </div>
       <div className="mt-6">{children}</div>
     </section>
+  );
+}
+
+function ExpandablePanel({ title, description, badge, defaultOpen = true, children }) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div className="rounded-[28px] border border-white/10 bg-white/5">
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left transition duration-300 hover:bg-white/5 sm:px-5"
+      >
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-lg font-semibold text-white">{title}</h3>
+            {badge ? (
+              <span className="rounded-full border border-white/10 bg-slate-950/35 px-3 py-1 text-xs text-slate-300">
+                {badge}
+              </span>
+            ) : null}
+          </div>
+          {description ? <p className="mt-1 text-sm text-slate-400">{description}</p> : null}
+        </div>
+        <span className={`rounded-full border border-white/10 bg-slate-950/30 p-2 text-slate-300 transition duration-300 ${open ? "rotate-180" : ""}`}>
+          <ChevronDown size={16} />
+        </span>
+      </button>
+      {open ? <div className="border-t border-white/10 px-4 py-4 sm:px-5 sm:py-5">{children}</div> : null}
+    </div>
   );
 }
 
@@ -356,6 +404,15 @@ function DashboardPage() {
     }));
   }
 
+  function updateRefundEligibleStatus(status, checked) {
+    setSettingsForm((current) => ({
+      ...current,
+      refundEligibleStatuses: checked
+        ? Array.from(new Set([...current.refundEligibleStatuses, status]))
+        : current.refundEligibleStatuses.filter((item) => item !== status)
+    }));
+  }
+
   function updateLocationFee(index, field, value) {
     setSettingsForm((current) => ({
       ...current,
@@ -481,6 +538,15 @@ function DashboardPage() {
           url: settingsForm.heroImageUrl,
           alt: `${settingsForm.storeName} hero image`
         },
+        backgroundImage: {
+          url: settingsForm.backgroundImageUrl,
+          alt: `${settingsForm.storeName} storefront background`
+        },
+        favicon: {
+          url: settingsForm.faviconUrl,
+          alt: `${settingsForm.storeName} favicon`
+        },
+        backgroundOverlay: Number(settingsForm.backgroundOverlay || 0.5),
         paymentOptions: settingsForm.paymentOptions,
         paymentDetails: {
           gcash: {
@@ -497,7 +563,9 @@ function DashboardPage() {
           proofOfPaymentRequired: settingsForm.proofOfPaymentRequired
         },
         orderRules: {
-          autoCancelUnpaidHours: Number(settingsForm.autoCancelUnpaidHours || 24)
+          autoCancelUnpaidHours: Number(settingsForm.autoCancelUnpaidHours || 24),
+          refundWindowDays: Number(settingsForm.refundWindowDays || 7),
+          refundEligibleStatuses: settingsForm.refundEligibleStatuses
         },
         promotions: {
           bundle: {
@@ -528,6 +596,15 @@ function DashboardPage() {
         },
         metrics: {
           lowStockThreshold: Number(settingsForm.lowStockThreshold || 0)
+        },
+        installment: {
+          enabled: settingsForm.installmentEnabled,
+          frequency: settingsForm.installmentFrequency,
+          paymentCount: Number(settingsForm.installmentPaymentCount || 1),
+          downPaymentPercent: Number(settingsForm.installmentDownPaymentPercent || 0),
+          serviceFeePercent: Number(settingsForm.installmentServiceFeePercent || 0),
+          gracePeriodDays: Number(settingsForm.installmentGracePeriodDays || 0),
+          releaseCondition: settingsForm.installmentReleaseCondition
         }
       };
 
@@ -618,33 +695,36 @@ function DashboardPage() {
             <SectionCard
               eyebrow="Overview"
               title="Revenue, orders, and quick admin actions"
-              description="Your most important business numbers stay visible first, with recent orders and live status mix underneath."
+              description="The most important numbers stay visible first, while deeper panels can be expanded only when you need them."
             >
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]">
-                <div className="space-y-4">
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                    <StatsCard label="Daily revenue" value={{ numericValue: dailyRevenue, type: "currency" }} helper="Revenue collected for the current calendar day." tone="brand" />
-                    <StatsCard label="Weekly revenue" value={{ numericValue: weeklyRevenue, type: "currency" }} helper="Revenue collected for the current ISO week." tone="emerald" />
-                    <StatsCard label="Monthly revenue" value={{ numericValue: monthlyRevenue, type: "currency" }} helper="Revenue collected for the current month." tone="cyan" />
-                    <StatsCard label="Estimated profit" value={{ numericValue: overview.estimatedProfit || 0, type: "currency" }} helper="Based on selling price minus cost price from paid orders." tone="amber" />
-                    <StatsCard label="Conversion rate" value={{ numericValue: overview.conversionRate || 0, type: "percent" }} helper={`${overview.totalOrders || 0} orders from ${insights.cartAdds || 0} tracked cart adds.`} tone="brand" />
-                    <StatsCard label="Audience" value={{ numericValue: overview.totalUsers || 0, type: "number" }} helper={`${overview.newsletterSubscribers || 0} newsletter subscribers on file.`} tone="cyan" />
-                  </div>
+              <div className="dashboard-card-grid">
+                <StatsCard className="dashboard-card-span-2" label="Daily revenue" value={{ numericValue: dailyRevenue, type: "currency" }} helper="Revenue collected for the current calendar day." tone="brand" />
+                <StatsCard label="Weekly revenue" value={{ numericValue: weeklyRevenue, type: "currency" }} helper="Revenue collected for the current ISO week." tone="emerald" />
+                <StatsCard label="Monthly revenue" value={{ numericValue: monthlyRevenue, type: "currency" }} helper="Revenue collected for the current month." tone="cyan" />
+                <StatsCard label="Estimated profit" value={{ numericValue: overview.estimatedProfit || 0, type: "currency" }} helper="Based on selling price minus cost price from paid orders." tone="amber" />
+                <StatsCard label="Conversion rate" value={{ numericValue: overview.conversionRate || 0, type: "percent" }} helper={`${overview.totalOrders || 0} orders from ${insights.cartAdds || 0} tracked cart adds.`} tone="brand" />
+                <StatsCard label="Audience" value={{ numericValue: overview.totalUsers || 0, type: "number" }} helper={`${overview.newsletterSubscribers || 0} newsletter subscribers on file.`} tone="cyan" />
+              </div>
 
-                  <div className="grid gap-4 md:grid-cols-3">
+              <div className="mt-6 grid gap-4 xl:grid-cols-2">
+                <ExpandablePanel
+                  title="Quick actions"
+                  description="Jump to the areas you use most often without keeping every admin widget open."
+                  badge="Always handy"
+                >
+                  <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
                     <QuickLink to="/admin/products" icon={Boxes} title="Products" caption="Edit catalog, variants, and trending tags." />
                     <QuickLink to="/admin/orders" icon={ShoppingBag} title="Orders" caption="Verify payment and move orders through fulfillment." />
                     <QuickLink to="/admin/customers" icon={Users} title="Customers" caption="Review customer accounts and recent activity." />
                   </div>
-                </div>
+                </ExpandablePanel>
 
-                <div className="rounded-[32px] border border-white/10 bg-gradient-to-br from-white/8 to-white/3 p-5">
-                  <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Store pulse</p>
-                  <h3 className="mt-2 text-2xl font-semibold text-white">{settings.storeName}</h3>
-                  <p className="mt-3 text-sm text-slate-300">
-                    Affordable gadgets, phones, laptops, and trending tech products with account-based cart and wishlist access.
-                  </p>
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <ExpandablePanel
+                  title="Store pulse"
+                  description="Keep the essential store status visible without leaving a tall sticky panel on screen."
+                  badge={`${overview.totalOrders || 0} orders`}
+                >
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <div className="rounded-3xl border border-white/10 bg-slate-950/30 p-4">
                       <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Orders</p>
                       <p className="mt-2 text-3xl font-semibold text-white">{overview.totalOrders || 0}</p>
@@ -656,21 +736,23 @@ function DashboardPage() {
                       <p className="mt-2 text-sm text-slate-400">Active catalog items tracked in the storefront.</p>
                     </div>
                   </div>
-                  <div className="mt-5 rounded-3xl border border-brand-400/15 bg-brand-500/10 p-4 text-sm text-brand-50">
+                  <div className="mt-4 rounded-3xl border border-brand-400/15 bg-brand-500/10 p-4 text-sm text-brand-50">
                     Shipping mode: <span className="font-semibold capitalize">{settingsForm.shippingMode}</span>
-                    <span className="mx-2 text-brand-200">•</span>
+                    <span className="mx-2 text-brand-200">|</span>
                     Payment options active: <span className="font-semibold">{Object.values(settingsForm.paymentOptions).filter(Boolean).length}</span>
                   </div>
-                </div>
+                </ExpandablePanel>
               </div>
 
-              <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-                <div className="rounded-[28px] border border-white/10 bg-white/5 p-4">
+              <div className="mt-4 grid gap-4 xl:grid-cols-2">
+                <ExpandablePanel
+                  title="Recent orders"
+                  description="Collapsed by default so the overview stays short until you need the latest buyer activity."
+                  badge={stats?.recentOrders?.length ? `${stats.recentOrders.length} latest` : "Waiting for sales"}
+                  defaultOpen={false}
+                >
                   <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Recent orders</p>
-                      <h3 className="mt-2 text-lg font-semibold text-white">Latest buyer activity</h3>
-                    </div>
+                    <div className="text-sm text-slate-400">Newest orders and payment activity from your storefront.</div>
                     <Link to="/admin/orders" className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200">
                       Open orders
                     </Link>
@@ -683,6 +765,7 @@ function DashboardPage() {
                             <div>
                               <p className="font-semibold text-white">{order.user?.name || order.shippingAddress?.name || "Guest order"}</p>
                               <p className="mt-1 text-sm text-slate-400">{order.user?.email || order.shippingAddress?.email || "No email on file"}</p>
+                              <p className="mt-2 text-xs uppercase tracking-[0.28em] text-slate-500">{getOrderReference(order)}</p>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
                               <OrderStatusBadge status={order.status} />
@@ -702,9 +785,16 @@ function DashboardPage() {
                       </div>
                     )}
                   </div>
-                </div>
+                </ExpandablePanel>
 
-                <StatusMixCard ordersByStatus={stats?.ordersByStatus || []} totalOrders={totalOrders} />
+                <ExpandablePanel
+                  title="Status mix"
+                  description="Expand this when you want a cleaner look at how orders are distributed right now."
+                  badge={totalOrders ? `${totalOrders} tracked` : "No orders yet"}
+                  defaultOpen={false}
+                >
+                  <StatusMixCard ordersByStatus={stats?.ordersByStatus || []} totalOrders={totalOrders} />
+                </ExpandablePanel>
               </div>
             </SectionCard>
           </div>
@@ -919,6 +1009,98 @@ function DashboardPage() {
                       <InputField label="Auto-cancel unpaid orders (hours)">
                         <input type="number" value={settingsForm.autoCancelUnpaidHours} onChange={(event) => updateFormField("autoCancelUnpaidHours", Number(event.target.value || 0))} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
                       </InputField>
+                      <InputField label="Refund request window (days)">
+                        <input type="number" min="0" value={settingsForm.refundWindowDays} onChange={(event) => updateFormField("refundWindowDays", Number(event.target.value || 0))} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                      </InputField>
+                    </div>
+
+                    <div className="mt-5 rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
+                      <p className="text-sm font-medium text-white">Refund policy</p>
+                      <p className="mt-2 text-sm text-slate-400">
+                        Choose which order progress points allow customers to request a refund.
+                      </p>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {[
+                          ["paid", "Paid orders"],
+                          ["delivered", "Delivered orders"]
+                        ].map(([status, label]) => (
+                          <label key={status} className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                            <span>{label}</span>
+                            <input
+                              type="checkbox"
+                              checked={settingsForm.refundEligibleStatuses.includes(status)}
+                              onChange={(event) => updateRefundEligibleStatus(status, event.target.checked)}
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mt-5 rounded-[24px] border border-cyan-400/20 bg-cyan-500/10 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium text-white">Installment / Paluwagan</p>
+                          <p className="mt-1 text-sm text-cyan-100/80">Configure the no-refund installment plan separately from regular orders.</p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={settingsForm.installmentEnabled}
+                          onChange={(event) => updateFormField("installmentEnabled", event.target.checked)}
+                        />
+                      </div>
+                      <div className="mt-4 grid gap-3 md:grid-cols-2">
+                        <select
+                          value={settingsForm.installmentFrequency}
+                          onChange={(event) => updateFormField("installmentFrequency", event.target.value)}
+                          className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                        >
+                          <option value="weekly">Weekly</option>
+                          <option value="monthly">Monthly</option>
+                        </select>
+                        <input
+                          type="number"
+                          min="1"
+                          value={settingsForm.installmentPaymentCount}
+                          onChange={(event) => updateFormField("installmentPaymentCount", Number(event.target.value || 1))}
+                          placeholder="Number of payments"
+                          className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          value={settingsForm.installmentDownPaymentPercent}
+                          onChange={(event) => updateFormField("installmentDownPaymentPercent", Number(event.target.value || 0))}
+                          placeholder="Down payment %"
+                          className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          value={settingsForm.installmentServiceFeePercent}
+                          onChange={(event) => updateFormField("installmentServiceFeePercent", Number(event.target.value || 0))}
+                          placeholder="Service fee %"
+                          className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          value={settingsForm.installmentGracePeriodDays}
+                          onChange={(event) => updateFormField("installmentGracePeriodDays", Number(event.target.value || 0))}
+                          placeholder="Grace period days"
+                          className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                        />
+                        <select
+                          value={settingsForm.installmentReleaseCondition}
+                          onChange={(event) => updateFormField("installmentReleaseCondition", event.target.value)}
+                          className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                        >
+                          <option value="after_full_payment">Ship after full payment</option>
+                          <option value="admin_approved_early_release">Admin-approved early release</option>
+                        </select>
+                      </div>
+                      <div className="mt-4 rounded-[20px] border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+                        Down payment and all approved installment payments remain non-refundable under the installment agreement.
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1046,8 +1228,8 @@ function DashboardPage() {
               <form onSubmit={handleSaveDashboard}>
                 <SectionCard
                   eyebrow="Branding"
-                  title="Store identity and homepage media"
-                  description="Update your storefront name, logo, banner, and hero image without touching code."
+                  title="Store identity and branded visuals"
+                  description="Manage your storefront name, logo, favicon, and the full-page background image without touching code."
                 >
                   <div className="grid gap-4">
                     <InputField label="Store name">
@@ -1068,7 +1250,7 @@ function DashboardPage() {
                             <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
                               <ImagePlus size={16} />
                               <span>{uploadingField === field ? "Uploading..." : `Upload ${label.toLowerCase()}`}</span>
-                              <input type="file" className="hidden" onChange={(event) => handleAssetUpload(field, event)} />
+                              <input type="file" accept="image/*" className="hidden" onChange={(event) => handleAssetUpload(field, event)} />
                             </label>
                           </div>
                           <div className="overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/30 lg:w-56">
@@ -1081,6 +1263,110 @@ function DashboardPage() {
                         </div>
                       </div>
                     ))}
+
+                    <div className="rounded-[28px] border border-white/10 bg-white/5 p-4">
+                      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(300px,0.9fr)]">
+                        <div className="space-y-4">
+                          <InputField label="Website background image" helper="This image is applied behind the storefront and admin pages. JPG or PNG under 5MB is best for fast loading.">
+                            <input value={settingsForm.backgroundImageUrl} onChange={(event) => updateFormField("backgroundImageUrl", event.target.value)} placeholder="https://..." className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                          </InputField>
+
+                          <div className="flex flex-wrap gap-3">
+                            <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                              <ImagePlus size={16} />
+                              <span>{uploadingField === "backgroundImageUrl" ? "Uploading..." : "Upload background image"}</span>
+                              <input type="file" accept="image/*" className="hidden" onChange={(event) => handleAssetUpload("backgroundImageUrl", event)} />
+                            </label>
+                            <button type="button" onClick={() => updateFormField("backgroundImageUrl", "/branding/default-background.jpg")} className="rounded-2xl border border-white/10 px-4 py-3 text-sm text-slate-200 transition hover:bg-white/5">
+                              Restore sample background
+                            </button>
+                          </div>
+
+                          <InputField
+                            label="Dark overlay strength"
+                            helper="A 0.4 to 0.6 overlay keeps the text readable on top of the image."
+                          >
+                            <div className="rounded-[24px] border border-white/10 bg-slate-950/30 p-4">
+                              <div className="flex items-center justify-between gap-3 text-sm text-slate-300">
+                                <span>Overlay opacity</span>
+                                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 font-medium text-white">
+                                  {Number(settingsForm.backgroundOverlay || 0.5).toFixed(2)}
+                                </span>
+                              </div>
+                              <input
+                                type="range"
+                                min="0.4"
+                                max="0.6"
+                                step="0.05"
+                                value={settingsForm.backgroundOverlay}
+                                onChange={(event) => updateFormField("backgroundOverlay", Number(event.target.value))}
+                                className="mt-4 w-full accent-brand-500"
+                              />
+                            </div>
+                          </InputField>
+                        </div>
+
+                        <div className="overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/30">
+                          <div
+                            className="relative flex min-h-[17rem] items-end overflow-hidden p-5 sm:min-h-[19rem]"
+                            style={{
+                              backgroundImage: `url("${settingsForm.backgroundImageUrl || "/branding/default-background.jpg"}")`,
+                              backgroundPosition: "center",
+                              backgroundRepeat: "no-repeat",
+                              backgroundSize: "cover"
+                            }}
+                          >
+                            <div
+                              className="absolute inset-0"
+                              style={{
+                                background: `linear-gradient(180deg, rgba(2, 6, 23, ${Math.min(0.72, Number(settingsForm.backgroundOverlay || 0.5) + 0.1)}) 0%, rgba(2, 6, 23, ${Number(settingsForm.backgroundOverlay || 0.5)}) 48%, rgba(15, 23, 42, ${Math.min(0.78, Number(settingsForm.backgroundOverlay || 0.5) + 0.16)}) 100%)`
+                              }}
+                            />
+                            <div className="relative z-10 max-w-sm">
+                              <p className="text-xs uppercase tracking-[0.28em] text-cyan-100/75">Live background preview</p>
+                              <h3 className="mt-3 text-2xl font-semibold text-white sm:text-3xl">{settingsForm.storeName || "Mighty Couple"}</h3>
+                              <p className="mt-2 text-sm text-slate-200/90">
+                                Your shoppers will see this branded backdrop across the store while cards and controls stay readable above it.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-[28px] border border-white/10 bg-white/5 p-4">
+                      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_260px]">
+                        <div className="space-y-3">
+                          <InputField label="Browser tab logo (favicon)" helper="Use a square PNG, ICO, or SVG so your brand shows in the browser tab.">
+                            <input value={settingsForm.faviconUrl} onChange={(event) => updateFormField("faviconUrl", event.target.value)} placeholder="https://..." className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                          </InputField>
+                          <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                            <ImagePlus size={16} />
+                            <span>{uploadingField === "faviconUrl" ? "Uploading..." : "Upload favicon"}</span>
+                            <input type="file" accept=".png,.ico,.svg,image/png,image/x-icon,image/vnd.microsoft.icon,image/svg+xml" className="hidden" onChange={(event) => handleAssetUpload("faviconUrl", event)} />
+                          </label>
+                        </div>
+
+                        <div className="rounded-[28px] border border-white/10 bg-slate-950/40 p-4">
+                          <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Browser tab preview</p>
+                          <div className="mt-4 rounded-[22px] border border-white/10 bg-slate-900/80 p-3">
+                            <div className="flex items-center gap-3 rounded-2xl bg-white/5 px-3 py-2">
+                              <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-white shadow-ambient">
+                                {settingsForm.faviconUrl ? (
+                                  <img src={settingsForm.faviconUrl} alt={`${settingsForm.storeName} favicon preview`} className="h-full w-full object-contain p-1" />
+                                ) : (
+                                  <span className="text-sm font-semibold text-slate-700">MC</span>
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium text-white">{settingsForm.storeName || "Mighty Couple"}</p>
+                                <p className="text-xs text-slate-400">https://store.example</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
                     <div className="flex flex-wrap gap-3">
                       <button className="rounded-2xl bg-brand-500 px-5 py-3 font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-brand-600">

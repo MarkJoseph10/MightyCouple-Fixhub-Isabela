@@ -6,18 +6,32 @@
   font-family: "Inter", "Segoe UI", sans-serif;
   color: #e2e8f0;
   background: #020617;
+  color-scheme: dark;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(39, 99, 255, 0.16), transparent 24%),
-    linear-gradient(180deg, #020617 0%, #0f172a 55%, #111827 100%);
+  overflow-x: hidden;
+  background: #020617;
 }
 
 #root {
   min-height: 100vh;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 .glass-panel {
@@ -25,5 +39,33 @@ body {
 }
 
 .page-shell {
-  @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  @apply mx-auto w-full px-4 sm:px-6 lg:px-8;
+  max-width: 1160px;
+}
+
+.admin-shell {
+  @apply w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12;
+}
+
+@media (min-width: 1536px) {
+  .page-shell {
+    max-width: 1220px;
+  }
+}
+
+.dashboard-card-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-auto-flow: dense;
+}
+
+.dashboard-card-span-2 {
+  grid-column: span 2;
+}
+
+@media (max-width: 767px) {
+  .dashboard-card-span-2 {
+    grid-column: span 1;
+  }
 }

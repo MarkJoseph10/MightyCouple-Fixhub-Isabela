@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import api from "../api/client";
+import { resolveMediaUrl } from "../utils/media";
 import { useAuth } from "./AuthContext";
 
 const CartContext = createContext(null);
@@ -15,19 +16,47 @@ export function CartProvider({ children }) {
       cartKey: item.cartKey || (item.variantId ? `${item._id}:${item.variantId}` : item._id),
       variantId: item.variantId || "",
       variantLabel: item.variantLabel || "",
-      bundleEligible: item.bundleEligible !== false
+        bundleEligible: item.bundleEligible !== false
     }));
+  });
+  const [selectedCartKeys, setSelectedCartKeys] = useState(() => {
+    const saved = localStorage.getItem("shopverse-cart-selected");
+    const parsed = saved ? JSON.parse(saved) : null;
+    return Array.isArray(parsed) ? parsed : [];
   });
 
   useEffect(() => {
     localStorage.setItem("shopverse-cart", JSON.stringify(items));
   }, [items]);
 
+  useEffect(() => {
+    const availableKeys = new Set(items.map((item) => item.cartKey));
+    setSelectedCartKeys((current) => {
+      const next = current.filter((key) => availableKeys.has(key));
+      if (!next.length && items.length) {
+        return items.map((item) => item.cartKey);
+      }
+      return next;
+    });
+  }, [items]);
+
+  useEffect(() => {
+    localStorage.setItem("shopverse-cart-selected", JSON.stringify(selectedCartKeys));
+  }, [selectedCartKeys]);
+
   const value = useMemo(
     () => ({
       items,
       itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
       subtotal: items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+      selectedCartKeys,
+      selectedItems: items.filter((item) => selectedCartKeys.includes(item.cartKey)),
+      selectedItemCount: items
+        .filter((item) => selectedCartKeys.includes(item.cartKey))
+        .reduce((sum, item) => sum + item.quantity, 0),
+      selectedSubtotal: items
+        .filter((item) => selectedCartKeys.includes(item.cartKey))
+        .reduce((sum, item) => sum + item.price * item.quantity, 0),
       async addToCart(product, quantity = 1, options = {}) {
         if (!isAuthenticated) {
           return { ok: false, requiresAuth: true };
@@ -56,8 +85,10 @@ export function CartProvider({ children }) {
               _id: product._id,
               name: product.name,
               slug: product.slug,
-              image: product.images?.[0]?.url || "",
+              image: resolveMediaUrl(product.images?.[0]?.url || ""),
               price: Number(selectedVariant?.price || product.price),
+              vendorType: product.vendorType || "admin",
+              sellerId: product.owner || "",
               variantId: selectedVariant?._id || "",
               variantLabel: [selectedVariant?.name, selectedVariant?.color, selectedVariant?.storage, selectedVariant?.model]
                 .filter(Boolean)
@@ -67,9 +98,25 @@ export function CartProvider({ children }) {
             }
           ];
         });
+        setSelectedCartKeys((current) => (current.includes(cartKey) ? current : [...current, cartKey]));
 
         api.post("/analytics/cart-add").catch(() => null);
-        return { ok: true };
+        return { ok: true, cartKey };
+      },
+      toggleSelected(cartKey) {
+        setSelectedCartKeys((current) =>
+          current.includes(cartKey) ? current.filter((key) => key !== cartKey) : [...current, cartKey]
+        );
+      },
+      setSelectedOnly(cartKeys = []) {
+        const normalized = [...new Set(cartKeys.filter(Boolean))];
+        setSelectedCartKeys(normalized);
+      },
+      selectAll() {
+        setSelectedCartKeys(items.map((item) => item.cartKey));
+      },
+      clearSelection() {
+        setSelectedCartKeys([]);
       },
       updateQuantity(cartKey, quantity) {
         setItems((current) =>
@@ -80,12 +127,18 @@ export function CartProvider({ children }) {
       },
       removeItem(cartKey) {
         setItems((current) => current.filter((item) => item.cartKey !== cartKey));
+        setSelectedCartKeys((current) => current.filter((key) => key !== cartKey));
+      },
+      clearSelectedItems() {
+        setItems((current) => current.filter((item) => !selectedCartKeys.includes(item.cartKey)));
+        setSelectedCartKeys([]);
       },
       clearCart() {
         setItems([]);
+        setSelectedCartKeys([]);
       }
     }),
-    [isAuthenticated, items]
+    [isAuthenticated, items, selectedCartKeys]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

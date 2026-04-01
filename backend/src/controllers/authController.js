@@ -3,6 +3,7 @@ import { User } from "../models/User.js";
 import { createToken } from "../utils/createToken.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { clearRateLimitFailures, recordRateLimitFailure } from "../middleware/rateLimit.js";
 import { isValidEmail } from "../utils/validators.js";
 
 function formatUser(user) {
@@ -10,7 +11,9 @@ function formatUser(user) {
     id: user._id,
     name: user.name,
     email: user.email,
-    role: user.role
+    role: user.role,
+    sellerProfile: user.sellerProfile || null,
+    sellerApplication: user.sellerApplication || null
   };
 }
 
@@ -61,15 +64,18 @@ export const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   if (!isValidEmail(email)) {
+    recordRateLimitFailure(req);
     throw new ApiError(400, "Please enter a valid email address");
   }
 
   const user = await User.findOne({ email });
 
   if (!user || !(await user.comparePassword(password))) {
+    recordRateLimitFailure(req);
     throw new ApiError(401, "Invalid email or password");
   }
 
+  clearRateLimitFailures(req);
   user.lastLoginAt = new Date();
   await user.save();
 

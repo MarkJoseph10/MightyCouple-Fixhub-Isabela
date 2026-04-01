@@ -7,7 +7,10 @@ const toneMap = {
   shipped: "bg-purple-500/15 text-purple-200",
   out_for_delivery: "bg-orange-500/15 text-orange-200",
   delivered: "bg-emerald-500/15 text-emerald-200",
-  cancelled: "bg-rose-500/15 text-rose-200"
+  cancelled: "bg-rose-500/15 text-rose-200",
+  approved: "bg-sky-500/15 text-sky-200",
+  rejected: "bg-rose-500/15 text-rose-200",
+  refunded: "bg-emerald-500/15 text-emerald-200"
 };
 
 export default function OrderStatusBadge({ status }) {

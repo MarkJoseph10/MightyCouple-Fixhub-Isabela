@@ -1,6 +1,6 @@
-import { Heart, MessageSquare, ShieldCheck, ShoppingBag, Star, TrendingUp, Users } from "lucide-react";
+import { Heart, MessageSquare, ShieldCheck, ShoppingBag, Star, TrendingUp, Users, Video } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import api from "../../api/client";
 import AccessPromptModal from "../../components/common/AccessPromptModal";
 import LoadingScreen from "../../components/common/LoadingScreen";
@@ -11,6 +11,7 @@ import { useCart } from "../../context/CartContext";
 import { useStoreSettings } from "../../context/StoreSettingsContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { peso } from "../../utils/commerce";
+import { calculateInstallmentPlan, formatInstallmentBreakdown } from "../../utils/installments";
 import { pushRecentlyViewed } from "../../utils/recentlyViewed";
 
 const initialReviewForm = {
@@ -18,16 +19,28 @@ const initialReviewForm = {
   comment: ""
 };
 
+const mediaBaseUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace("/api", "");
+
+function withAbsoluteUrl(url = "") {
+  if (!url) {
+    return "";
+  }
+
+  return url.startsWith("http") ? url : `${mediaBaseUrl}${url}`;
+}
+
 export default function ProductDetailsPage() {
   const { slug } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  const { addToCart } = useCart();
+  const { addToCart, setSelectedOnly } = useCart();
   const { settings } = useStoreSettings();
   const { isWishlisted, toggleWishlist } = useWishlist();
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [selectedVariantId, setSelectedVariantId] = useState("");
+  const [selectedMediaId, setSelectedMediaId] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [reviewForm, setReviewForm] = useState(initialReviewForm);
   const [reviewStatus, setReviewStatus] = useState("");
@@ -82,9 +95,49 @@ export default function ProductDetailsPage() {
     () => product?.variants?.find((variant) => String(variant._id) === String(selectedVariantId)) || null,
     [product, selectedVariantId]
   );
+  const mediaItems = useMemo(() => {
+    if (!product) {
+      return [];
+    }
+
+    const images = (product.images || []).map((image, index) => ({
+      id: `image-${index}`,
+      type: "image",
+      url: withAbsoluteUrl(image.url),
+      alt: image.alt || product.name
+    }));
+
+    const videoItem = product.video?.url
+      ? [{
+          id: "video-0",
+          type: "video",
+          url: withAbsoluteUrl(product.video.url),
+          poster: withAbsoluteUrl(product.video.poster || product.images?.[0]?.url || ""),
+          alt: `${product.name} product video`
+        }]
+      : [];
+
+    return [...videoItem, ...images];
+  }, [product]);
+  const selectedMedia = useMemo(
+    () => mediaItems.find((item) => item.id === selectedMediaId) || mediaItems[0] || null,
+    [mediaItems, selectedMediaId]
+  );
+
+  useEffect(() => {
+    if (!mediaItems.length) {
+      setSelectedMediaId("");
+      return;
+    }
+
+    setSelectedMediaId((current) => (mediaItems.some((item) => item.id === current) ? current : mediaItems[0].id));
+  }, [mediaItems]);
 
   const activePrice = Number(selectedVariant?.price || product?.price || 0);
+  const installmentPlan = useMemo(() => calculateInstallmentPlan(activePrice, settings), [activePrice, settings]);
+  const canUseInstallment = installmentPlan.enabled && product?.vendorType !== "seller";
   const activeStock = Number(selectedVariant?.stock ?? product?.stock ?? 0);
+  const isLowStock = activeStock > 0 && activeStock <= 5;
   const wished = product ? isWishlisted(product._id) : false;
   const limitedOffer = settings.promotions?.limitedOffer;
 
@@ -100,6 +153,47 @@ export default function ProductDetailsPage() {
 
     await addToCart(product, quantity, { variant: selectedVariant });
     setReviewStatus("Added to cart.");
+  }
+
+  async function handleBuyNow() {
+    if (!product) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      setAccessPromptMessage("Please log in to continue with Buy now.");
+      return;
+    }
+
+    const result = await addToCart(product, quantity, { variant: selectedVariant });
+
+    if (result?.requiresAuth) {
+      setAccessPromptMessage("Please log in to continue with Buy now.");
+      return;
+    }
+
+    if (result?.outOfStock) {
+      setReviewStatus("This item is currently out of stock.");
+      return;
+    }
+
+    if (result?.cartKey) {
+      setSelectedOnly([result.cartKey]);
+    }
+
+    navigate("/checkout");
+  }
+
+  async function handleWishlistClick() {
+    if (!product) {
+      return;
+    }
+
+    const result = await toggleWishlist(product._id);
+
+    if (result?.requiresAuth) {
+      setAccessPromptMessage("Please log in to save items to your wishlist.");
+    }
   }
 
   async function handleReviewSubmit(event) {
@@ -139,12 +233,60 @@ export default function ProductDetailsPage() {
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_460px]">
         <div className="space-y-6">
           <div className="glass-panel overflow-hidden rounded-[36px] shadow-ambient">
-            <img
-              src={product.images?.[0]?.url}
-              alt={product.images?.[0]?.alt || product.name}
-              className="h-full min-h-[420px] w-full object-cover"
-            />
+            {selectedMedia?.type === "video" ? (
+              <video
+                src={selectedMedia.url}
+                poster={selectedMedia.poster}
+                controls
+                className="h-full min-h-[420px] w-full bg-slate-950 object-contain"
+              />
+            ) : (
+              <div className="flex min-h-[420px] items-center justify-center bg-slate-950/30 p-4 sm:p-6">
+                <img
+                  src={selectedMedia?.url || withAbsoluteUrl(product.images?.[0]?.url)}
+                  alt={selectedMedia?.alt || product.images?.[0]?.alt || product.name}
+                  className="max-h-[520px] w-full object-scale-down"
+                />
+              </div>
+            )}
           </div>
+
+          {!!mediaItems.length && (
+            <div className="grid gap-3 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
+              {mediaItems.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setSelectedMediaId(item.id)}
+                  className={`group overflow-hidden rounded-[24px] border transition ${
+                    selectedMedia?.id === item.id
+                      ? "border-brand-400 bg-brand-500/10"
+                      : "border-white/10 bg-white/5 hover:border-white/20"
+                  }`}
+                >
+                  <div className="relative overflow-hidden">
+                    {item.type === "video" ? (
+                      <>
+                        <img
+                          src={item.poster || withAbsoluteUrl(product.images?.[0]?.url)}
+                          alt={item.alt}
+                          className="h-24 w-full bg-slate-950/30 object-scale-down sm:h-28"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-slate-950/35 text-white">
+                          <Video size={20} />
+                        </div>
+                      </>
+                    ) : (
+                      <img src={item.url} alt={item.alt} className="h-24 w-full bg-slate-950/30 object-scale-down sm:h-28" />
+                    )}
+                  </div>
+                  <div className="px-3 py-2 text-left text-xs font-medium text-slate-300">
+                    {item.type === "video" ? "Product video" : "Product image"}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="grid gap-4 md:grid-cols-3">
             <div className="glass-panel rounded-[28px] p-5 shadow-ambient">
@@ -201,8 +343,48 @@ export default function ProductDetailsPage() {
                   )}
                 </div>
               </div>
-              <div className="rounded-2xl bg-white/5 px-4 py-3 text-sm text-slate-200">Stock: {activeStock}</div>
+              <div className={`rounded-2xl px-4 py-3 text-sm ${
+                !activeStock
+                  ? "bg-rose-500/15 text-rose-100"
+                  : isLowStock
+                    ? "bg-amber-500/15 text-amber-100"
+                    : "bg-white/5 text-slate-200"
+              }`}>
+                {!activeStock ? "Sold out" : `Stock: ${activeStock}`}
+              </div>
             </div>
+
+            {canUseInstallment ? (
+              <div className="mt-4 rounded-[28px] border border-cyan-400/20 bg-cyan-500/10 p-4 text-sm text-cyan-50">
+                <p className="font-semibold text-white">Installment / Paluwagan available</p>
+                <p className="mt-2">{formatInstallmentBreakdown(installmentPlan)}</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <p>Service fee: {peso(installmentPlan.serviceFeeAmount)}</p>
+                  <p>Grace period: {installmentPlan.gracePeriodDays} day(s)</p>
+                  <p>
+                    Release: {installmentPlan.releaseCondition === "admin_approved_early_release"
+                      ? "Admin-approved early release possible"
+                      : "Release after full payment"}
+                  </p>
+                  <p className="text-amber-100">Payments made are non-refundable under the installment agreement.</p>
+                </div>
+              </div>
+            ) : installmentPlan.configured ? (
+              <div className="mt-4 rounded-[28px] border border-rose-400/20 bg-rose-500/10 p-4 text-sm text-rose-100">
+                <p className="font-semibold text-white">Installment / Paluwagan unavailable</p>
+                <p className="mt-2">
+                  {product?.vendorType === "seller"
+                    ? "Seller marketplace products are not yet eligible for installment checkout."
+                    : "The installment plan needs a valid down payment and schedule before customers can use it at checkout."}
+                </p>
+              </div>
+            ) : null}
+
+            {isLowStock ? (
+              <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                Low stock alert: only {activeStock} item{activeStock === 1 ? "" : "s"} left for this selection.
+              </div>
+            ) : null}
 
             {!!product.variants?.length && (
               <div className="mt-6">
@@ -248,30 +430,42 @@ export default function ProductDetailsPage() {
               ))}
             </div>
 
-            <div className="mt-6 grid gap-3 md:grid-cols-[120px_minmax(0,1fr)_52px]">
-              <input
-                type="number"
-                min="1"
-                max={Math.max(activeStock, 1)}
-                value={quantity}
-                onChange={(event) => setQuantity(Math.max(1, Number(event.target.value || 1)))}
-                className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
-              />
+            <div className="mt-6 flex flex-wrap items-stretch gap-3">
+              <div className="w-[110px] shrink-0">
+                <input
+                  type="number"
+                  min="1"
+                  max={Math.max(activeStock, 1)}
+                  value={quantity}
+                  onChange={(event) => setQuantity(Math.max(1, Number(event.target.value || 1)))}
+                  className="h-full min-h-[58px] w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                />
+              </div>
               <button
+                type="button"
                 onClick={handleAddToCart}
                 disabled={!activeStock}
                 title={!isAuthenticated ? "Please log in to add items to your cart." : ""}
-                className="rounded-2xl bg-brand-500 px-5 py-4 font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex min-h-[58px] min-w-[160px] flex-1 items-center justify-center gap-2 rounded-2xl bg-brand-500 px-5 py-4 text-center font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <ShoppingBag size={16} className="mr-2 inline-flex" />
-                {isAuthenticated ? "Add to cart" : "Log in to add"}
+                <ShoppingBag size={16} />
+                <span className="whitespace-nowrap">{isAuthenticated ? "Add to cart" : "Log in to add"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleBuyNow}
+                disabled={!activeStock}
+                title={!isAuthenticated ? "Please log in to continue with Buy now." : ""}
+                className="inline-flex min-h-[58px] min-w-[140px] flex-1 items-center justify-center rounded-2xl border border-cyan-400/30 bg-cyan-500/15 px-5 py-4 text-center font-semibold text-cyan-50 transition duration-300 hover:-translate-y-0.5 hover:bg-cyan-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <span className="whitespace-nowrap">Buy now</span>
               </button>
               <button
                 type="button"
                 onClick={handleWishlistClick}
                 className={`rounded-2xl border px-4 py-4 transition duration-300 ${
                   wished ? "border-rose-400 bg-rose-500/10 text-rose-100" : "border-white/10 bg-white/5 text-white"
-                }`}
+                } min-h-[58px] min-w-[58px] shrink-0`}
               >
                 <Heart size={18} fill={wished ? "currentColor" : "none"} />
               </button>
@@ -427,10 +621,3 @@ export default function ProductDetailsPage() {
     </div>
   );
 }
-  async function handleWishlistClick() {
-    const result = await toggleWishlist(product._id);
-
-    if (result?.requiresAuth) {
-      setAccessPromptMessage("Please log in to save items to your wishlist.");
-    }
-  }

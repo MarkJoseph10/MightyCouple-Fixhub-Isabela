@@ -10,9 +10,9 @@ export default function SearchFilters({
   onSortChange
 }) {
   return (
-    <div className="glass-panel rounded-[28px] p-5 shadow-ambient">
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_220px_220px]">
-        <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-slate-300">
+    <div className="glass-panel rounded-[26px] p-4 shadow-ambient">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_200px_200px]">
+        <label className="md:col-span-2 xl:col-span-1 flex min-w-0 items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-2.5 text-slate-300">
           <Search size={18} />
           <input
             value={search}
@@ -25,7 +25,7 @@ export default function SearchFilters({
         <select
           value={category}
           onChange={(event) => onCategoryChange(event.target.value)}
-          className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm text-white outline-none"
+          className="min-h-[48px] w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-2.5 text-sm text-white outline-none"
         >
           <option value="All">All categories</option>
           {categories.map((item) => (
@@ -38,7 +38,7 @@ export default function SearchFilters({
         <select
           value={sort}
           onChange={(event) => onSortChange?.(event.target.value)}
-          className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm text-white outline-none"
+          className="min-h-[48px] w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-2.5 text-sm text-white outline-none"
         >
           <option value="popular">Most popular</option>
           <option value="rating">Top rated</option>

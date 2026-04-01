@@ -9,6 +9,7 @@ const pageLabels = {
   "/admin": "Overview",
   "/admin/products": "Products",
   "/admin/orders": "Orders",
+  "/admin/installments": "Installments",
   "/admin/customers": "Customers",
   "/admin/dropshipping": "Dropshipping"
 };
@@ -21,7 +22,7 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="page-shell py-6 lg:py-8">
+      <div className="admin-shell py-6 lg:py-8">
         <div className="mb-4 flex items-center justify-between gap-3 rounded-[28px] border border-white/10 bg-white/5 px-4 py-4 backdrop-blur-xl lg:hidden">
           <div>
             <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Admin</p>
@@ -36,11 +37,11 @@ export default function AdminLayout() {
           </button>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)] 2xl:grid-cols-[320px_minmax(0,1fr)]">
           <div className="hidden lg:block">
             <AdminSidebar />
           </div>
-          <main>
+          <main className="min-w-0">
             <Outlet />
           </main>
         </div>

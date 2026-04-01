@@ -5,7 +5,10 @@ import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 function buildProductFilters(query) {
-  const filters = { status: "active" };
+  const filters = {
+    status: "active",
+    approvalStatus: { $in: ["approved", null] }
+  };
 
   if (query.category && query.category !== "All") {
     filters.category = query.category;
@@ -61,6 +64,10 @@ function resolveSort(sortKey) {
 function toNumber(value, fallback = 0) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function toPositiveNumber(value, fallback = 0) {
+  return Math.max(0, toNumber(value, fallback));
 }
 
 function normalizeTags(tags) {
@@ -126,6 +133,49 @@ function normalizeVariants(variants = []) {
     .filter((variant) => variant.name || variant.color || variant.storage || variant.model || variant.sku);
 }
 
+function normalizeImages(images = [], productName = "") {
+  if (!Array.isArray(images)) {
+    return [];
+  }
+
+  const seen = new Set();
+
+  return images
+    .map((image) => ({
+      url: String(image?.url || "").trim(),
+      alt: String(image?.alt || productName || "Product image").trim()
+    }))
+    .filter((image) => image.url)
+    .filter((image) => {
+      if (seen.has(image.url)) {
+        return false;
+      }
+
+      seen.add(image.url);
+      return true;
+    });
+}
+
+function normalizeVideo(video, fallbackPoster = "") {
+  if (!video || typeof video !== "object") {
+    return undefined;
+  }
+
+  const url = String(video.url || "").trim();
+
+  if (!url) {
+    return undefined;
+  }
+
+  return {
+    url,
+    poster: String(video.poster || fallbackPoster || "").trim(),
+    durationSeconds: toPositiveNumber(video.durationSeconds, 0),
+    sizeBytes: toPositiveNumber(video.sizeBytes, 0),
+    mimeType: String(video.mimeType || "").trim()
+  };
+}
+
 async function ensureUniqueSlug(name, excludeId) {
   const baseSlug = createSlug(name);
   let slug = baseSlug;
@@ -149,9 +199,12 @@ function prepareProductPayload(body) {
   const stock = variants.length
     ? variants.reduce((sum, variant) => sum + toNumber(variant.stock, 0), 0)
     : toNumber(body.stock, 0);
+  const name = String(body.name || "").trim();
+  const images = normalizeImages(body.images, name);
+  const video = normalizeVideo(body.video, images[0]?.url || "");
 
   return {
-    name: String(body.name || "").trim(),
+    name,
     shortDescription: String(body.shortDescription || "").trim(),
     description: String(body.description || "").trim(),
     category: String(body.category || "Gadgets").trim(),
@@ -162,18 +215,23 @@ function prepareProductPayload(body) {
     sku: String(body.sku || "").trim(),
     featured: Boolean(body.featured),
     tags: normalizeTags(body.tags),
-    images: Array.isArray(body.images) ? body.images : [],
+    images,
+    video,
     attributes: normalizeAttributes(body.attributes),
     variants,
     bundleEligible: body.bundleEligible !== false,
     popularityLabel: String(body.popularityLabel || "").trim() || "Trending tech pick",
     condition: String(body.condition || "").trim() || "Affordable tech",
     status: body.status || "active",
-    soldCount: toNumber(body.soldCount, 0),
-    viewsCount: toNumber(body.viewsCount, 0),
-    favoritesCount: toNumber(body.favoritesCount, 0),
-    reviewCount: toNumber(body.reviewCount, 0),
-    rating: toNumber(body.rating, 0)
+    approvalStatus: body.approvalStatus || "approved",
+    approvalNote: String(body.approvalNote || "").trim(),
+    commissionRate: toPositiveNumber(body.commissionRate, 10),
+    soldCount: toPositiveNumber(body.soldCount, 0),
+    manualRecentSales24h: toPositiveNumber(body.manualRecentSales24h, 0),
+    viewsCount: toPositiveNumber(body.viewsCount, 0),
+    favoritesCount: toPositiveNumber(body.favoritesCount, 0),
+    reviewCount: toPositiveNumber(body.reviewCount, 0),
+    rating: Math.min(5, toPositiveNumber(body.rating, 0))
   };
 }
 
@@ -206,7 +264,9 @@ function serializeProduct(product, recentSalesMap = new Map()) {
 
   return {
     ...normalizedProduct,
-    recentSales24h: recentSalesMap.get(String(normalizedProduct._id)) || 0,
+    video: normalizedProduct.video?.url ? normalizedProduct.video : null,
+    recentSales24h: (recentSalesMap.get(String(normalizedProduct._id)) || 0) + Number(normalizedProduct.manualRecentSales24h || 0),
+    manualRecentSales24h: Number(normalizedProduct.manualRecentSales24h || 0),
     hasVariants: Boolean(normalizedProduct.variants?.length),
     priceFrom: variantPrices.length ? Math.min(...variantPrices) : normalizedProduct.price
   };
@@ -266,13 +326,22 @@ export const getTagSuggestions = asyncHandler(async (_, res) => {
 });
 
 export const getAdminProducts = asyncHandler(async (_, res) => {
-  const products = await Product.find().sort({ createdAt: -1 });
+  const products = await Product.find().sort({ createdAt: -1 }).populate("owner", "name email sellerProfile");
+  res.json(products.map((product) => serializeProduct(product)));
+});
+
+export const getSellerProducts = asyncHandler(async (req, res) => {
+  const products = await Product.find({ owner: req.user._id, vendorType: "seller" }).sort({ createdAt: -1 });
   res.json(products.map((product) => serializeProduct(product)));
 });
 
 export const getProductBySlug = asyncHandler(async (req, res) => {
   const product = await Product.findOneAndUpdate(
-    { slug: req.params.slug },
+    {
+      slug: req.params.slug,
+      status: "active",
+      approvalStatus: { $in: ["approved", null] }
+    },
     { $inc: { viewsCount: 1 } },
     { new: true }
   );
@@ -285,7 +354,8 @@ export const getProductBySlug = asyncHandler(async (req, res) => {
   const relatedProducts = await Product.find({
     _id: { $ne: product._id },
     category: product.category,
-    status: "active"
+    status: "active",
+    approvalStatus: { $in: ["approved", null] }
   })
     .sort({ soldCount: -1, rating: -1 })
     .limit(4);
@@ -304,6 +374,16 @@ export const createProduct = asyncHandler(async (req, res) => {
   }
 
   payload.slug = await ensureUniqueSlug(payload.name);
+  payload.owner = req.user?._id || undefined;
+  payload.vendorType = req.user?.role === "seller" ? "seller" : "admin";
+  payload.commissionRate = req.user?.role === "seller" ? Number(req.user?.sellerProfile?.commissionRate || 10) : Number(payload.commissionRate || 10);
+
+  if (req.user?.role === "seller") {
+    payload.approvalStatus = "pending";
+    payload.status = "active";
+  } else {
+    payload.approvalStatus = req.body.approvalStatus || "approved";
+  }
 
   const product = await Product.create(payload);
   res.status(201).json(serializeProduct(product));
@@ -316,8 +396,24 @@ export const updateProduct = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Product not found");
   }
 
+  if (req.user?.role === "seller" && String(product.owner) !== String(req.user._id)) {
+    throw new ApiError(403, "You can only manage your own products");
+  }
+
+  if (req.user?.role === "admin" && product.vendorType === "seller") {
+    throw new ApiError(403, "Seller listings must be reviewed, not edited directly by admin");
+  }
+
   const payload = prepareProductPayload({ ...product.toObject(), ...req.body });
   payload.slug = req.body.name ? await ensureUniqueSlug(payload.name, product._id) : product.slug;
+
+  if (req.user?.role === "seller") {
+    payload.owner = product.owner;
+    payload.vendorType = "seller";
+    payload.approvalStatus = "pending";
+    payload.approvalNote = "";
+    payload.commissionRate = Number(product.commissionRate || req.user?.sellerProfile?.commissionRate || 10);
+  }
 
   Object.assign(product, payload);
   await product.save();
@@ -332,6 +428,35 @@ export const deleteProduct = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Product not found");
   }
 
+  if (req.user?.role === "seller" && String(product.owner) !== String(req.user._id)) {
+    throw new ApiError(403, "You can only delete your own products");
+  }
+
   await product.deleteOne();
   res.json({ message: "Product deleted" });
+});
+
+export const reviewSellerProduct = asyncHandler(async (req, res) => {
+  const product = await Product.findById(req.params.id);
+
+  if (!product) {
+    throw new ApiError(404, "Product not found");
+  }
+
+  if (product.vendorType !== "seller") {
+    throw new ApiError(400, "Only seller marketplace listings can be reviewed here");
+  }
+
+  const approvalStatus = String(req.body.approvalStatus || "").trim().toLowerCase();
+
+  if (!["approved", "rejected", "pending"].includes(approvalStatus)) {
+    throw new ApiError(400, "Invalid approval status");
+  }
+
+  product.approvalStatus = approvalStatus;
+  product.approvalNote = String(req.body.approvalNote || "").trim();
+  product.approvedAt = approvalStatus === "approved" ? new Date() : null;
+  await product.save();
+
+  res.json(serializeProduct(product));
 });

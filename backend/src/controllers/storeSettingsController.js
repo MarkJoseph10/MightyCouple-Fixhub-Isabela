@@ -23,11 +23,15 @@ export const updateStoreSettings = asyncHandler(async (req, res) => {
     logo,
     banner,
     heroImage,
+    backgroundImage,
+    favicon,
+    backgroundOverlay,
     paymentOptions,
     paymentDetails,
     orderRules,
     promotions,
-    metrics
+    metrics,
+    installment
   } = req.body;
 
   if (typeof storeName === "string" && storeName.trim()) {
@@ -79,6 +83,30 @@ export const updateStoreSettings = asyncHandler(async (req, res) => {
     };
   }
 
+  if (backgroundImage) {
+    settings.backgroundImage = {
+      url: backgroundImage.url || "",
+      alt: backgroundImage.alt || `${settings.storeName} storefront background`
+    };
+  }
+
+  if (favicon) {
+    settings.favicon = {
+      url: favicon.url || "",
+      alt: favicon.alt || `${settings.storeName} favicon`
+    };
+  }
+
+  if (backgroundOverlay !== undefined) {
+    const overlayValue = Number(backgroundOverlay);
+
+    if (Number.isNaN(overlayValue) || overlayValue < 0.4 || overlayValue > 0.6) {
+      throw new ApiError(400, "Background overlay must be between 0.4 and 0.6");
+    }
+
+    settings.backgroundOverlay = overlayValue;
+  }
+
   if (paymentOptions) {
     settings.paymentOptions = {
       ...settings.paymentOptions,
@@ -112,6 +140,16 @@ export const updateStoreSettings = asyncHandler(async (req, res) => {
   if (orderRules) {
     if (orderRules.autoCancelUnpaidHours !== undefined) {
       settings.orderRules.autoCancelUnpaidHours = Number(orderRules.autoCancelUnpaidHours || 0);
+    }
+
+    if (orderRules.refundWindowDays !== undefined) {
+      settings.orderRules.refundWindowDays = Number(orderRules.refundWindowDays || 0);
+    }
+
+    if (Array.isArray(orderRules.refundEligibleStatuses)) {
+      settings.orderRules.refundEligibleStatuses = orderRules.refundEligibleStatuses
+        .map((status) => String(status || "").trim().toLowerCase())
+        .filter((status) => ["paid", "delivered"].includes(status));
     }
 
     if (Array.isArray(orderRules.guestCheckoutMethods)) {
@@ -161,6 +199,38 @@ export const updateStoreSettings = asyncHandler(async (req, res) => {
 
   if (metrics?.lowStockThreshold !== undefined) {
     settings.metrics.lowStockThreshold = Number(metrics.lowStockThreshold || 0);
+  }
+
+  if (installment) {
+    if (installment.enabled !== undefined) {
+      settings.installment.enabled = Boolean(installment.enabled);
+    }
+
+    if (installment.frequency) {
+      settings.installment.frequency = installment.frequency === "monthly" ? "monthly" : "weekly";
+    }
+
+    if (installment.paymentCount !== undefined) {
+      settings.installment.paymentCount = Math.max(1, Number(installment.paymentCount || 1));
+    }
+
+    if (installment.downPaymentPercent !== undefined) {
+      settings.installment.downPaymentPercent = Math.max(0, Number(installment.downPaymentPercent || 0));
+    }
+
+    if (installment.serviceFeePercent !== undefined) {
+      settings.installment.serviceFeePercent = Math.max(0, Number(installment.serviceFeePercent || 0));
+    }
+
+    if (installment.gracePeriodDays !== undefined) {
+      settings.installment.gracePeriodDays = Math.max(0, Number(installment.gracePeriodDays || 0));
+    }
+
+    if (installment.releaseCondition) {
+      settings.installment.releaseCondition = installment.releaseCondition === "admin_approved_early_release"
+        ? "admin_approved_early_release"
+        : "after_full_payment";
+    }
   }
 
   await settings.save();

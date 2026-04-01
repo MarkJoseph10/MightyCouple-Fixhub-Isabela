@@ -8,6 +8,17 @@ const imageSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const videoSchema = new mongoose.Schema(
+  {
+    url: String,
+    poster: String,
+    durationSeconds: Number,
+    sizeBytes: Number,
+    mimeType: String
+  },
+  { _id: false }
+);
+
 const attributeSchema = new mongoose.Schema(
   {
     label: String,
@@ -85,6 +96,7 @@ const productSchema = new mongoose.Schema(
     },
     sku: String,
     images: [imageSchema],
+    video: videoSchema,
     tags: [String],
     featured: {
       type: Boolean,
@@ -99,6 +111,10 @@ const productSchema = new mongoose.Schema(
       default: 0
     },
     soldCount: {
+      type: Number,
+      default: 0
+    },
+    manualRecentSales24h: {
       type: Number,
       default: 0
     },
@@ -122,6 +138,26 @@ const productSchema = new mongoose.Schema(
       type: String,
       enum: ["draft", "active", "archived"],
       default: "active"
+    },
+    vendorType: {
+      type: String,
+      enum: ["admin", "seller"],
+      default: "admin"
+    },
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    },
+    approvalStatus: {
+      type: String,
+      enum: ["approved", "pending", "rejected"],
+      default: "approved"
+    },
+    approvalNote: String,
+    approvedAt: Date,
+    commissionRate: {
+      type: Number,
+      default: 10
     },
     attributes: [attributeSchema],
     variants: [variantSchema],
