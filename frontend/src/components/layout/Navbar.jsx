@@ -1,4 +1,4 @@
-import { Heart, LayoutDashboard, LogOut, ShoppingBag } from "lucide-react";
+import { CreditCard, Heart, LayoutDashboard, LogOut, ShoppingBag } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
@@ -49,7 +49,6 @@ export default function Navbar() {
           <NavLink to="/cart" className={navPillClass}>Cart</NavLink>
           <NavLink to="/track-order" className={navPillClass}>Track Order</NavLink>
           {user && <NavLink to="/orders" className={navPillClass}>My Orders</NavLink>}
-          {user && <NavLink to="/installments" className={navPillClass}>Installments</NavLink>}
           {user && !isAdmin && !isSeller && <NavLink to="/become-seller" className={navPillClass}>Become Seller</NavLink>}
           {isSeller && <NavLink to="/seller" className={navPillClass}>Seller Hub</NavLink>}
           </nav>
@@ -63,6 +62,11 @@ export default function Navbar() {
               <ShoppingBag size={16} />
               <span>{itemCount}</span>
             </Link>
+            {user && (
+              <Link to="/installments" className="glass-panel inline-flex h-9 min-w-[2.8rem] items-center justify-center rounded-full px-2.5 text-sm text-white sm:h-10 sm:min-w-[3rem] sm:px-3" aria-label="Installments">
+                <CreditCard size={16} />
+              </Link>
+            )}
             {isAdmin && (
               <Link to="/admin" className="glass-panel inline-flex h-9 min-w-[2.8rem] items-center justify-center rounded-full px-2.5 text-sm text-white sm:h-10 sm:min-w-[3rem] sm:px-3" aria-label="Dashboard">
                 <LayoutDashboard size={16} />
