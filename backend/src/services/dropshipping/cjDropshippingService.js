@@ -70,6 +70,10 @@ function extractLegacyProductRows(listData) {
   return asArray(listData?.list || listData?.records || listData?.items || listData);
 }
 
+function hasRows(rows) {
+  return Array.isArray(rows) && rows.length > 0;
+}
+
 function pickFirst(...values) {
   return values.find((value) => value !== undefined && value !== null && String(value).trim() !== "");
 }
@@ -375,27 +379,60 @@ export class CJDropshippingService extends BaseProvider {
     const page = Math.max(1, Number(options.page || options.pageNum || 1));
     const size = Math.min(20, Math.max(1, Number(options.size || options.pageSize || DEFAULT_IMPORT_LIMIT)));
     const keyword = String(options.keyword || "").trim();
-    const listData = await this.request("/product/listV2", {
-      params: {
-        page,
-        size,
-        ...(keyword ? { keyWord: keyword } : {})
+    const attempts = [
+      {
+        endpoint: "/product/listV2",
+        params: {
+          page,
+          size,
+          ...(keyword ? { keyWord: keyword } : {})
+        },
+        extractor: extractProductListV2Rows
       }
+    ];
+
+    if (keyword) {
+      attempts.push({
+        endpoint: "/product/listV2",
+        params: {
+          page,
+          size
+        },
+        extractor: extractProductListV2Rows
+      });
+    }
+
+    attempts.push({
+      endpoint: "/product/list",
+      params: {
+        pageNum: page,
+        pageSize: size,
+        ...(keyword ? { productName: keyword, productNameEn: keyword } : {})
+      },
+      extractor: extractLegacyProductRows
     });
 
-    let rows = extractProductListV2Rows(listData);
-
-    // Fall back to the documented legacy list endpoint if V2 returns no rows for this account/query.
-    if (!rows.length) {
-      const legacyData = await this.request("/product/list", {
+    if (keyword) {
+      attempts.push({
+        endpoint: "/product/list",
         params: {
           pageNum: page,
-          pageSize: size,
-          ...(keyword ? { productName: keyword } : {})
-        }
+          pageSize: size
+        },
+        extractor: extractLegacyProductRows
       });
+    }
 
-      rows = extractLegacyProductRows(legacyData);
+    let rows = [];
+
+    for (const attempt of attempts) {
+      const data = await this.request(attempt.endpoint, {
+        params: attempt.params
+      });
+      rows = attempt.extractor(data);
+      if (hasRows(rows)) {
+        break;
+      }
     }
 
     const importedProducts = [];
