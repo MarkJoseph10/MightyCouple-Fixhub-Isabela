@@ -2,6 +2,7 @@ import { CalendarRange, CheckCircle2, CreditCard, Search, ShieldAlert, XCircle }
 import { useEffect, useMemo, useState } from "react";
 import api from "../../api/client";
 import { peso } from "../../utils/commerce";
+import { resolveMediaUrl } from "../../utils/media";
 import {
   formatInstallmentStatus,
   getInstallmentDueMeta,
@@ -239,7 +240,7 @@ export default function AdminInstallmentsPage() {
                             </div>
                             {payment.proofImage ? (
                               <a
-                                href={`${(api.defaults.baseURL || "").replace(/\/api\/?$/, "")}${payment.proofImage}`}
+                                href={resolveMediaUrl(payment.proofImage)}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="mt-3 inline-flex text-sm text-cyan-200 underline-offset-4 hover:underline"

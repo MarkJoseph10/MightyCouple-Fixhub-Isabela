@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState } from "react";
 import api from "../../api/client";
 import OrderStatusBadge from "../../components/common/OrderStatusBadge";
 import { copyText, formatRefundReason, getOrderReference } from "../../utils/orders";
+import { resolveMediaUrl } from "../../utils/media";
 
 const peso = new Intl.NumberFormat("en-PH", {
   style: "currency",
@@ -81,12 +82,7 @@ const dateFilterOptions = [
 ];
 
 function buildUploadUrl(path = "") {
-  if (!path) {
-    return "";
-  }
-
-  const base = (api.defaults.baseURL || "").replace(/\/api\/?$/, "");
-  return `${base}${path}`;
+  return resolveMediaUrl(path);
 }
 
 function normalizeValue(value = "") {
