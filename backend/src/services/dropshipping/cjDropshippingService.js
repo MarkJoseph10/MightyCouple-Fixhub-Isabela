@@ -20,6 +20,11 @@ function roundMoney(value) {
   return Math.round(amount * 100) / 100;
 }
 
+function toTimestamp(value) {
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function toPeso(value) {
   const rate = Number.isFinite(env.cjPhpExchangeRate) && env.cjPhpExchangeRate > 0 ? env.cjPhpExchangeRate : 58;
   return roundMoney(Number(value || 0) * rate);
@@ -246,11 +251,17 @@ export class CJDropshippingService extends BaseProvider {
   }
 
   async requestAccessToken() {
-    const { data } = await this.client.get("/authentication/getAccessToken", {
-      headers: {
-        "CJ-Access-Token": env.cjApiKey
+    const { data } = await this.client.post(
+      "/authentication/getAccessToken",
+      {
+        apiKey: env.cjApiKey
+      },
+      {
+        headers: {
+          "Content-Type": "application/json"
+        }
       }
-    });
+    );
 
     if (!data?.result || !data?.data?.accessToken) {
       throw new Error(data?.message || "CJ authentication failed.");
@@ -258,8 +269,8 @@ export class CJDropshippingService extends BaseProvider {
 
     tokenCache.accessToken = data.data.accessToken;
     tokenCache.refreshToken = data.data.refreshToken || "";
-    tokenCache.accessTokenExpiresAt = Date.now() + ((Number(data.data.accessTokenExpiryDate) || 0) * 1000);
-    tokenCache.refreshTokenExpiresAt = Date.now() + ((Number(data.data.refreshTokenExpiryDate) || 0) * 1000);
+    tokenCache.accessTokenExpiresAt = toTimestamp(data.data.accessTokenExpiryDate);
+    tokenCache.refreshTokenExpiresAt = toTimestamp(data.data.refreshTokenExpiryDate);
 
     return tokenCache.accessToken;
   }
@@ -271,10 +282,12 @@ export class CJDropshippingService extends BaseProvider {
 
     const { data } = await this.client.post(
       "/authentication/refreshAccessToken",
-      { refreshToken: tokenCache.refreshToken },
+      {
+        refreshToken: tokenCache.refreshToken
+      },
       {
         headers: {
-          "CJ-Access-Token": env.cjApiKey
+          "Content-Type": "application/json"
         }
       }
     );
@@ -285,8 +298,8 @@ export class CJDropshippingService extends BaseProvider {
 
     tokenCache.accessToken = data.data.accessToken;
     tokenCache.refreshToken = data.data.refreshToken || tokenCache.refreshToken;
-    tokenCache.accessTokenExpiresAt = Date.now() + ((Number(data.data.accessTokenExpiryDate) || 0) * 1000);
-    tokenCache.refreshTokenExpiresAt = Date.now() + ((Number(data.data.refreshTokenExpiryDate) || 0) * 1000);
+    tokenCache.accessTokenExpiresAt = toTimestamp(data.data.accessTokenExpiryDate);
+    tokenCache.refreshTokenExpiresAt = toTimestamp(data.data.refreshTokenExpiryDate);
 
     return tokenCache.accessToken;
   }
@@ -344,14 +357,14 @@ export class CJDropshippingService extends BaseProvider {
   }
 
   async importProducts(options = {}) {
-    const pageNum = Math.max(1, Number(options.pageNum || 1));
-    const pageSize = Math.min(20, Math.max(1, Number(options.pageSize || DEFAULT_IMPORT_LIMIT)));
+    const page = Math.max(1, Number(options.page || options.pageNum || 1));
+    const size = Math.min(20, Math.max(1, Number(options.size || options.pageSize || DEFAULT_IMPORT_LIMIT)));
     const keyword = String(options.keyword || "").trim();
     const listData = await this.request("/product/listV2", {
       params: {
-        pageNum,
-        pageSize,
-        ...(keyword ? { productNameEn: keyword } : {})
+        page,
+        size,
+        ...(keyword ? { keyWord: keyword } : {})
       }
     });
 
