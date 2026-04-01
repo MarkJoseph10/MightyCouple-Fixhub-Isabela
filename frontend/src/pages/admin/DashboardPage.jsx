@@ -24,6 +24,7 @@ import OrderStatusBadge from "../../components/common/OrderStatusBadge";
 import { useAuth } from "../../context/AuthContext";
 import { useStoreSettings } from "../../context/StoreSettingsContext";
 import { peso } from "../../utils/commerce";
+import { resolveMediaUrl } from "../../utils/media";
 import { getOrderReference } from "../../utils/orders";
 
 const sectionTabs = [
@@ -496,7 +497,7 @@ function DashboardPage() {
         headers: { "Content-Type": "multipart/form-data" }
       });
 
-      const uploadedUrl = `${(import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace("/api", "")}${data.imageUrl}`;
+      const uploadedUrl = resolveMediaUrl(data.imageUrl || data.url);
       updateFormField(field, uploadedUrl);
       setStatus("Asset uploaded. Save dashboard settings to publish it.");
     } catch (requestError) {
