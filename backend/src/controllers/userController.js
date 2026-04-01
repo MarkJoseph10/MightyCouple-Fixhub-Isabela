@@ -3,6 +3,7 @@ import { Product } from "../models/Product.js";
 import { Order } from "../models/Order.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
+import { ensureSellerDisciplineShape, getNextSellerDisciplineStep, normalizeSellerSuspensionState } from "../utils/sellerDiscipline.js";
 
 function generatePayoutReference(prefix = "PO") {
   const now = new Date();
@@ -104,12 +105,20 @@ function buildSellerProfileSnapshot(user) {
     },
     payoutRequests: [...(user.sellerProfile?.payoutRequests || [])],
     totalPayoutApproved: Number(user.sellerProfile?.totalPayoutApproved || 0),
-    totalPayoutPaid: Number(user.sellerProfile?.totalPayoutPaid || 0)
+    totalPayoutPaid: Number(user.sellerProfile?.totalPayoutPaid || 0),
+    discipline: ensureSellerDisciplineShape(user)
   };
 }
 
 export const getUsers = asyncHandler(async (_, res) => {
   const users = await User.find().select("-password").sort({ createdAt: -1 });
+  await Promise.all(
+    users.map(async (user) => {
+      if (normalizeSellerSuspensionState(user)) {
+        await user.save();
+      }
+    })
+  );
   res.json(users);
 });
 
@@ -169,15 +178,27 @@ export const getMySellerProfile = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
+  if (normalizeSellerSuspensionState(user)) {
+    await user.save();
+  }
+
   res.json(user);
 });
 
 export const getSellerApplications = asyncHandler(async (_, res) => {
   const users = await User.find({
-    "sellerApplication.status": { $in: ["pending", "approved", "rejected", "suspended"] }
+    "sellerApplication.status": { $in: ["pending", "approved", "rejected", "suspended", "terminated"] }
   })
     .select("-password")
     .sort({ "sellerApplication.submittedAt": -1, createdAt: -1 });
+
+  await Promise.all(
+    users.map(async (user) => {
+      if (normalizeSellerSuspensionState(user)) {
+        await user.save();
+      }
+    })
+  );
 
   res.json(users);
 });
@@ -197,6 +218,7 @@ export const reviewSellerApplication = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid seller application decision");
   }
 
+  const sellerProfile = buildSellerProfileSnapshot(user);
   user.sellerApplication = {
     ...((typeof user.sellerApplication?.toObject === "function" ? user.sellerApplication.toObject() : user.sellerApplication) || {}),
     status: decision,
@@ -208,29 +230,68 @@ export const reviewSellerApplication = asyncHandler(async (req, res) => {
   if (decision === "approved") {
     user.role = "seller";
     user.sellerProfile = {
-      ...(user.sellerProfile || {}),
+      ...sellerProfile,
       storeName: user.sellerApplication.businessName || user.name,
       displayName: user.sellerApplication.displayName || user.name,
       description: user.sellerApplication.description || "",
       statusNote: "Approved and active on the marketplace",
-      commissionRate: Number(user.sellerProfile?.commissionRate || 10),
+      commissionRate: Number(sellerProfile.commissionRate || 10),
       isActive: true,
       approvedAt: new Date(),
       payoutDetails: {
-        gcashNumber: user.sellerApplication.gcashNumber || "",
-        bankName: user.sellerApplication.bankName || "",
-        bankAccountName: user.sellerApplication.bankAccountName || "",
-        bankAccountNumber: user.sellerApplication.bankAccountNumber || ""
+        gcashNumber: user.sellerApplication.gcashNumber || sellerProfile.payoutDetails?.gcashNumber || "",
+        bankName: user.sellerApplication.bankName || sellerProfile.payoutDetails?.bankName || "",
+        bankAccountName: user.sellerApplication.bankAccountName || sellerProfile.payoutDetails?.bankAccountName || "",
+        bankAccountNumber: user.sellerApplication.bankAccountNumber || sellerProfile.payoutDetails?.bankAccountNumber || ""
+      },
+      discipline: {
+        ...sellerProfile.discipline,
+        currentStage: sellerProfile.discipline?.terminatedAt ? "terminated" : "good_standing",
+        suspendedAt: null,
+        suspendedUntil: null
       }
     };
   }
 
   if (decision === "suspended") {
+    const discipline = ensureSellerDisciplineShape(user);
+    const step = getNextSellerDisciplineStep(discipline.offenseCount);
+    const now = new Date();
+    const suspendedUntil = step.durationDays ? new Date(now.getTime() + step.durationDays * 24 * 60 * 60 * 1000) : null;
+    const nextHistory = [
+      ...discipline.history,
+      {
+        offenseNumber: step.offenseNumber,
+        action: step.action,
+        durationDays: step.durationDays,
+        note: adminNote || step.label,
+        createdAt: now,
+        endsAt: suspendedUntil
+      }
+    ];
+
     user.sellerProfile = {
-      ...(user.sellerProfile || {}),
-      isActive: false,
-      statusNote: adminNote || "Seller account is currently suspended by admin review."
+      ...sellerProfile,
+      isActive: step.action === "termination" ? false : false,
+      statusNote:
+        step.action === "termination"
+          ? adminNote || "Seller account has been terminated after repeated violations."
+          : adminNote || `${step.label}. Seller access is paused for ${step.durationDays} day(s).`,
+      payoutDetails: {
+        ...sellerProfile.payoutDetails
+      },
+      discipline: {
+        ...discipline,
+        offenseCount: step.offenseNumber,
+        currentStage: step.stage,
+        suspendedAt: step.action === "termination" ? discipline.suspendedAt : now,
+        suspendedUntil,
+        terminatedAt: step.action === "termination" ? now : null,
+        lastReason: adminNote || step.label,
+        history: nextHistory
+      }
     };
+    user.sellerApplication.status = step.action === "termination" ? "terminated" : "suspended";
   }
 
   await user.save();

@@ -251,6 +251,8 @@ export default function AdminInstallmentsPage() {
           const dueMeta = getInstallmentDueMeta(order.installment);
           const nextSchedule = (order.installment?.schedule || []).find((entry) => entry.status !== "paid" && entry.status !== "cancelled");
           const shipmentMeta = getInstallmentShipmentMeta(order);
+          const installmentStatus = String(order.installment?.status || "").toLowerCase();
+          const isArchivedInstallment = ["completed", "cancelled"].includes(installmentStatus);
 
           return (
             <section key={order._id} className="rounded-[32px] border border-white/10 bg-slate-950/60 p-6">
@@ -431,19 +433,27 @@ export default function AdminInstallmentsPage() {
                       <span className="block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                         Fulfillment status
                       </span>
-                      <select
-                        value={order.status || "pending"}
-                        onChange={(event) => updateFulfillmentStatus(order._id, event.target.value)}
-                        className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm text-white outline-none"
-                      >
-                        {getAllowedInstallmentFulfillmentStatuses(order).map((status) => (
-                          <option key={status} value={status}>
-                            {status.replaceAll("_", " ")}
-                          </option>
-                        ))}
-                      </select>
+                      {isArchivedInstallment ? (
+                        <div className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm text-slate-200">
+                          {String(order.status || installmentStatus || "completed").replaceAll("_", " ")}
+                        </div>
+                      ) : (
+                        <select
+                          value={order.status || "pending"}
+                          onChange={(event) => updateFulfillmentStatus(order._id, event.target.value)}
+                          className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm text-white outline-none"
+                        >
+                          {getAllowedInstallmentFulfillmentStatuses(order).map((status) => (
+                            <option key={status} value={status}>
+                              {status.replaceAll("_", " ")}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                       <p className="text-xs leading-5 text-slate-500">
-                        {shipmentMeta.readyToShip
+                        {isArchivedInstallment
+                          ? "This installment record is archived. Shipping and payment controls are locked here for history tracking."
+                          : shipmentMeta.readyToShip
                           ? "This installment can now move through packing, shipping, and delivery."
                           : "Shipment stays limited until full payment clears or early release is approved."}
                       </p>
@@ -462,27 +472,35 @@ export default function AdminInstallmentsPage() {
                       >
                         Save note
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => updateInstallment(order._id, { action: "approve_early_release", note: adminNotes[order._id] || "" })}
-                        className="rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-medium text-white"
-                      >
-                        Approve early release
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => updateInstallment(order._id, { action: "mark_completed", note: adminNotes[order._id] || "" })}
-                        className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-medium text-white"
-                      >
-                        Mark completed
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => updateInstallment(order._id, { action: "cancel", note: adminNotes[order._id] || "" })}
-                        className="rounded-2xl bg-rose-500 px-4 py-3 text-sm font-medium text-white"
-                      >
-                        Cancel / forfeit
-                      </button>
+                      {isArchivedInstallment ? (
+                        <div className="rounded-2xl border border-dashed border-white/10 px-4 py-3 text-sm text-slate-400 sm:col-span-2">
+                          Archived installment records are view-only in this section.
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => updateInstallment(order._id, { action: "approve_early_release", note: adminNotes[order._id] || "" })}
+                            className="rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-medium text-white"
+                          >
+                            Approve early release
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updateInstallment(order._id, { action: "mark_completed", note: adminNotes[order._id] || "" })}
+                            className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-medium text-white"
+                          >
+                            Mark completed
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updateInstallment(order._id, { action: "cancel", note: adminNotes[order._id] || "" })}
+                            className="rounded-2xl bg-rose-500 px-4 py-3 text-sm font-medium text-white"
+                          >
+                            Cancel / forfeit
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

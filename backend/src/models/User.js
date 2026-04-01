@@ -5,7 +5,7 @@ const sellerApplicationSchema = new mongoose.Schema(
   {
     status: {
       type: String,
-      enum: ["none", "pending", "approved", "rejected", "suspended"],
+      enum: ["none", "pending", "approved", "rejected", "suspended", "terminated"],
       default: "none"
     },
     businessName: String,
@@ -45,6 +45,28 @@ const sellerPayoutRequestSchema = new mongoose.Schema(
     paidAt: Date
   },
   { timestamps: true }
+);
+
+const sellerDisciplinaryEntrySchema = new mongoose.Schema(
+  {
+    offenseNumber: {
+      type: Number,
+      default: 0
+    },
+    action: {
+      type: String,
+      enum: ["warning", "suspension", "termination"],
+      default: "warning"
+    },
+    durationDays: {
+      type: Number,
+      default: 0
+    },
+    note: String,
+    createdAt: Date,
+    endsAt: Date
+  },
+  { _id: false }
 );
 
 const userSchema = new mongoose.Schema(
@@ -116,6 +138,22 @@ const userSchema = new mongoose.Schema(
       totalPayoutPaid: {
         type: Number,
         default: 0
+      },
+      discipline: {
+        offenseCount: {
+          type: Number,
+          default: 0
+        },
+        currentStage: {
+          type: String,
+          enum: ["good_standing", "warning", "suspended", "terminated"],
+          default: "good_standing"
+        },
+        suspendedAt: Date,
+        suspendedUntil: Date,
+        terminatedAt: Date,
+        lastReason: String,
+        history: [sellerDisciplinaryEntrySchema]
       }
     },
     sellerApplication: {

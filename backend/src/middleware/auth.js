@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import { User } from "../models/User.js";
 import { env } from "../config/env.js";
 import { ApiError } from "../utils/ApiError.js";
+import { normalizeSellerSuspensionState } from "../utils/sellerDiscipline.js";
 
 export async function protect(req, _, next) {
   const authHeader = req.headers.authorization || "";
@@ -19,6 +20,10 @@ export async function protect(req, _, next) {
     if (!user) {
       next(new ApiError(401, "User not found"));
       return;
+    }
+
+    if (normalizeSellerSuspensionState(user)) {
+      await user.save();
     }
 
     req.user = user;
@@ -42,6 +47,9 @@ export async function optionalAuth(req, _, next) {
     const user = await User.findById(payload.userId).select("-password");
 
     if (user) {
+      if (normalizeSellerSuspensionState(user)) {
+        await user.save();
+      }
       req.user = user;
     }
   } catch {
@@ -59,6 +67,17 @@ export function authorize(...roles) {
     }
 
     if (req.user.role === "seller" && req.user.sellerProfile?.isActive === false) {
+      const discipline = req.user.sellerProfile?.discipline;
+      if (discipline?.currentStage === "terminated" || discipline?.terminatedAt) {
+        next(new ApiError(403, "Seller access has been terminated"));
+        return;
+      }
+
+      if (discipline?.suspendedUntil) {
+        next(new ApiError(403, `Seller access is suspended until ${new Date(discipline.suspendedUntil).toLocaleString("en-PH")}`));
+        return;
+      }
+
       next(new ApiError(403, "Seller access is currently suspended"));
       return;
     }

@@ -7,6 +7,8 @@ function StatusBadge({ value }) {
     approved: "border-emerald-400/20 bg-emerald-500/10 text-emerald-100",
     rejected: "border-rose-400/20 bg-rose-500/10 text-rose-100",
     suspended: "border-slate-400/20 bg-slate-500/10 text-slate-200",
+    terminated: "border-rose-500/20 bg-rose-600/15 text-rose-100",
+    warning: "border-amber-400/20 bg-amber-500/10 text-amber-100",
     seller: "border-cyan-400/20 bg-cyan-500/10 text-cyan-100",
     customer: "border-white/10 bg-white/5 text-slate-200",
     admin: "border-fuchsia-400/20 bg-fuchsia-500/10 text-fuchsia-100"
@@ -17,6 +19,44 @@ function StatusBadge({ value }) {
       {value}
     </span>
   );
+}
+
+function getNextDisciplineLabel(user) {
+  const offenseCount = Number(user?.sellerProfile?.discipline?.offenseCount || 0);
+
+  if (offenseCount <= 0) {
+    return "Issue warning (3 days)";
+  }
+
+  if (offenseCount === 1) {
+    return "Suspend 7 days";
+  }
+
+  if (offenseCount === 2) {
+    return "Suspend 15 days";
+  }
+
+  return "Terminate seller";
+}
+
+function getDisciplineSummary(user) {
+  const discipline = user?.sellerProfile?.discipline || {};
+  const offenseCount = Number(discipline.offenseCount || 0);
+  const currentStage = discipline.currentStage || "good_standing";
+
+  if (currentStage === "terminated" || discipline.terminatedAt) {
+    return `4th offense termination${discipline.terminatedAt ? ` on ${new Date(discipline.terminatedAt).toLocaleDateString()}` : ""}`;
+  }
+
+  if (discipline.suspendedUntil) {
+    return `Offense ${offenseCount}: access resumes on ${new Date(discipline.suspendedUntil).toLocaleDateString()}`;
+  }
+
+  if (offenseCount > 0) {
+    return `Offense ${offenseCount} on record`;
+  }
+
+  return "No seller offenses on record";
 }
 
 function SectionPanel({ title, description, count, children }) {
@@ -120,7 +160,7 @@ export default function CustomersPage() {
   const reviewedApplications = useMemo(
     () =>
       applications
-        .filter((user) => (user.sellerApplication?.status || "") === "rejected")
+        .filter((user) => ["rejected", "terminated"].includes(user.sellerApplication?.status || ""))
         .filter((user) => searchableUsers.some((entry) => entry._id === user._id)),
     [applications, searchableUsers]
   );
@@ -331,11 +371,12 @@ export default function CustomersPage() {
                     <p>Approved: {user.sellerProfile?.approvedAt ? new Date(user.sellerProfile.approvedAt).toLocaleString() : "N/A"}</p>
                   </div>
                   <p className="mt-3 text-sm leading-7 text-slate-400">{user.sellerProfile?.description || user.sellerApplication?.description || "No seller description submitted."}</p>
+                  <p className="mt-2 text-sm text-amber-100">{getDisciplineSummary(user)}</p>
                   {user.sellerApplication?.adminNote ? <p className="mt-3 text-sm text-slate-500">Admin note: {user.sellerApplication.adminNote}</p> : null}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" onClick={() => reviewApplication(user._id, "suspended")} className="rounded-full border border-amber-400/20 bg-amber-500/10 px-4 py-2 text-sm text-amber-100">
-                    Suspend seller
+                    {getNextDisciplineLabel(user)}
                   </button>
                 </div>
               </div>
@@ -384,9 +425,11 @@ export default function CustomersPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <p className="font-semibold text-white">{user.name}</p>
                 <StatusBadge value="suspended" />
+                {user.sellerProfile?.discipline?.currentStage === "warning" ? <StatusBadge value="warning" /> : null}
               </div>
               <p className="mt-1 text-sm text-slate-400">{user.email}</p>
               <p className="mt-3 text-sm text-slate-300">Store: {user.sellerProfile?.storeName || user.sellerApplication?.businessName || "N/A"}</p>
+              <p className="mt-2 text-sm text-amber-100">{getDisciplineSummary(user)}</p>
               {user.sellerProfile?.statusNote ? <p className="mt-2 text-sm text-slate-400">{user.sellerProfile.statusNote}</p> : null}
             </div>
           ))
