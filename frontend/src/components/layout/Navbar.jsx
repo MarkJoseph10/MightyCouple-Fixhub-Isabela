@@ -27,8 +27,8 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
       <div className="page-shell py-2.5 sm:py-3">
-        <div className="flex flex-wrap items-center gap-3 lg:flex-nowrap">
-          <Link to="/" className="group flex min-w-0 flex-1 items-center gap-2.5 lg:w-[255px] lg:flex-none sm:gap-3">
+        <div className="flex flex-wrap items-center gap-3 lg:grid lg:grid-cols-[minmax(220px,260px)_minmax(0,1fr)_auto] lg:items-center lg:gap-4">
+          <Link to="/" className="group flex min-w-0 flex-1 items-center gap-2.5 lg:min-w-[220px] lg:flex-none sm:gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-brand-500 to-orange-400 font-bold text-white shadow-ambient transition duration-300 group-hover:scale-105">
               {settings.logo?.url ? (
                 <img src={resolveMediaUrl(settings.logo.url)} alt={settings.logo.alt || settings.storeName} className="h-full w-full object-cover" />
@@ -42,7 +42,7 @@ export default function Navbar() {
             </div>
           </Link>
 
-          <nav className="order-3 flex w-full flex-wrap items-center gap-1.5 text-[13px] text-slate-300 lg:order-2 lg:min-w-0 lg:flex-1 lg:flex-nowrap lg:justify-center lg:overflow-x-auto lg:pb-1 xl:overflow-visible sm:gap-2">
+          <nav className="order-3 flex w-full flex-wrap items-center gap-1.5 text-[13px] text-slate-300 lg:order-2 lg:min-w-0 lg:flex-nowrap lg:justify-center lg:gap-2 lg:overflow-x-auto lg:pb-1 xl:overflow-visible">
           <NavLink to="/" end className={navPillClass}>Store</NavLink>
           <NavLink to="/contact" className={navPillClass}>Contact</NavLink>
           <NavLink to="/wishlist" className={navPillClass}>Wishlist</NavLink>
@@ -55,7 +55,7 @@ export default function Navbar() {
           {isAdmin && <NavLink to="/admin" className={navPillClass}>Dashboard</NavLink>}
           </nav>
 
-          <div className="order-2 ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2 lg:order-3">
+          <div className="order-2 ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2 lg:order-3 lg:ml-0">
             <Link to="/wishlist" className="glass-panel inline-flex h-9 min-w-[2.8rem] items-center justify-center gap-2 rounded-full px-2.5 text-sm text-white sm:h-10 sm:min-w-[3rem] sm:px-3">
               <Heart size={16} />
               <span>{wishlistIds.length}</span>
