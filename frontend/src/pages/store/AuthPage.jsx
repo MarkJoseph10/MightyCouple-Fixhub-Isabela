@@ -39,12 +39,26 @@ export default function AuthPage() {
   const [mode, setMode] = useState("login");
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState("");
   const [googleReady, setGoogleReady] = useState(false);
   const [facebookReady, setFacebookReady] = useState(false);
   const googleButtonRef = useRef(null);
+  const facebookTimeoutRef = useRef(null);
   const redirectedMessage = location.state?.message || "";
   const redirectTo = location.state?.from || "";
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(facebookTimeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    setError("");
+    setFormLoading(false);
+    setSocialLoading("");
+  }, [mode]);
 
   useEffect(() => {
     if (mode !== "login" || !googleClientId || !googleButtonRef.current) {
@@ -62,7 +76,7 @@ export default function AuthPage() {
         google.accounts.id.initialize({
           client_id: googleClientId,
           callback: async (response) => {
-            setLoading(true);
+            setSocialLoading("google");
             setError("");
 
             try {
@@ -72,7 +86,7 @@ export default function AuthPage() {
             } catch (requestError) {
               setError(requestError.response?.data?.message || "Google sign-in failed.");
             } finally {
-              setLoading(false);
+              setSocialLoading("");
             }
           }
         });
@@ -149,13 +163,20 @@ export default function AuthPage() {
       return;
     }
 
-    setLoading(true);
+    setFormLoading(false);
+    setSocialLoading("facebook");
     setError("");
+    clearTimeout(facebookTimeoutRef.current);
+    facebookTimeoutRef.current = setTimeout(() => {
+      setSocialLoading("");
+      setError("Facebook sign-in is taking too long. Please try again.");
+    }, 15000);
 
     window.FB.login(
       async (response) => {
+        clearTimeout(facebookTimeoutRef.current);
         if (!response?.authResponse?.accessToken) {
-          setLoading(false);
+          setSocialLoading("");
           setError("Facebook sign-in was cancelled.");
           return;
         }
@@ -169,7 +190,7 @@ export default function AuthPage() {
         } catch (requestError) {
           setError(requestError.response?.data?.message || "Facebook sign-in failed.");
         } finally {
-          setLoading(false);
+          setSocialLoading("");
         }
       },
       {
@@ -180,7 +201,9 @@ export default function AuthPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    setLoading(true);
+    clearTimeout(facebookTimeoutRef.current);
+    setSocialLoading("");
+    setFormLoading(true);
     setError("");
 
     try {
@@ -197,7 +220,7 @@ export default function AuthPage() {
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Something went wrong.");
     } finally {
-      setLoading(false);
+      setFormLoading(false);
     }
   }
 
@@ -258,10 +281,10 @@ export default function AuthPage() {
             className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
           />
           <button
-            disabled={loading}
+            disabled={formLoading}
             className="w-full rounded-2xl bg-brand-500 px-5 py-3 font-semibold text-white disabled:opacity-60"
           >
-            {loading ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}
+            {formLoading ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}
           </button>
         </form>
 
@@ -288,10 +311,10 @@ export default function AuthPage() {
               <button
                 type="button"
                 onClick={handleFacebookLogin}
-                disabled={loading || !facebookReady}
+                disabled={Boolean(formLoading) || Boolean(socialLoading) || !facebookReady}
                 className="mt-4 flex w-full items-center justify-center rounded-2xl border border-[#1877F2]/30 bg-[#1877F2]/10 px-5 py-3 font-semibold text-[#E8F1FF] transition hover:bg-[#1877F2]/20 disabled:opacity-60"
               >
-                Continue with Facebook
+                {socialLoading === "facebook" ? "Connecting Facebook..." : "Continue with Facebook"}
               </button>
             ) : null}
             {facebookAppId && !facebookReady ? (
