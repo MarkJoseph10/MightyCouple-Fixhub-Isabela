@@ -22,6 +22,7 @@ export default function InstallmentsPage() {
   const [installments, setInstallments] = useState(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [messageOrderId, setMessageOrderId] = useState("");
   const [drafts, setDrafts] = useState({});
   const [submittingId, setSubmittingId] = useState("");
 
@@ -62,6 +63,7 @@ export default function InstallmentsPage() {
       setSubmittingId(order._id);
       setError("");
       setMessage("");
+      setMessageOrderId("");
       const payload = new FormData();
       payload.append("amount", draft.amount);
       payload.append("method", draft.method);
@@ -80,8 +82,10 @@ export default function InstallmentsPage() {
         [order._id]: initialDraft
       }));
       setMessage(data.message || "Installment payment submitted.");
+      setMessageOrderId(order._id);
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to submit installment payment.");
+      setMessageOrderId(order._id);
     } finally {
       setSubmittingId("");
     }
@@ -274,6 +278,16 @@ export default function InstallmentsPage() {
                     <div className="rounded-[22px] border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
                       Payments made are non-refundable under installment agreement.
                     </div>
+                    {message && messageOrderId === order._id ? (
+                      <div className="rounded-[22px] border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+                        {message}
+                      </div>
+                    ) : null}
+                    {error && messageOrderId === order._id ? (
+                      <div className="rounded-[22px] border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+                        {error}
+                      </div>
+                    ) : null}
                     <button
                       type="button"
                       onClick={() => handleSubmitPayment(order)}
