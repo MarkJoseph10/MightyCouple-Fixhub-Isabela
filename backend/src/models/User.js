@@ -47,6 +47,28 @@ const sellerPayoutRequestSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const sellerPayoutDetailsSchema = new mongoose.Schema(
+  {
+    gcashNumber: {
+      type: String,
+      default: ""
+    },
+    bankName: {
+      type: String,
+      default: ""
+    },
+    bankAccountName: {
+      type: String,
+      default: ""
+    },
+    bankAccountNumber: {
+      type: String,
+      default: ""
+    }
+  },
+  { _id: false }
+);
+
 const sellerDisciplinaryEntrySchema = new mongoose.Schema(
   {
     offenseNumber: {
@@ -125,10 +147,8 @@ const userSchema = new mongoose.Schema(
       },
       approvedAt: Date,
       payoutDetails: {
-        gcashNumber: String,
-        bankName: String,
-        bankAccountName: String,
-        bankAccountNumber: String
+        type: sellerPayoutDetailsSchema,
+        default: () => ({})
       },
       payoutRequests: [sellerPayoutRequestSchema],
       totalPayoutApproved: {
@@ -140,20 +160,32 @@ const userSchema = new mongoose.Schema(
         default: 0
       },
       discipline: {
-        offenseCount: {
-          type: Number,
-          default: 0
-        },
-        currentStage: {
-          type: String,
-          enum: ["good_standing", "warning", "suspended", "terminated"],
-          default: "good_standing"
-        },
-        suspendedAt: Date,
-        suspendedUntil: Date,
-        terminatedAt: Date,
-        lastReason: String,
-        history: [sellerDisciplinaryEntrySchema]
+        type: new mongoose.Schema(
+          {
+            offenseCount: {
+              type: Number,
+              default: 0
+            },
+            currentStage: {
+              type: String,
+              enum: ["good_standing", "warning", "suspended", "terminated"],
+              default: "good_standing"
+            },
+            suspendedAt: Date,
+            suspendedUntil: Date,
+            terminatedAt: Date,
+            lastReason: {
+              type: String,
+              default: ""
+            },
+            history: {
+              type: [sellerDisciplinaryEntrySchema],
+              default: []
+            }
+          },
+          { _id: false }
+        ),
+        default: () => ({})
       }
     },
     sellerApplication: {
