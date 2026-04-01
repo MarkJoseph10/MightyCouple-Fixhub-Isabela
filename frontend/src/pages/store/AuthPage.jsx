@@ -1,19 +1,99 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 const initialForm = { name: "", email: "", password: "" };
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+
+function loadGoogleScript() {
+  return new Promise((resolve, reject) => {
+    if (window.google?.accounts?.id) {
+      resolve(window.google);
+      return;
+    }
+
+    const existingScript = document.querySelector('script[data-google-identity="true"]');
+
+    if (existingScript) {
+      existingScript.addEventListener("load", () => resolve(window.google), { once: true });
+      existingScript.addEventListener("error", reject, { once: true });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.dataset.googleIdentity = "true";
+    script.onload = () => resolve(window.google);
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
 
 export default function AuthPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { login, register } = useAuth();
+  const { login, loginWithGoogle, register } = useAuth();
   const [mode, setMode] = useState("login");
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleReady, setGoogleReady] = useState(false);
+  const googleButtonRef = useRef(null);
   const redirectedMessage = location.state?.message || "";
   const redirectTo = location.state?.from || "";
+
+  useEffect(() => {
+    if (mode !== "login" || !googleClientId || !googleButtonRef.current) {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    loadGoogleScript()
+      .then((google) => {
+        if (cancelled || !google?.accounts?.id || !googleButtonRef.current) {
+          return;
+        }
+
+        google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: async (response) => {
+            setLoading(true);
+            setError("");
+
+            try {
+              const result = await loginWithGoogle({ credential: response.credential });
+              const fallbackTarget = result?.user?.role === "admin" ? "/admin" : "/";
+              navigate(redirectTo || fallbackTarget, { replace: true });
+            } catch (requestError) {
+              setError(requestError.response?.data?.message || "Google sign-in failed.");
+            } finally {
+              setLoading(false);
+            }
+          }
+        });
+        googleButtonRef.current.innerHTML = "";
+        google.accounts.id.renderButton(googleButtonRef.current, {
+          theme: "outline",
+          size: "large",
+          shape: "pill",
+          width: 360,
+          text: "continue_with"
+        });
+        setGoogleReady(true);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setGoogleReady(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loginWithGoogle, mode, navigate, redirectTo]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -101,6 +181,28 @@ export default function AuthPage() {
             {loading ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}
           </button>
         </form>
+
+        {mode === "login" ? (
+          <div className="mt-6">
+            <div className="flex items-center gap-3 text-xs uppercase tracking-[0.24em] text-slate-500">
+              <span className="h-px flex-1 bg-white/10" />
+              <span>Or continue with</span>
+              <span className="h-px flex-1 bg-white/10" />
+            </div>
+            {googleClientId ? (
+              <div className="mt-4 flex justify-center">
+                <div ref={googleButtonRef} className="min-h-[44px] min-w-[260px]" />
+              </div>
+            ) : (
+              <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                Google login is not configured yet. Add the Google client ID to enable it.
+              </div>
+            )}
+            {googleClientId && !googleReady ? (
+              <p className="mt-3 text-center text-xs text-slate-500">Loading Google sign-in...</p>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   );

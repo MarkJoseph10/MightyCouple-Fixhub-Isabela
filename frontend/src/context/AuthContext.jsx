@@ -54,6 +54,12 @@ export function AuthProvider({ children }) {
         setUser(data.user);
         return data;
       },
+      async loginWithGoogle(payload) {
+        const { data } = await api.post("/auth/google", payload);
+        localStorage.setItem("shopverse-token", data.token);
+        setUser(data.user);
+        return data;
+      },
       refreshUser,
       setUserData(nextUser) {
         setUser(nextUser);

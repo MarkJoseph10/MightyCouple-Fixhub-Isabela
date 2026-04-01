@@ -5,6 +5,9 @@ import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { clearRateLimitFailures, recordRateLimitFailure } from "../middleware/rateLimit.js";
 import { isValidEmail } from "../utils/validators.js";
+import { OAuth2Client } from "google-auth-library";
+
+const googleClient = new OAuth2Client();
 
 function formatUser(user) {
   return {
@@ -23,6 +26,28 @@ function validatePassword(password) {
   if (!strongPassword.test(password)) {
     throw new ApiError(400, "Password must be at least 8 characters and include uppercase, lowercase, and a number");
   }
+}
+
+async function verifyGoogleCredential(credential) {
+  if (!env.googleClientId) {
+    throw new ApiError(500, "Google login is not configured on the server");
+  }
+
+  if (!credential) {
+    throw new ApiError(400, "Google credential is required");
+  }
+
+  const ticket = await googleClient.verifyIdToken({
+    idToken: credential,
+    audience: env.googleClientId
+  });
+  const payload = ticket.getPayload();
+
+  if (!payload?.email || !payload?.sub) {
+    throw new ApiError(401, "Unable to verify Google account");
+  }
+
+  return payload;
 }
 
 export const registerUser = asyncHandler(async (req, res) => {
@@ -48,6 +73,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     name,
     email,
     password,
+    authProvider: "local",
     role: "customer"
   });
 
@@ -55,6 +81,48 @@ export const registerUser = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     message: "Account created successfully",
+    token,
+    user: formatUser(user)
+  });
+});
+
+export const loginWithGoogle = asyncHandler(async (req, res) => {
+  const payload = await verifyGoogleCredential(req.body?.credential);
+  const email = String(payload.email || "").trim().toLowerCase();
+
+  let user = await User.findOne({ email });
+
+  if (!user) {
+    user = await User.create({
+      name: payload.name || email.split("@")[0],
+      email,
+      password: "",
+      authProvider: "google",
+      googleId: payload.sub,
+      avatar: payload.picture || "",
+      role: "customer"
+    });
+  } else {
+    const nextName = user.name || payload.name || email.split("@")[0];
+    const nextAvatar = user.avatar || payload.picture || "";
+
+    user.name = nextName;
+    user.avatar = nextAvatar;
+    user.googleId = payload.sub;
+    user.authProvider = user.authProvider === "local" && user.password ? "local" : "google";
+    user.lastLoginAt = new Date();
+    await user.save();
+  }
+
+  if (!user.lastLoginAt) {
+    user.lastLoginAt = new Date();
+    await user.save();
+  }
+
+  const token = createToken(user._id, user.role, env.jwtSecret);
+
+  res.json({
+    message: "Google login successful",
     token,
     user: formatUser(user)
   });

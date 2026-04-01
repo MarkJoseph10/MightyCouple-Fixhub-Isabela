@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getCurrentUser,
+  loginWithGoogle,
   loginUser,
   registerUser,
   updateAdminCredentials
@@ -12,6 +13,7 @@ const router = Router();
 
 router.post("/register", registerUser);
 router.post("/login", loginRateLimit, loginUser);
+router.post("/google", loginWithGoogle);
 router.get("/me", protect, getCurrentUser);
 router.put("/admin-profile", protect, authorize("admin"), updateAdminCredentials);
 

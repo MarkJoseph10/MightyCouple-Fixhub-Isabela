@@ -63,7 +63,16 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true
+      required: false
+    },
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local"
+    },
+    googleId: {
+      type: String,
+      default: ""
     },
     role: {
       type: String,
@@ -120,7 +129,7 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.pre("save", async function save(next) {
-  if (!this.isModified("password")) {
+  if (!this.isModified("password") || !this.password) {
     next();
     return;
   }
@@ -130,6 +139,10 @@ userSchema.pre("save", async function save(next) {
 });
 
 userSchema.methods.comparePassword = function comparePassword(candidatePassword) {
+  if (!this.password) {
+    return false;
+  }
+
   return bcrypt.compare(candidatePassword, this.password);
 };
 
