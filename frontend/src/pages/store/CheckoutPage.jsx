@@ -388,7 +388,7 @@ export default function CheckoutPage() {
           {statusMessage && <div className="mt-6 rounded-2xl bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">{statusMessage}</div>}
 
           <button
-            disabled={!items.length || submitting}
+            disabled={!selectedItems.length || submitting}
             className="mt-6 rounded-2xl bg-brand-500 px-5 py-3 font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-brand-600 disabled:opacity-60"
           >
             {submitting
@@ -404,7 +404,7 @@ export default function CheckoutPage() {
         <aside className="glass-panel h-fit rounded-[32px] p-6 shadow-ambient">
           <h2 className="text-xl font-semibold text-white">Order summary</h2>
           <div className="mt-6 space-y-3 text-sm text-slate-300">
-            {items.map((item) => (
+            {selectedItems.map((item) => (
               <div key={item.cartKey || `${item._id}-${item.variantId || "default"}`} className="flex justify-between gap-3">
                 <div>
                   <span>{item.name} x {item.quantity}</span>
@@ -415,7 +415,7 @@ export default function CheckoutPage() {
             ))}
             <div className="flex justify-between border-t border-white/10 pt-3">
               <span>Subtotal</span>
-              <span>{peso(subtotal)}</span>
+              <span>{peso(selectedSubtotal)}</span>
             </div>
             <div className="flex justify-between">
               <span>Discount</span>
