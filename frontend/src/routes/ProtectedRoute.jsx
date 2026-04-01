@@ -2,8 +2,8 @@ import { Navigate, useLocation } from "react-router-dom";
 import LoadingScreen from "../components/common/LoadingScreen";
 import { useAuth } from "../context/AuthContext";
 
-export default function ProtectedRoute({ children, adminOnly = false, sellerOnly = false, redirectTo = "/auth", message = "" }) {
-  const { loading, isAuthenticated, isAdmin, isSeller } = useAuth();
+export default function ProtectedRoute({ children, adminOnly = false, sellerOnly = false, sellerAccountOnly = false, redirectTo = "/auth", message = "" }) {
+  const { loading, isAuthenticated, isAdmin, isSeller, isSellerAccount } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -19,6 +19,10 @@ export default function ProtectedRoute({ children, adminOnly = false, sellerOnly
   }
 
   if (sellerOnly && !isSeller) {
+    return <Navigate to="/" replace state={{ message: "Seller access only." }} />;
+  }
+
+  if (sellerAccountOnly && !isSellerAccount) {
     return <Navigate to="/" replace state={{ message: "Seller access only." }} />;
   }
 

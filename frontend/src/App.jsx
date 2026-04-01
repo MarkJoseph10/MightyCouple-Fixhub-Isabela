@@ -28,6 +28,7 @@ import TrackOrderPage from "./pages/store/TrackOrderPage";
 import WishlistPage from "./pages/store/WishlistPage";
 import SellerDashboardPage from "./pages/seller/SellerDashboardPage";
 import SellerOrdersPage from "./pages/seller/SellerOrdersPage";
+import SellerAppealPage from "./pages/seller/SellerAppealPage";
 import SellerProductsPage from "./pages/seller/SellerProductsPage";
 import BrandingBackground from "./components/layout/BrandingBackground";
 
@@ -70,6 +71,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <SellerApplyPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/seller/appeal"
+              element={
+                <ProtectedRoute sellerAccountOnly>
+                  <SellerAppealPage />
                 </ProtectedRoute>
               }
             />

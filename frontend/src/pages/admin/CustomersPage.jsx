@@ -133,6 +133,22 @@ export default function CustomersPage() {
     }
   }
 
+  async function reviewAppeal(userId, status) {
+    try {
+      const adminNote = reviewNotes[`${userId}:appeal`] || "";
+      const { data } = await api.patch(`/users/seller/applications/${userId}/appeal`, {
+        status,
+        adminNote
+      });
+      setApplications((current) => current.map((entry) => (entry._id === userId ? data.user : entry)));
+      setUsers((current) => current.map((entry) => (entry._id === userId ? data.user : entry)));
+      setMessage(data.message || "Seller appeal updated.");
+      setError("");
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to review seller appeal.");
+    }
+  }
+
   const normalizedQuery = query.trim().toLowerCase();
   const searchableUsers = useMemo(() => {
     if (!normalizedQuery) {
@@ -431,6 +447,37 @@ export default function CustomersPage() {
               <p className="mt-3 text-sm text-slate-300">Store: {user.sellerProfile?.storeName || user.sellerApplication?.businessName || "N/A"}</p>
               <p className="mt-2 text-sm text-amber-100">{getDisciplineSummary(user)}</p>
               {user.sellerProfile?.statusNote ? <p className="mt-2 text-sm text-slate-400">{user.sellerProfile.statusNote}</p> : null}
+              <div className="mt-4 rounded-[24px] border border-white/10 bg-slate-950/30 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-semibold text-white">Seller appeal</p>
+                  <StatusBadge value={user.sellerProfile?.appeal?.status || "none"} />
+                </div>
+                <p className="mt-3 text-sm leading-7 text-slate-300">
+                  {user.sellerProfile?.appeal?.message || "No appeal submitted yet. Seller can open the Seller Appeal page to explain why the suspension should be reviewed."}
+                </p>
+                {user.sellerProfile?.appeal?.submittedAt ? (
+                  <p className="mt-2 text-sm text-slate-400">Submitted: {new Date(user.sellerProfile.appeal.submittedAt).toLocaleString()}</p>
+                ) : null}
+                {user.sellerProfile?.appeal?.adminNote ? <p className="mt-2 text-sm text-cyan-100">Admin note: {user.sellerProfile.appeal.adminNote}</p> : null}
+              </div>
+              {user.sellerProfile?.appeal?.status === "pending" ? (
+                <>
+                  <textarea
+                    value={reviewNotes[`${user._id}:appeal`] || ""}
+                    onChange={(event) => setReviewNotes((current) => ({ ...current, [`${user._id}:appeal`]: event.target.value }))}
+                    placeholder="Admin note for appeal review"
+                    className="mt-4 min-h-[100px] w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                  />
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => reviewAppeal(user._id, "approved")} className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-white">
+                      Approve appeal and restore seller
+                    </button>
+                    <button type="button" onClick={() => reviewAppeal(user._id, "rejected")} className="rounded-full bg-rose-500 px-4 py-2 text-sm font-medium text-white">
+                      Reject appeal
+                    </button>
+                  </div>
+                </>
+              ) : null}
             </div>
           ))
         ) : (

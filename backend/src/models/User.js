@@ -91,6 +91,27 @@ const sellerDisciplinaryEntrySchema = new mongoose.Schema(
   { _id: false }
 );
 
+const sellerAppealSchema = new mongoose.Schema(
+  {
+    status: {
+      type: String,
+      enum: ["none", "pending", "approved", "rejected"],
+      default: "none"
+    },
+    message: {
+      type: String,
+      default: ""
+    },
+    submittedAt: Date,
+    reviewedAt: Date,
+    adminNote: {
+      type: String,
+      default: ""
+    }
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -185,6 +206,10 @@ const userSchema = new mongoose.Schema(
           },
           { _id: false }
         ),
+        default: () => ({})
+      },
+      appeal: {
+        type: sellerAppealSchema,
         default: () => ({})
       }
     },

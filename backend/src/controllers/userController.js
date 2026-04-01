@@ -106,7 +106,14 @@ function buildSellerProfileSnapshot(user) {
     payoutRequests: [...(user.sellerProfile?.payoutRequests || [])],
     totalPayoutApproved: Number(user.sellerProfile?.totalPayoutApproved || 0),
     totalPayoutPaid: Number(user.sellerProfile?.totalPayoutPaid || 0),
-    discipline: ensureSellerDisciplineShape(user)
+    discipline: ensureSellerDisciplineShape(user),
+    appeal: {
+      status: String(user.sellerProfile?.appeal?.status || "none"),
+      message: String(user.sellerProfile?.appeal?.message || ""),
+      submittedAt: user.sellerProfile?.appeal?.submittedAt || null,
+      reviewedAt: user.sellerProfile?.appeal?.reviewedAt || null,
+      adminNote: String(user.sellerProfile?.appeal?.adminNote || "")
+    }
   };
 }
 
@@ -330,6 +337,105 @@ export const updateSellerProfile = asyncHandler(async (req, res) => {
   await user.save();
   res.json({
     message: "Seller profile updated successfully.",
+    user
+  });
+});
+
+export const submitSellerAppeal = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user || user.role !== "seller") {
+    throw new ApiError(403, "Seller access only");
+  }
+
+  if (user.sellerProfile?.isActive !== false) {
+    throw new ApiError(400, "Only suspended sellers can submit an appeal");
+  }
+
+  const message = String(req.body.message || "").trim();
+
+  if (message.length < 20) {
+    throw new ApiError(400, "Please provide a clearer appeal message with at least 20 characters");
+  }
+
+  const sellerProfile = buildSellerProfileSnapshot(user);
+
+  if (sellerProfile.appeal?.status === "pending") {
+    throw new ApiError(400, "You already have a pending appeal under review");
+  }
+
+  user.sellerProfile = {
+    ...sellerProfile,
+    appeal: {
+      status: "pending",
+      message,
+      submittedAt: new Date(),
+      reviewedAt: null,
+      adminNote: ""
+    }
+  };
+
+  await user.save();
+
+  res.status(201).json({
+    message: "Seller appeal submitted successfully.",
+    user
+  });
+});
+
+export const reviewSellerAppeal = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user || user.role !== "seller") {
+    throw new ApiError(404, "Seller not found");
+  }
+
+  const decision = String(req.body.status || "").trim().toLowerCase();
+  const adminNote = String(req.body.adminNote || "").trim();
+
+  if (!["approved", "rejected"].includes(decision)) {
+    throw new ApiError(400, "Invalid appeal decision");
+  }
+
+  const sellerProfile = buildSellerProfileSnapshot(user);
+
+  if (sellerProfile.appeal?.status !== "pending") {
+    throw new ApiError(400, "There is no pending appeal to review");
+  }
+
+  const nextAppeal = {
+    ...sellerProfile.appeal,
+    status: decision,
+    reviewedAt: new Date(),
+    adminNote
+  };
+
+  const nextSellerProfile = {
+    ...sellerProfile,
+    appeal: nextAppeal
+  };
+
+  if (decision === "approved") {
+    nextSellerProfile.isActive = true;
+    nextSellerProfile.statusNote = adminNote || "Seller appeal approved. Selling access has been restored.";
+    nextSellerProfile.discipline = {
+      ...sellerProfile.discipline,
+      currentStage: "good_standing",
+      suspendedAt: null,
+      suspendedUntil: null,
+      lastReason: adminNote || sellerProfile.discipline?.lastReason || ""
+    };
+    user.sellerApplication.status = "approved";
+  } else {
+    nextSellerProfile.statusNote = adminNote || sellerProfile.statusNote || "Seller appeal was reviewed and suspension remains active.";
+    user.sellerApplication.status = user.sellerApplication?.status === "terminated" ? "terminated" : "suspended";
+  }
+
+  user.sellerProfile = nextSellerProfile;
+  await user.save();
+
+  res.json({
+    message: `Seller appeal ${decision}.`,
     user
   });
 });

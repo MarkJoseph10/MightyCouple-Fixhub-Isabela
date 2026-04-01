@@ -18,6 +18,7 @@ export default function AuthPage() {
   const [socialLoading, setSocialLoading] = useState("");
   const redirectedMessage = location.state?.message || "";
   const redirectTo = location.state?.from || "";
+  const sessionExpired = new URLSearchParams(location.search).get("session") === "expired";
 
   useEffect(() => {
     setError("");
@@ -119,9 +120,9 @@ export default function AuthPage() {
           {mode === "login" ? "Welcome back" : "Create your customer account"}
         </h1>
         <p className="mt-2 text-sm text-slate-400">Sign in with your real account or create a new customer account.</p>
-        {redirectedMessage && (
+        {(redirectedMessage || sessionExpired) && (
           <div className="mt-6 rounded-2xl border border-brand-400/20 bg-brand-500/10 px-4 py-3 text-sm text-brand-50">
-            {redirectedMessage}
+            {redirectedMessage || "Your session expired. Please sign in again to continue."}
           </div>
         )}
 

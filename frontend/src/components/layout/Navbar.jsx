@@ -13,7 +13,7 @@ function navPillClass({ isActive }) {
 }
 
 export default function Navbar() {
-  const { user, isAdmin, isSeller, logout } = useAuth();
+  const { user, isAdmin, isSeller, isSellerAccount, logout } = useAuth();
   const { itemCount } = useCart();
   const { wishlistIds } = useWishlist();
   const { settings } = useStoreSettings();
@@ -67,8 +67,9 @@ export default function Navbar() {
           <NavLink to="/" end className={navPillClass}>Store</NavLink>
           <NavLink to="/track-order" className={navPillClass}>Track Order</NavLink>
           {user && <NavLink to="/orders" className={navPillClass}>My Orders</NavLink>}
-          {user && !isAdmin && !isSeller && <NavLink to="/become-seller" className={navPillClass}>Become Seller</NavLink>}
+          {user && !isAdmin && !isSellerAccount && <NavLink to="/become-seller" className={navPillClass}>Become Seller</NavLink>}
           {isSeller && <NavLink to="/seller" className={navPillClass}>Seller Hub</NavLink>}
+          {isSellerAccount && !isSeller && <NavLink to="/seller/appeal" className={navPillClass}>Seller Appeal</NavLink>}
           </nav>
 
           <div className="order-2 ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2 lg:order-3 lg:ml-0">
