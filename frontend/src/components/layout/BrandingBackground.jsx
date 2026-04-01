@@ -12,8 +12,10 @@ function clampOverlay(value) {
 }
 
 export default function BrandingBackground() {
-  const { settings } = useStoreSettings();
-  const backgroundImageUrl = resolveMediaUrl(settings.backgroundImage?.url || "/branding/default-background.jpg");
+  const { settings, loading } = useStoreSettings();
+  const backgroundImageUrl = !loading
+    ? resolveMediaUrl(settings.backgroundImage?.url || "/branding/default-background.jpg")
+    : "";
   const overlayOpacity = clampOverlay(settings.backgroundOverlay);
 
   return (
@@ -21,7 +23,7 @@ export default function BrandingBackground() {
       <div className="absolute inset-0 bg-slate-950" />
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-700"
-        style={{ backgroundImage: `url("${backgroundImageUrl}")` }}
+        style={{ backgroundImage: backgroundImageUrl ? `url("${backgroundImageUrl}")` : "none" }}
       />
       <div
         className="absolute inset-0"
