@@ -229,6 +229,11 @@ export default function InstallmentsPage() {
                   <p className="mt-3 text-sm leading-6 text-slate-300">
                     Upload your payment proof for admin verification. Duplicate submissions are blocked while one payment is still pending.
                   </p>
+                  {pendingVerification ? (
+                    <div className="mt-4 rounded-[22px] border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                      You already have a submitted payment waiting for admin verification. Review will need to finish before you can upload another payment.
+                    </div>
+                  ) : null}
                   <div className="mt-4 space-y-3">
                     <input
                       type="number"
@@ -237,11 +242,13 @@ export default function InstallmentsPage() {
                       value={draft.amount}
                       onChange={(event) => updateDraft(order._id, "amount", event.target.value)}
                       placeholder="Amount paid"
+                      disabled={pendingVerification}
                       className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
                     />
                     <select
                       value={draft.method}
                       onChange={(event) => updateDraft(order._id, "method", event.target.value)}
+                      disabled={pendingVerification}
                       className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
                     >
                       <option value="gcash">GCash</option>
@@ -254,13 +261,15 @@ export default function InstallmentsPage() {
                       type="date"
                       value={draft.paymentDate}
                       onChange={(event) => updateDraft(order._id, "paymentDate", event.target.value)}
+                      disabled={pendingVerification}
                       className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
                     />
                     <input
                       type="file"
                       accept="image/*"
                       onChange={(event) => updateDraft(order._id, "proof", event.target.files?.[0] || null)}
-                      className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none file:mr-3 file:rounded-full file:border-0 file:bg-brand-500 file:px-3 file:py-2 file:text-white"
+                      disabled={pendingVerification}
+                      className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none file:mr-3 file:rounded-full file:border-0 file:bg-brand-500 file:px-3 file:py-2 file:text-white disabled:cursor-not-allowed disabled:opacity-60"
                     />
                     <div className="rounded-[22px] border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
                       Payments made are non-refundable under installment agreement.
