@@ -44,7 +44,7 @@ export default function SellerAppealPage() {
 
   const discipline = profile?.sellerProfile?.discipline;
   const appeal = profile?.sellerProfile?.appeal;
-  const canAppeal = profile?.role === "seller" && profile?.sellerProfile?.isActive === false && appeal?.status !== "pending";
+  const canAppeal = profile?.role === "seller" && profile?.sellerProfile?.isActive === false && (appeal?.status || "none") === "none";
 
   return (
     <div className="page-shell py-8">
@@ -79,7 +79,7 @@ export default function SellerAppealPage() {
                 : appeal?.status === "approved"
                   ? "Your appeal was approved and selling access should already be restored."
                   : appeal?.status === "rejected"
-                    ? "Your appeal was reviewed and the suspension remains active."
+                    ? "Your appeal was reviewed and rejected. You cannot submit another appeal until this suspension is lifted."
                     : "No appeal submitted yet."}
             </p>
             {appeal?.adminNote ? <p className="mt-2 text-sm text-cyan-100">Admin note: {appeal.adminNote}</p> : null}
@@ -87,6 +87,15 @@ export default function SellerAppealPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          {!canAppeal && profile?.sellerProfile?.isActive === false ? (
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+              {(appeal?.status || "none") === "pending"
+                ? "Your appeal is already under review. Please wait for the admin decision."
+                : (appeal?.status || "none") === "rejected"
+                  ? "This suspension already has a reviewed appeal. You can sell again only after the suspension period ends or if admin restores access."
+                  : "Appeal submission is currently unavailable for this seller account."}
+            </div>
+          ) : null}
           <textarea
             value={appealMessage}
             onChange={(event) => setAppealMessage(event.target.value)}

@@ -251,6 +251,13 @@ export const reviewSellerApplication = asyncHandler(async (req, res) => {
         bankAccountName: user.sellerApplication.bankAccountName || sellerProfile.payoutDetails?.bankAccountName || "",
         bankAccountNumber: user.sellerApplication.bankAccountNumber || sellerProfile.payoutDetails?.bankAccountNumber || ""
       },
+      appeal: {
+        status: "none",
+        message: "",
+        submittedAt: null,
+        reviewedAt: null,
+        adminNote: ""
+      },
       discipline: {
         ...sellerProfile.discipline,
         currentStage: sellerProfile.discipline?.terminatedAt ? "terminated" : "good_standing",
@@ -286,6 +293,13 @@ export const reviewSellerApplication = asyncHandler(async (req, res) => {
           : adminNote || `${step.label}. Seller access is paused for ${step.durationDays} day(s).`,
       payoutDetails: {
         ...sellerProfile.payoutDetails
+      },
+      appeal: {
+        status: "none",
+        message: "",
+        submittedAt: null,
+        reviewedAt: null,
+        adminNote: ""
       },
       discipline: {
         ...discipline,
@@ -360,8 +374,13 @@ export const submitSellerAppeal = asyncHandler(async (req, res) => {
 
   const sellerProfile = buildSellerProfileSnapshot(user);
 
-  if (sellerProfile.appeal?.status === "pending") {
-    throw new ApiError(400, "You already have a pending appeal under review");
+  if (sellerProfile.appeal?.status !== "none") {
+    throw new ApiError(
+      400,
+      sellerProfile.appeal?.status === "pending"
+        ? "You already have a pending appeal under review"
+        : "You already used your appeal for this suspension. Please wait until the suspension period ends."
+    );
   }
 
   user.sellerProfile = {
