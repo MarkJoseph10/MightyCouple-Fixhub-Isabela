@@ -12,7 +12,7 @@ import {
   Truck
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import api from "../../api/client";
 import TiltCard from "../../components/common/TiltCard";
 import CountdownTimer from "../../components/store/CountdownTimer";
@@ -26,6 +26,7 @@ import { resolveMediaUrl } from "../../utils/media";
 import { readRecentlyViewed } from "../../utils/recentlyViewed";
 
 export default function HomePage() {
+  const location = useLocation();
   const categories = ["Phones", "Laptops", "Gadgets", "Accessories", "Wearables", "Gaming"];
   const { isAdmin } = useAuth();
   const { addToCart } = useCart();
@@ -75,6 +76,22 @@ export default function HomePage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [search, category, sort, perPage]);
+
+  useEffect(() => {
+    if (location.hash !== "#catalog-search") {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      const target = document.getElementById("catalog-search");
+      const input = document.getElementById("catalog-search-input");
+
+      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+      input?.focus();
+    }, 150);
+
+    return () => window.clearTimeout(timer);
+  }, [location.hash]);
 
   async function handleNewsletterSubscribe(event) {
     event.preventDefault();
@@ -386,6 +403,8 @@ export default function HomePage() {
         </div>
 
         <SearchFilters
+          containerId="catalog-search"
+          searchInputId="catalog-search-input"
           search={search}
           category={category}
           sort={sort}

@@ -1,6 +1,8 @@
 import { Search } from "lucide-react";
 
 export default function SearchFilters({
+  containerId,
+  searchInputId,
   search,
   category,
   sort = "popular",
@@ -13,7 +15,7 @@ export default function SearchFilters({
   onReset
 }) {
   return (
-    <div className="glass-panel sticky top-20 z-20 rounded-[26px] border border-white/10 p-4 shadow-ambient backdrop-blur">
+    <div id={containerId} className="glass-panel sticky top-20 z-20 scroll-mt-28 rounded-[26px] border border-white/10 p-4 shadow-ambient backdrop-blur">
       <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Search and filter</p>
         <button
@@ -29,6 +31,7 @@ export default function SearchFilters({
         <label className="md:col-span-2 xl:col-span-1 flex min-w-0 items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-2.5 text-slate-300">
           <Search size={18} />
           <input
+            id={searchInputId}
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Search products, tags, or categories"

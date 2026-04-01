@@ -1,5 +1,5 @@
-import { CreditCard, Heart, LayoutDashboard, LogOut, ShoppingBag } from "lucide-react";
-import { Link, NavLink } from "react-router-dom";
+import { CreditCard, Heart, LayoutDashboard, LogOut, Search, ShoppingBag } from "lucide-react";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import { useStoreSettings } from "../../context/StoreSettingsContext";
@@ -17,12 +17,33 @@ export default function Navbar() {
   const { itemCount } = useCart();
   const { wishlistIds } = useWishlist();
   const { settings } = useStoreSettings();
+  const location = useLocation();
+  const navigate = useNavigate();
   const initials = settings.storeName
     .split(" ")
     .slice(0, 2)
     .map((part) => part[0] || "")
     .join("")
     .toUpperCase();
+
+  function handleCatalogSearchJump() {
+    if (location.pathname === "/") {
+      const target = document.getElementById("catalog-search");
+      const input = document.getElementById("catalog-search-input");
+
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      window.setTimeout(() => {
+        input?.focus();
+      }, 350);
+
+      return;
+    }
+
+    navigate("/#catalog-search");
+  }
 
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
@@ -51,6 +72,14 @@ export default function Navbar() {
           </nav>
 
           <div className="order-2 ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2 lg:order-3 lg:ml-0">
+            <button
+              type="button"
+              onClick={handleCatalogSearchJump}
+              className="glass-panel inline-flex h-9 min-w-[2.8rem] items-center justify-center rounded-full px-2.5 text-sm text-white sm:h-10 sm:min-w-[3rem] sm:px-3"
+              aria-label="Search products"
+            >
+              <Search size={16} />
+            </button>
             <Link to="/wishlist" className="glass-panel inline-flex h-9 min-w-[2.8rem] items-center justify-center gap-2 rounded-full px-2.5 text-sm text-white sm:h-10 sm:min-w-[3rem] sm:px-3">
               <Heart size={16} />
               <span>{wishlistIds.length}</span>
