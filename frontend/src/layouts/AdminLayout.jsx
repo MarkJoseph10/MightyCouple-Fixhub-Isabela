@@ -11,7 +11,8 @@ const pageLabels = {
   "/admin/orders": "Orders",
   "/admin/installments": "Installments",
   "/admin/customers": "Customers",
-  "/admin/dropshipping": "Dropshipping"
+  "/admin/dropshipping": "Dropshipping",
+  "/admin/settings": "Settings"
 };
 
 export default function AdminLayout() {
