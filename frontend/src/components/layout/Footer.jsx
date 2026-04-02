@@ -13,12 +13,12 @@ export default function Footer() {
 
   return (
     <footer className="border-t border-white/10 py-8">
-      <div className="page-shell grid gap-6 text-sm text-slate-400 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-start">
+      <div className="page-shell flex flex-col gap-6 text-sm text-slate-400">
         <div>
           <p>{settings.storeName} offers affordable gadgets with secure account-based checkout, shipping transparency, and trackable orders.</p>
           <p className="mt-2">Support: <a href="mailto:supportmightycouple@gmail.com" className="text-slate-200 hover:text-white">supportmightycouple@gmail.com</a></p>
         </div>
-        <div>
+        <div className="max-w-[220px]">
           <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Follow us</p>
           <div className="mt-3 flex flex-col gap-3">
             {socialLinks.map(({ label, href, icon: Icon }) => (
@@ -27,7 +27,7 @@ export default function Footer() {
                 href={href}
                 target="_blank"
                 rel="noreferrer"
-                className="flex w-full min-w-[168px] flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center text-slate-200 transition duration-300 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white"
+                className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center text-slate-200 transition duration-300 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-slate-950/30">
                   <Icon size={18} />
@@ -37,7 +37,7 @@ export default function Footer() {
             ))}
           </div>
         </div>
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap gap-4 border-t border-white/10 pt-4">
           <Link to="/contact" className="hover:text-white">Contact</Link>
           <Link to="/shipping-policy" className="hover:text-white">Shipping Policy</Link>
           <Link to="/return-policy" className="hover:text-white">Return Policy</Link>
