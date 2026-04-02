@@ -233,7 +233,7 @@ export default function NotificationsPage() {
         </button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
           <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Unread</p>
           <p className="mt-2 text-3xl font-semibold text-white">{Math.max(unreadCount, liveUnreadCount || 0)}</p>
@@ -367,9 +367,9 @@ export default function NotificationsPage() {
 
                 <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-400">
                   <span>{formatTime(notification.createdAt)}</span>
-                  {notification.readAt ? <span>â€¢ Read</span> : <span>â€¢ Unread</span>}
-                  {notification.data?.orderNumber ? <span>â€¢ Order {notification.data.orderNumber}</span> : null}
-                  {notification.data?.reference ? <span>â€¢ {notification.data.reference}</span> : null}
+                  {notification.readAt ? <span>• Read</span> : <span>• Unread</span>}
+                  {notification.data?.orderNumber ? <span>• Order {notification.data.orderNumber}</span> : null}
+                  {notification.data?.reference ? <span>• {notification.data.reference}</span> : null}
                 </div>
               </article>
             );
@@ -403,3 +403,4 @@ export default function NotificationsPage() {
     </section>
   );
 }
+

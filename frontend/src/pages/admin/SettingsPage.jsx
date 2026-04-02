@@ -730,12 +730,12 @@ function DashboardPage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Admin settings</p>
-          <h1 className="mt-2 text-4xl font-semibold text-white">Manage {settings.storeName} branding and operations</h1>
+          <h1 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">Manage {settings.storeName} branding and operations</h1>
           <p className="mt-3 max-w-2xl text-sm text-slate-400">
             Keep the store visuals, browser tab icon, admin account, and checkout rules in one dedicated workspace while the overview stays clean.
           </p>
         </div>
-        <div className="rounded-[28px] border border-brand-400/20 bg-gradient-to-r from-brand-500/20 to-cyan-400/10 px-5 py-4 text-sm text-slate-100">
+        <div className="rounded-[28px] border border-brand-400/20 bg-gradient-to-r from-brand-500/20 to-cyan-400/10 px-4 py-3 text-sm text-slate-100 sm:px-5 sm:py-4">
           Live charts, mobile-first controls, and touch-ready store settings
         </div>
       </div>
