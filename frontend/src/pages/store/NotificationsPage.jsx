@@ -1,7 +1,6 @@
 import { Bell, CheckCheck, ExternalLink, Inbox } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useNotifications } from "../../context/NotificationContext";
-import { useEffect } from "react";
 
 function formatTime(value) {
   if (!value) {
@@ -22,11 +21,7 @@ function formatTime(value) {
 }
 
 export default function NotificationsPage() {
-  const { notifications, unreadCount, loading, refreshNotifications, markNotificationRead, markAllNotificationsRead } = useNotifications();
-
-  useEffect(() => {
-    refreshNotifications().catch(() => {});
-  }, [refreshNotifications]);
+  const { notifications, unreadCount, loading, markNotificationRead, markAllNotificationsRead } = useNotifications();
 
   return (
     <section className="section-card space-y-6">

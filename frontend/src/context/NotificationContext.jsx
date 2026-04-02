@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import api from "../api/client";
 import { useAuth } from "./AuthContext";
 
@@ -10,7 +10,7 @@ export function NotificationProvider({ children }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  async function refreshNotifications() {
+  const refreshNotifications = useCallback(async () => {
     if (!user) {
       setNotifications([]);
       setUnreadCount(0);
@@ -25,9 +25,9 @@ export function NotificationProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [user]);
 
-  async function markNotificationRead(notificationId) {
+  const markNotificationRead = useCallback(async (notificationId) => {
     if (!notificationId) {
       return;
     }
@@ -41,9 +41,9 @@ export function NotificationProvider({ children }) {
       )
     );
     setUnreadCount((current) => Math.max(0, current - 1));
-  }
+  }, []);
 
-  async function markAllNotificationsRead() {
+  const markAllNotificationsRead = useCallback(async () => {
     if (!user) {
       return;
     }
@@ -51,7 +51,7 @@ export function NotificationProvider({ children }) {
     await api.patch("/notifications/read-all");
     setNotifications((current) => current.map((notification) => ({ ...notification, readAt: notification.readAt || new Date().toISOString() })));
     setUnreadCount(0);
-  }
+  }, [user]);
 
   useEffect(() => {
     if (!user) {
@@ -64,7 +64,7 @@ export function NotificationProvider({ children }) {
       setNotifications([]);
       setUnreadCount(0);
     });
-  }, [user]);
+  }, [user, refreshNotifications]);
 
   useEffect(() => {
     if (!user) {
@@ -76,7 +76,7 @@ export function NotificationProvider({ children }) {
     }, 45000);
 
     return () => window.clearInterval(interval);
-  }, [user]);
+  }, [user, refreshNotifications]);
 
   const value = useMemo(
     () => ({
@@ -87,7 +87,7 @@ export function NotificationProvider({ children }) {
       markNotificationRead,
       markAllNotificationsRead
     }),
-    [loading, notifications, unreadCount]
+    [loading, notifications, unreadCount, refreshNotifications, markNotificationRead, markAllNotificationsRead]
   );
 
   return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>;
