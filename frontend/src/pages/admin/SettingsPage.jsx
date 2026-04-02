@@ -1044,306 +1044,308 @@ function DashboardPage() {
                 description="Everything here updates the live store after saving, including checkout fees and accepted payment methods."
               >
                 <div className="grid gap-4 xl:grid-cols-2 xl:items-start">
-                  <div className="self-start rounded-[28px] border border-white/10 bg-white/5 p-4 xl:h-fit">
-                    <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
-                      <MapPinned size={16} className="text-cyan-300" />
-                      Shipping settings
-                    </div>
-                    <div className="mt-4 grid gap-3">
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <button
-                          type="button"
-                          onClick={() => updateFormField("shippingMode", "fixed")}
-                          className={`rounded-[20px] border px-3 py-3 text-left transition ${
-                            settingsForm.shippingMode === "fixed"
-                              ? "border-brand-400/30 bg-brand-500/10 text-white"
-                              : "border-white/10 bg-slate-950/20 text-slate-300"
-                          }`}
-                        >
-                          <p className="text-sm font-semibold">Fixed fee</p>
-                          <p className="mt-1 text-xs text-slate-400">One fee for all areas.</p>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => updateFormField("shippingMode", "location")}
-                          className={`rounded-[20px] border px-3 py-3 text-left transition ${
-                            settingsForm.shippingMode === "location"
-                              ? "border-brand-400/30 bg-brand-500/10 text-white"
-                              : "border-white/10 bg-slate-950/20 text-slate-300"
-                          }`}
-                        >
-                          <p className="text-sm font-semibold">Location based</p>
-                          <p className="mt-1 text-xs text-slate-400">Different fees by area.</p>
-                        </button>
+                  <div className="space-y-4">
+                    <div className="self-start rounded-[28px] border border-white/10 bg-white/5 p-4 xl:h-fit">
+                      <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
+                        <MapPinned size={16} className="text-cyan-300" />
+                        Shipping settings
                       </div>
-
-                      <InputField label="Fallback shipping fee">
-                        <input
-                          type="number"
-                          value={settingsForm.fixedFee}
-                          onChange={(event) => updateFormField("fixedFee", Number(event.target.value || 0))}
-                          className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
-                        />
-                      </InputField>
-
-                      {settingsForm.shippingMode === "location" && (
-                        <div className="space-y-3">
-                          {settingsForm.locationFees.map((item, index) => (
-                            <div key={`${item.label}-${index}`} className="grid gap-3 rounded-[24px] border border-white/10 bg-slate-950/25 p-4 md:grid-cols-[1fr_1.1fr_140px]">
-                              <input value={item.label} onChange={(event) => updateLocationFee(index, "label", event.target.value)} placeholder="Metro Manila" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                              <input value={item.keyword} onChange={(event) => updateLocationFee(index, "keyword", event.target.value)} placeholder="manila, makati, qc" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                              <div className="flex gap-3">
-                                <input type="number" value={item.fee} onChange={(event) => updateLocationFee(index, "fee", event.target.value)} placeholder="80" className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                                <button type="button" onClick={() => removeLocationFee(index)} className="rounded-2xl border border-white/10 px-4 py-3 text-sm text-slate-200 transition hover:bg-white/5">
-                                  Remove
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                          <button type="button" onClick={addLocationFee} className="rounded-2xl border border-dashed border-white/15 px-4 py-3 text-sm text-slate-300">
-                            Add location fee
+                      <div className="mt-4 grid gap-3">
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <button
+                            type="button"
+                            onClick={() => updateFormField("shippingMode", "fixed")}
+                            className={`rounded-[20px] border px-3 py-3 text-left transition ${
+                              settingsForm.shippingMode === "fixed"
+                                ? "border-brand-400/30 bg-brand-500/10 text-white"
+                                : "border-white/10 bg-slate-950/20 text-slate-300"
+                            }`}
+                          >
+                            <p className="text-sm font-semibold">Fixed fee</p>
+                            <p className="mt-1 text-xs text-slate-400">One fee for all areas.</p>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updateFormField("shippingMode", "location")}
+                            className={`rounded-[20px] border px-3 py-3 text-left transition ${
+                              settingsForm.shippingMode === "location"
+                                ? "border-brand-400/30 bg-brand-500/10 text-white"
+                                : "border-white/10 bg-slate-950/20 text-slate-300"
+                            }`}
+                          >
+                            <p className="text-sm font-semibold">Location based</p>
+                            <p className="mt-1 text-xs text-slate-400">Different fees by area.</p>
                           </button>
                         </div>
-                      )}
-                    </div>
-                </div>
 
-                  <div className="self-start rounded-[28px] border border-white/10 bg-white/5 p-4 xl:h-fit">
-                    <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
-                      <CreditCard size={16} className="text-emerald-300" />
-                      Payment settings
-                    </div>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      {[
-                        ["gcash", "GCash"],
-                        ["bankTransfer", "Bank transfer"],
-                        ["cod", "Cash on delivery"],
-                        ["stripe", "Stripe"],
-                        ["paypal", "PayPal"],
-                        ["maya", "Maya"]
-                      ].map(([key, label]) => (
-                        <label key={key} className="flex items-center justify-between rounded-[20px] border border-white/10 bg-slate-950/25 px-3 py-3 text-sm text-slate-200">
-                          <span>{label}</span>
-                          <input type="checkbox" checked={settingsForm.paymentOptions[key]} onChange={(event) => updateNestedField("paymentOptions", key, event.target.checked)} />
-                        </label>
-                      ))}
-                    </div>
+                        <InputField label="Fallback shipping fee">
+                          <input
+                            type="number"
+                            value={settingsForm.fixedFee}
+                            onChange={(event) => updateFormField("fixedFee", Number(event.target.value || 0))}
+                            className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                          />
+                        </InputField>
 
-                    <div className="mt-4 grid gap-3 md:grid-cols-2">
-                      <InputField label="GCash account name">
-                        <input value={settingsForm.gcashAccountName} onChange={(event) => updateFormField("gcashAccountName", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                      </InputField>
-                      <InputField label="GCash number">
-                        <input value={settingsForm.gcashNumber} onChange={(event) => updateFormField("gcashNumber", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                      </InputField>
-                      <InputField label="Bank name">
-                        <input value={settingsForm.bankName} onChange={(event) => updateFormField("bankName", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                      </InputField>
-                      <InputField label="Bank account name">
-                        <input value={settingsForm.bankAccountName} onChange={(event) => updateFormField("bankAccountName", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                      </InputField>
-                      <InputField label="Bank account number">
-                        <input value={settingsForm.bankAccountNumber} onChange={(event) => updateFormField("bankAccountNumber", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                      </InputField>
-                      <InputField label="Auto-cancel unpaid orders (hours)">
-                        <input type="number" value={settingsForm.autoCancelUnpaidHours} onChange={(event) => updateFormField("autoCancelUnpaidHours", Number(event.target.value || 0))} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                      </InputField>
-                      <InputField label="Refund request window (days)">
-                        <input type="number" min="0" value={settingsForm.refundWindowDays} onChange={(event) => updateFormField("refundWindowDays", Number(event.target.value || 0))} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                      </InputField>
+                        {settingsForm.shippingMode === "location" && (
+                          <div className="space-y-3">
+                            {settingsForm.locationFees.map((item, index) => (
+                              <div key={`${item.label}-${index}`} className="grid gap-3 rounded-[24px] border border-white/10 bg-slate-950/25 p-4 md:grid-cols-[1fr_1.1fr_140px]">
+                                <input value={item.label} onChange={(event) => updateLocationFee(index, "label", event.target.value)} placeholder="Metro Manila" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                                <input value={item.keyword} onChange={(event) => updateLocationFee(index, "keyword", event.target.value)} placeholder="manila, makati, qc" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                                <div className="flex gap-3">
+                                  <input type="number" value={item.fee} onChange={(event) => updateLocationFee(index, "fee", event.target.value)} placeholder="80" className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                                  <button type="button" onClick={() => removeLocationFee(index)} className="rounded-2xl border border-white/10 px-4 py-3 text-sm text-slate-200 transition hover:bg-white/5">
+                                    Remove
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                            <button type="button" onClick={addLocationFee} className="rounded-2xl border border-dashed border-white/15 px-4 py-3 text-sm text-slate-300">
+                              Add location fee
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="mt-4 rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
-                      <p className="text-sm font-medium text-white">Refund policy</p>
-                      <p className="mt-2 text-sm text-slate-400">
-                        Choose which order progress points allow customers to request a refund.
-                      </p>
+                    <div className="self-start rounded-[28px] border border-white/10 bg-white/5 p-4 xl:h-fit">
+                      <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
+                        <Gift size={16} className="text-orange-300" />
+                        Promotions
+                      </div>
+                      <div className="mt-4 space-y-4">
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <label className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4 text-sm text-slate-200">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="font-medium">Bundle discount</span>
+                              <input type="checkbox" checked={settingsForm.bundleEnabled} onChange={(event) => updateFormField("bundleEnabled", event.target.checked)} />
+                            </div>
+                            <div className="mt-4 grid gap-3">
+                              <input value={settingsForm.bundleLabel} onChange={(event) => updateFormField("bundleLabel", event.target.value)} placeholder="Bundle deal" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                <input type="number" value={settingsForm.bundleMinQuantity} onChange={(event) => updateFormField("bundleMinQuantity", Number(event.target.value || 0))} placeholder="Min quantity" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                                <input type="number" value={settingsForm.bundleDiscountPercent} onChange={(event) => updateFormField("bundleDiscountPercent", Number(event.target.value || 0))} placeholder="Discount %" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                              </div>
+                            </div>
+                          </label>
+
+                          <label className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4 text-sm text-slate-200">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="font-medium">Free gift</span>
+                              <input type="checkbox" checked={settingsForm.freeGiftEnabled} onChange={(event) => updateFormField("freeGiftEnabled", event.target.checked)} />
+                            </div>
+                            <div className="mt-4 grid gap-3">
+                              <input type="number" value={settingsForm.freeGiftBuyQuantity} onChange={(event) => updateFormField("freeGiftBuyQuantity", Number(event.target.value || 0))} placeholder="Buy quantity" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                              <input value={settingsForm.freeGiftProductId} onChange={(event) => updateFormField("freeGiftProductId", event.target.value)} placeholder="Gift product ID" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                            </div>
+                          </label>
+                        </div>
+
+                        <div className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="font-medium text-white">Limited time offer</span>
+                            <input type="checkbox" checked={settingsForm.limitedOfferEnabled} onChange={(event) => updateFormField("limitedOfferEnabled", event.target.checked)} />
+                          </div>
+                          <div className="mt-4 grid gap-3 md:grid-cols-3">
+                            <input value={settingsForm.limitedOfferTitle} onChange={(event) => updateFormField("limitedOfferTitle", event.target.value)} placeholder="Limited time offer" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                            <input type="datetime-local" value={settingsForm.limitedOfferEndsAt} onChange={(event) => updateFormField("limitedOfferEndsAt", event.target.value)} className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                            <input type="number" value={settingsForm.limitedOfferDiscountPercent} onChange={(event) => updateFormField("limitedOfferDiscountPercent", Number(event.target.value || 0))} placeholder="Discount %" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="self-start rounded-[28px] border border-white/10 bg-white/5 p-4 xl:h-fit">
+                      <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
+                        <CreditCard size={16} className="text-emerald-300" />
+                        Payment settings
+                      </div>
                       <div className="mt-4 grid gap-3 sm:grid-cols-2">
                         {[
-                          ["paid", "Paid orders"],
-                          ["delivered", "Delivered orders"]
-                        ].map(([status, label]) => (
-                          <label key={status} className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                          ["gcash", "GCash"],
+                          ["bankTransfer", "Bank transfer"],
+                          ["cod", "Cash on delivery"],
+                          ["stripe", "Stripe"],
+                          ["paypal", "PayPal"],
+                          ["maya", "Maya"]
+                        ].map(([key, label]) => (
+                          <label key={key} className="flex items-center justify-between rounded-[20px] border border-white/10 bg-slate-950/25 px-3 py-3 text-sm text-slate-200">
                             <span>{label}</span>
-                            <input
-                              type="checkbox"
-                              checked={settingsForm.refundEligibleStatuses.includes(status)}
-                              onChange={(event) => updateRefundEligibleStatus(status, event.target.checked)}
-                            />
+                            <input type="checkbox" checked={settingsForm.paymentOptions[key]} onChange={(event) => updateNestedField("paymentOptions", key, event.target.checked)} />
                           </label>
                         ))}
                       </div>
-                    </div>
 
-                    <div className="mt-4 rounded-[24px] border border-cyan-400/20 bg-cyan-500/10 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-medium text-white">Installment / Paluwagan</p>
-                          <p className="mt-1 text-sm text-cyan-100/80">Configure the no-refund installment plan separately from regular orders.</p>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={settingsForm.installmentEnabled}
-                          onChange={(event) => updateFormField("installmentEnabled", event.target.checked)}
-                        />
-                      </div>
                       <div className="mt-4 grid gap-3 md:grid-cols-2">
-                        <select
-                          value={settingsForm.installmentFrequency}
-                          onChange={(event) => updateFormField("installmentFrequency", event.target.value)}
-                          className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
-                        >
-                          <option value="weekly">Weekly</option>
-                          <option value="monthly">Monthly</option>
-                        </select>
-                        <input
-                          type="number"
-                          min="1"
-                          value={settingsForm.installmentPaymentCount}
-                          onChange={(event) => updateFormField("installmentPaymentCount", Number(event.target.value || 1))}
-                          placeholder="Number of payments"
-                          className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
-                        />
-                        <input
-                          type="number"
-                          min="0"
-                          value={settingsForm.installmentDownPaymentPercent}
-                          onChange={(event) => updateFormField("installmentDownPaymentPercent", Number(event.target.value || 0))}
-                          placeholder="Down payment %"
-                          className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
-                        />
-                        <input
-                          type="number"
-                          min="0"
-                          value={settingsForm.installmentServiceFeePercent}
-                          onChange={(event) => updateFormField("installmentServiceFeePercent", Number(event.target.value || 0))}
-                          placeholder="Service fee %"
-                          className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
-                        />
-                        <input
-                          type="number"
-                          min="0"
-                          value={settingsForm.installmentGracePeriodDays}
-                          onChange={(event) => updateFormField("installmentGracePeriodDays", Number(event.target.value || 0))}
-                          placeholder="Grace period days"
-                          className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
-                        />
-                        <select
-                          value={settingsForm.installmentReleaseCondition}
-                          onChange={(event) => updateFormField("installmentReleaseCondition", event.target.value)}
-                          className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
-                        >
-                          <option value="after_full_payment">Ship after full payment</option>
-                          <option value="admin_approved_early_release">Admin-approved early release</option>
-                        </select>
-                      </div>
-                      <div className="mt-4 rounded-[20px] border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
-                        Down payment and all approved installment payments remain non-refundable under the installment agreement.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] xl:items-start">
-                  <div className="self-start rounded-[28px] border border-white/10 bg-white/5 p-4 xl:h-fit">
-                    <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
-                      <Gift size={16} className="text-orange-300" />
-                      Promotions
-                    </div>
-                    <div className="mt-4 space-y-4">
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <label className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4 text-sm text-slate-200">
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="font-medium">Bundle discount</span>
-                            <input type="checkbox" checked={settingsForm.bundleEnabled} onChange={(event) => updateFormField("bundleEnabled", event.target.checked)} />
-                          </div>
-                          <div className="mt-4 grid gap-3">
-                            <input value={settingsForm.bundleLabel} onChange={(event) => updateFormField("bundleLabel", event.target.value)} placeholder="Bundle deal" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                            <div className="grid gap-3 sm:grid-cols-2">
-                              <input type="number" value={settingsForm.bundleMinQuantity} onChange={(event) => updateFormField("bundleMinQuantity", Number(event.target.value || 0))} placeholder="Min quantity" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                              <input type="number" value={settingsForm.bundleDiscountPercent} onChange={(event) => updateFormField("bundleDiscountPercent", Number(event.target.value || 0))} placeholder="Discount %" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                            </div>
-                          </div>
-                        </label>
-
-                        <label className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4 text-sm text-slate-200">
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="font-medium">Free gift</span>
-                            <input type="checkbox" checked={settingsForm.freeGiftEnabled} onChange={(event) => updateFormField("freeGiftEnabled", event.target.checked)} />
-                          </div>
-                          <div className="mt-4 grid gap-3">
-                            <input type="number" value={settingsForm.freeGiftBuyQuantity} onChange={(event) => updateFormField("freeGiftBuyQuantity", Number(event.target.value || 0))} placeholder="Buy quantity" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                            <input value={settingsForm.freeGiftProductId} onChange={(event) => updateFormField("freeGiftProductId", event.target.value)} placeholder="Gift product ID" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                          </div>
-                        </label>
+                        <InputField label="GCash account name">
+                          <input value={settingsForm.gcashAccountName} onChange={(event) => updateFormField("gcashAccountName", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                        </InputField>
+                        <InputField label="GCash number">
+                          <input value={settingsForm.gcashNumber} onChange={(event) => updateFormField("gcashNumber", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                        </InputField>
+                        <InputField label="Bank name">
+                          <input value={settingsForm.bankName} onChange={(event) => updateFormField("bankName", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                        </InputField>
+                        <InputField label="Bank account name">
+                          <input value={settingsForm.bankAccountName} onChange={(event) => updateFormField("bankAccountName", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                        </InputField>
+                        <InputField label="Bank account number">
+                          <input value={settingsForm.bankAccountNumber} onChange={(event) => updateFormField("bankAccountNumber", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                        </InputField>
+                        <InputField label="Auto-cancel unpaid orders (hours)">
+                          <input type="number" value={settingsForm.autoCancelUnpaidHours} onChange={(event) => updateFormField("autoCancelUnpaidHours", Number(event.target.value || 0))} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                        </InputField>
+                        <InputField label="Refund request window (days)">
+                          <input type="number" min="0" value={settingsForm.refundWindowDays} onChange={(event) => updateFormField("refundWindowDays", Number(event.target.value || 0))} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                        </InputField>
                       </div>
 
-                      <div className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="font-medium text-white">Limited time offer</span>
-                          <input type="checkbox" checked={settingsForm.limitedOfferEnabled} onChange={(event) => updateFormField("limitedOfferEnabled", event.target.checked)} />
-                        </div>
-                        <div className="mt-4 grid gap-3 md:grid-cols-3">
-                          <input value={settingsForm.limitedOfferTitle} onChange={(event) => updateFormField("limitedOfferTitle", event.target.value)} placeholder="Limited time offer" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                          <input type="datetime-local" value={settingsForm.limitedOfferEndsAt} onChange={(event) => updateFormField("limitedOfferEndsAt", event.target.value)} className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                          <input type="number" value={settingsForm.limitedOfferDiscountPercent} onChange={(event) => updateFormField("limitedOfferDiscountPercent", Number(event.target.value || 0))} placeholder="Discount %" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="self-start rounded-[28px] border border-white/10 bg-white/5 p-4 xl:h-fit">
-                    <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
-                      <AlertTriangle size={16} className="text-orange-300" />
-                      Inventory watch
-                    </div>
-                    <div className="mt-5 space-y-4">
-                      <div className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
-                        <p className="font-medium text-white">Low-stock threshold</p>
-                        <p className="mt-1 text-sm text-slate-400">Products at or below this level get highlighted in insights.</p>
-                        <input type="number" value={settingsForm.lowStockThreshold} onChange={(event) => updateFormField("lowStockThreshold", Number(event.target.value || 0))} className="mt-4 w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                      </div>
-
-                      <div className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
-                        <div className="flex items-center justify-between gap-3 text-sm text-slate-200">
-                          <span>Require GCash proof</span>
-                          <input type="checkbox" checked={settingsForm.proofOfPaymentRequired.gcash} onChange={(event) => updateNestedField("proofOfPaymentRequired", "gcash", event.target.checked)} />
-                        </div>
-                        <div className="mt-4 flex items-center justify-between gap-3 text-sm text-slate-200">
-                          <span>Require bank transfer proof</span>
-                          <input type="checkbox" checked={settingsForm.proofOfPaymentRequired.bankTransfer} onChange={(event) => updateNestedField("proofOfPaymentRequired", "bankTransfer", event.target.checked)} />
+                      <div className="mt-4 rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
+                        <p className="text-sm font-medium text-white">Refund policy</p>
+                        <p className="mt-2 text-sm text-slate-400">
+                          Choose which order progress points allow customers to request a refund.
+                        </p>
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                          {[
+                            ["paid", "Paid orders"],
+                            ["delivered", "Delivered orders"]
+                          ].map(([status, label]) => (
+                            <label key={status} className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                              <span>{label}</span>
+                              <input
+                                type="checkbox"
+                                checked={settingsForm.refundEligibleStatuses.includes(status)}
+                                onChange={(event) => updateRefundEligibleStatus(status, event.target.checked)}
+                              />
+                            </label>
+                          ))}
                         </div>
                       </div>
 
-                      <div className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
+                      <div className="mt-4 rounded-[24px] border border-cyan-400/20 bg-cyan-500/10 p-4">
                         <div className="flex items-center justify-between gap-3">
                           <div>
-                            <p className="font-medium text-white">Promo codes</p>
-                            <p className="mt-1 text-sm text-slate-400">{promoCodeCount} configured right now.</p>
+                            <p className="text-sm font-medium text-white">Installment / Paluwagan</p>
+                            <p className="mt-1 text-sm text-cyan-100/80">Configure the no-refund installment plan separately from regular orders.</p>
                           </div>
-                          <button type="button" onClick={addPromoCode} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200">
-                            Add code
-                          </button>
+                          <input
+                            type="checkbox"
+                            checked={settingsForm.installmentEnabled}
+                            onChange={(event) => updateFormField("installmentEnabled", event.target.checked)}
+                          />
                         </div>
-                        <div className="mt-4 space-y-3">
-                          {settingsForm.promoCodes.map((promo, index) => (
-                            <div key={`${promo.code}-${index}`} className="grid gap-3 rounded-[24px] border border-white/10 bg-slate-950/30 p-4 md:grid-cols-[1fr_130px_130px_auto]">
-                              <input value={promo.code} onChange={(event) => updatePromoCode(index, "code", event.target.value)} placeholder="SAVE10" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                              <select value={promo.type} onChange={(event) => updatePromoCode(index, "type", event.target.value)} className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none">
-                                <option value="percent">Percent</option>
-                                <option value="fixed">Fixed PHP</option>
-                              </select>
-                              <input type="number" value={promo.value} onChange={(event) => updatePromoCode(index, "value", event.target.value)} placeholder="10" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                              <div className="flex gap-2">
-                                <label className="flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
-                                  <input type="checkbox" checked={promo.active !== false} onChange={(event) => updatePromoCode(index, "active", event.target.checked)} />
-                                </label>
-                                <button type="button" onClick={() => removePromoCode(index)} className="rounded-2xl border border-white/10 px-4 py-3 text-sm text-slate-200 transition hover:bg-white/5">
-                                  Remove
-                                </button>
-                              </div>
+                        <div className="mt-4 grid gap-3 md:grid-cols-2">
+                          <select
+                            value={settingsForm.installmentFrequency}
+                            onChange={(event) => updateFormField("installmentFrequency", event.target.value)}
+                            className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                          >
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                          </select>
+                          <input
+                            type="number"
+                            min="1"
+                            value={settingsForm.installmentPaymentCount}
+                            onChange={(event) => updateFormField("installmentPaymentCount", Number(event.target.value || 1))}
+                            placeholder="Number of payments"
+                            className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            value={settingsForm.installmentDownPaymentPercent}
+                            onChange={(event) => updateFormField("installmentDownPaymentPercent", Number(event.target.value || 0))}
+                            placeholder="Down payment %"
+                            className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            value={settingsForm.installmentServiceFeePercent}
+                            onChange={(event) => updateFormField("installmentServiceFeePercent", Number(event.target.value || 0))}
+                            placeholder="Service fee %"
+                            className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            value={settingsForm.installmentGracePeriodDays}
+                            onChange={(event) => updateFormField("installmentGracePeriodDays", Number(event.target.value || 0))}
+                            placeholder="Grace period days"
+                            className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                          />
+                          <select
+                            value={settingsForm.installmentReleaseCondition}
+                            onChange={(event) => updateFormField("installmentReleaseCondition", event.target.value)}
+                            className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                          >
+                            <option value="after_full_payment">Ship after full payment</option>
+                            <option value="admin_approved_early_release">Admin-approved early release</option>
+                          </select>
+                        </div>
+                        <div className="mt-4 rounded-[20px] border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+                          Down payment and all approved installment payments remain non-refundable under the installment agreement.
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="self-start rounded-[28px] border border-white/10 bg-white/5 p-4 xl:h-fit">
+                      <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
+                        <AlertTriangle size={16} className="text-orange-300" />
+                        Inventory watch
+                      </div>
+                      <div className="mt-5 space-y-4">
+                        <div className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
+                          <p className="font-medium text-white">Low-stock threshold</p>
+                          <p className="mt-1 text-sm text-slate-400">Products at or below this level get highlighted in insights.</p>
+                          <input type="number" value={settingsForm.lowStockThreshold} onChange={(event) => updateFormField("lowStockThreshold", Number(event.target.value || 0))} className="mt-4 w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                        </div>
+
+                        <div className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
+                          <div className="flex items-center justify-between gap-3 text-sm text-slate-200">
+                            <span>Require GCash proof</span>
+                            <input type="checkbox" checked={settingsForm.proofOfPaymentRequired.gcash} onChange={(event) => updateNestedField("proofOfPaymentRequired", "gcash", event.target.checked)} />
+                          </div>
+                          <div className="mt-4 flex items-center justify-between gap-3 text-sm text-slate-200">
+                            <span>Require bank transfer proof</span>
+                            <input type="checkbox" checked={settingsForm.proofOfPaymentRequired.bankTransfer} onChange={(event) => updateNestedField("proofOfPaymentRequired", "bankTransfer", event.target.checked)} />
+                          </div>
+                        </div>
+
+                        <div className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="font-medium text-white">Promo codes</p>
+                              <p className="mt-1 text-sm text-slate-400">{promoCodeCount} configured right now.</p>
                             </div>
-                          ))}
+                            <button type="button" onClick={addPromoCode} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200">
+                              Add code
+                            </button>
+                          </div>
+                          <div className="mt-4 space-y-3">
+                            {settingsForm.promoCodes.map((promo, index) => (
+                              <div key={`${promo.code}-${index}`} className="grid gap-3 rounded-[24px] border border-white/10 bg-slate-950/30 p-4 md:grid-cols-[1fr_130px_130px_auto]">
+                                <input value={promo.code} onChange={(event) => updatePromoCode(index, "code", event.target.value)} placeholder="SAVE10" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                                <select value={promo.type} onChange={(event) => updatePromoCode(index, "type", event.target.value)} className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none">
+                                  <option value="percent">Percent</option>
+                                  <option value="fixed">Fixed PHP</option>
+                                </select>
+                                <input type="number" value={promo.value} onChange={(event) => updatePromoCode(index, "value", event.target.value)} placeholder="10" className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                                <div className="flex gap-2">
+                                  <label className="flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                                    <input type="checkbox" checked={promo.active !== false} onChange={(event) => updatePromoCode(index, "active", event.target.checked)} />
+                                  </label>
+                                  <button type="button" onClick={() => removePromoCode(index)} className="rounded-2xl border border-white/10 px-4 py-3 text-sm text-slate-200 transition hover:bg-white/5">
+                                    Remove
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
