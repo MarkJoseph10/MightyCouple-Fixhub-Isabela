@@ -1155,6 +1155,31 @@ function DashboardPage() {
                         </div>
                       </div>
                     </div>
+
+                    <div className="self-start rounded-[28px] border border-white/10 bg-white/5 p-4 xl:h-fit">
+                      <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
+                        <AlertTriangle size={16} className="text-orange-300" />
+                        Inventory watch
+                      </div>
+                      <div className="mt-5 space-y-4">
+                        <div className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
+                          <p className="font-medium text-white">Low-stock threshold</p>
+                          <p className="mt-1 text-sm text-slate-400">Products at or below this level get highlighted in insights.</p>
+                          <input type="number" value={settingsForm.lowStockThreshold} onChange={(event) => updateFormField("lowStockThreshold", Number(event.target.value || 0))} className="mt-4 w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                        </div>
+
+                        <div className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
+                          <div className="flex items-center justify-between gap-3 text-sm text-slate-200">
+                            <span>Require GCash proof</span>
+                            <input type="checkbox" checked={settingsForm.proofOfPaymentRequired.gcash} onChange={(event) => updateNestedField("proofOfPaymentRequired", "gcash", event.target.checked)} />
+                          </div>
+                          <div className="mt-4 flex items-center justify-between gap-3 text-sm text-slate-200">
+                            <span>Require bank transfer proof</span>
+                            <input type="checkbox" checked={settingsForm.proofOfPaymentRequired.bankTransfer} onChange={(event) => updateNestedField("proofOfPaymentRequired", "bankTransfer", event.target.checked)} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-4">
@@ -1293,30 +1318,7 @@ function DashboardPage() {
                       </div>
                     </div>
 
-                    <div className="self-start rounded-[28px] border border-white/10 bg-white/5 p-4 xl:h-fit">
-                      <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
-                        <AlertTriangle size={16} className="text-orange-300" />
-                        Inventory watch
-                      </div>
-                      <div className="mt-5 space-y-4">
-                        <div className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
-                          <p className="font-medium text-white">Low-stock threshold</p>
-                          <p className="mt-1 text-sm text-slate-400">Products at or below this level get highlighted in insights.</p>
-                          <input type="number" value={settingsForm.lowStockThreshold} onChange={(event) => updateFormField("lowStockThreshold", Number(event.target.value || 0))} className="mt-4 w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                        </div>
-
-                        <div className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
-                          <div className="flex items-center justify-between gap-3 text-sm text-slate-200">
-                            <span>Require GCash proof</span>
-                            <input type="checkbox" checked={settingsForm.proofOfPaymentRequired.gcash} onChange={(event) => updateNestedField("proofOfPaymentRequired", "gcash", event.target.checked)} />
-                          </div>
-                          <div className="mt-4 flex items-center justify-between gap-3 text-sm text-slate-200">
-                            <span>Require bank transfer proof</span>
-                            <input type="checkbox" checked={settingsForm.proofOfPaymentRequired.bankTransfer} onChange={(event) => updateNestedField("proofOfPaymentRequired", "bankTransfer", event.target.checked)} />
-                          </div>
-                        </div>
-
-                        <div className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
+                    <div className="self-start rounded-[28px] border border-white/10 bg-slate-950/25 p-4">
                           <div className="flex items-center justify-between gap-3">
                             <div>
                               <p className="font-medium text-white">Promo codes</p>
@@ -1346,8 +1348,6 @@ function DashboardPage() {
                               </div>
                             ))}
                           </div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
