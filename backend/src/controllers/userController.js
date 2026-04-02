@@ -4,6 +4,8 @@ import { Order } from "../models/Order.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ensureSellerDisciplineShape, getNextSellerDisciplineStep, normalizeSellerSuspensionState } from "../utils/sellerDiscipline.js";
+import { createNotifications } from "../services/notificationService.js";
+import { getOrCreateStoreSettings } from "../services/storeSettingsService.js";
 
 function generatePayoutReference(prefix = "PO") {
   const now = new Date();
@@ -171,6 +173,27 @@ export const applyAsSeller = asyncHandler(async (req, res) => {
     adminNote: ""
   };
   await user.save();
+  const storeSettings = await getOrCreateStoreSettings();
+  await createNotifications({
+    settings: storeSettings,
+    type: "seller_application_submitted",
+    title: "Seller application submitted",
+    message: `${displayName || user.name} submitted a seller application.`,
+    link: "/admin/customers",
+    data: {
+      userId: user._id.toString(),
+      businessName,
+      displayName
+    },
+    recipients: [
+      {
+        role: "admin",
+        title: "Seller application submitted",
+        message: `${displayName || user.name} submitted a seller application.`,
+        link: "/admin/customers"
+      }
+    ]
+  });
 
   res.status(201).json({
     message: "Seller application submitted successfully.",
@@ -316,6 +339,53 @@ export const reviewSellerApplication = asyncHandler(async (req, res) => {
   }
 
   await user.save();
+  const storeSettings = await getOrCreateStoreSettings();
+  await createNotifications({
+    settings: storeSettings,
+    type:
+      decision === "approved"
+        ? "seller_application_approved"
+        : decision === "rejected"
+          ? "seller_application_rejected"
+          : "seller_suspended",
+    title:
+      decision === "approved"
+        ? "Seller application approved"
+        : decision === "rejected"
+          ? "Seller application rejected"
+          : "Seller suspended",
+    message:
+      decision === "approved"
+        ? "Your seller application was approved."
+        : decision === "rejected"
+          ? "Your seller application was rejected."
+          : `Your seller access was ${getNextSellerDisciplineStep(ensureSellerDisciplineShape(user).offenseCount).label.toLowerCase()}.`,
+    link: "/seller",
+    data: {
+      userId: user._id.toString(),
+      decision,
+      adminNote,
+      rejectionReason
+    },
+    recipients: [
+      {
+        userId: user._id,
+        title:
+          decision === "approved"
+            ? "Seller application approved"
+            : decision === "rejected"
+              ? "Seller application rejected"
+              : "Seller suspended",
+        message:
+          decision === "approved"
+            ? "Your seller application was approved."
+            : decision === "rejected"
+              ? "Your seller application was rejected."
+              : `Your seller access was ${getNextSellerDisciplineStep(ensureSellerDisciplineShape(user).offenseCount).label.toLowerCase()}.`,
+        link: "/seller"
+      }
+    ]
+  });
   res.json({
     message: `Seller application ${decision}.`,
     user
@@ -395,6 +465,27 @@ export const submitSellerAppeal = asyncHandler(async (req, res) => {
   };
 
   await user.save();
+  const storeSettings = await getOrCreateStoreSettings();
+  await createNotifications({
+    settings: storeSettings,
+    settingKey: "appealSubmitted",
+    type: "seller_appeal_submitted",
+    title: "Seller appeal submitted",
+    message: `${user.sellerProfile?.displayName || user.name} submitted a seller appeal.`,
+    link: "/admin/customers",
+    data: {
+      userId: user._id.toString(),
+      appealMessage: message
+    },
+    recipients: [
+      {
+        role: "admin",
+        title: "Seller appeal submitted",
+        message: `${user.sellerProfile?.displayName || user.name} submitted a seller appeal.`,
+        link: "/admin/customers"
+      }
+    ]
+  });
 
   res.status(201).json({
     message: "Seller appeal submitted successfully.",
@@ -453,6 +544,34 @@ export const reviewSellerAppeal = asyncHandler(async (req, res) => {
 
   user.sellerProfile = nextSellerProfile;
   await user.save();
+  const storeSettings = await getOrCreateStoreSettings();
+  await createNotifications({
+    settings: storeSettings,
+    settingKey: "appealResolved",
+    type: decision === "approved" ? "seller_appeal_approved" : "seller_appeal_rejected",
+    title: decision === "approved" ? "Seller appeal approved" : "Seller appeal rejected",
+    message:
+      decision === "approved"
+        ? "Your seller appeal was approved and access has been restored."
+        : "Your seller appeal was rejected and the suspension remains active.",
+    link: "/seller/appeal",
+    data: {
+      userId: user._id.toString(),
+      decision,
+      adminNote
+    },
+    recipients: [
+      {
+        userId: user._id,
+        title: decision === "approved" ? "Seller appeal approved" : "Seller appeal rejected",
+        message:
+          decision === "approved"
+            ? "Your seller appeal was approved and access has been restored."
+            : "Your seller appeal was rejected and the suspension remains active.",
+        link: "/seller/appeal"
+      }
+    ]
+  });
 
   res.json({
     message: `Seller appeal ${decision}.`,
@@ -570,13 +689,35 @@ export const requestSellerPayout = asyncHandler(async (req, res) => {
     { new: true, runValidators: true }
   );
 
-  if (!updatedUser) {
-    throw new ApiError(409, "Your payout balance was updated elsewhere. Refresh and try again.");
-  }
+    if (!updatedUser) {
+      throw new ApiError(409, "Your payout balance was updated elsewhere. Refresh and try again.");
+    }
 
-  res.status(201).json({
-    message: "Payout request submitted successfully.",
-    payoutRequests: updatedUser.sellerProfile?.payoutRequests || []
+    const storeSettings = await getOrCreateStoreSettings();
+    await createNotifications({
+      settings: storeSettings,
+      type: "seller_payout_requested",
+      title: "Seller payout requested",
+      message: `${updatedUser.name || "A seller"} submitted a payout request.`,
+      link: "/admin/customers",
+      data: {
+        userId: updatedUser._id.toString(),
+        requestedAmount,
+        requestCode: nextPayoutRequests[nextPayoutRequests.length - 1]?.requestCode || ""
+      },
+      recipients: [
+        {
+          role: "admin",
+          title: "Seller payout requested",
+          message: `${updatedUser.name || "A seller"} submitted a payout request.`,
+          link: "/admin/customers"
+        }
+      ]
+    });
+
+    res.status(201).json({
+      message: "Payout request submitted successfully.",
+      payoutRequests: updatedUser.sellerProfile?.payoutRequests || []
   });
 });
 
@@ -629,6 +770,47 @@ export const reviewSellerPayout = asyncHandler(async (req, res) => {
   };
 
   await user.save();
+  const storeSettings = await getOrCreateStoreSettings();
+  await createNotifications({
+    settings: storeSettings,
+    type: `seller_payout_${nextStatus}`,
+    title:
+      nextStatus === "approved"
+        ? "Seller payout approved"
+        : nextStatus === "paid"
+          ? "Seller payout paid"
+          : "Seller payout rejected",
+    message:
+      nextStatus === "approved"
+        ? "Your payout request was approved."
+        : nextStatus === "paid"
+          ? "Your payout has been marked as paid."
+          : "Your payout request was rejected.",
+    link: "/seller",
+    data: {
+      userId: user._id.toString(),
+      requestId,
+      nextStatus
+    },
+    recipients: [
+      {
+        userId: user._id,
+        title:
+          nextStatus === "approved"
+            ? "Seller payout approved"
+            : nextStatus === "paid"
+              ? "Seller payout paid"
+              : "Seller payout rejected",
+        message:
+          nextStatus === "approved"
+            ? "Your payout request was approved."
+            : nextStatus === "paid"
+              ? "Your payout has been marked as paid."
+              : "Your payout request was rejected.",
+        link: "/seller"
+      }
+    ]
+  });
 
   res.json({
     message: `Payout request ${nextStatus}.`,

@@ -5,6 +5,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { getOrCreateStoreSettings } from "../services/storeSettingsService.js";
 import { autoCancelStalePendingOrders } from "../services/orderAutomationService.js";
+import { createNotifications } from "../services/notificationService.js";
 import { uploadBufferToCloudinary } from "./uploadController.js";
 import {
   calculateCartDiscounts,
@@ -801,6 +802,33 @@ export const createOrder = asyncHandler(async (req, res) => {
   });
 
   await updateInventoryForOrderItems(order.items);
+  await createNotifications({
+    settings: storeSettings,
+    settingKey: "orderPlaced",
+    type: "order_placed",
+    title: "Order placed",
+    message: `Order ${order.orderNumber || order._id.toString()} has been placed successfully.`,
+    link: `/orders`,
+    data: {
+      orderId: order._id.toString(),
+      orderNumber: order.orderNumber || order._id.toString(),
+      orderType
+    },
+    recipients: [
+      {
+        userId: req.user._id,
+        title: "Your order has been placed",
+        message: `We received your ${orderType} order ${order.orderNumber || order._id.toString()}.`,
+        link: `/orders`
+      },
+      {
+        role: "admin",
+        title: "New order received",
+        message: `Order ${order.orderNumber || order._id.toString()} was placed by ${req.user.email || req.user.name}.`,
+        link: "/admin/orders"
+      }
+    ]
+  });
 
   res.status(201).json({
     ...serializeOrder(order, storeSettings),
@@ -995,6 +1023,26 @@ export const submitInstallmentPayment = asyncHandler(async (req, res) => {
     .filter(Boolean)
     .join(" | ");
   await order.save();
+  await createNotifications({
+    settings: storeSettings,
+    type: "installment_payment_submitted",
+    title: "Installment payment submitted",
+    message: `Installment payment for order ${order.orderNumber || order._id.toString()} is waiting for verification.`,
+    link: `/admin/installments`,
+    data: {
+      orderId: order._id.toString(),
+      paymentId: paymentRecord._id,
+      phase
+    },
+    recipients: [
+      {
+        role: "admin",
+        title: "Installment payment submitted",
+        message: `${req.user.name || req.user.email} submitted an installment ${phase.replace("_", " ")} for order ${order.orderNumber || order._id.toString()}.`,
+        link: `/admin/installments`
+      }
+    ]
+  });
 
   res.status(201).json({
     message: "Installment payment submitted successfully",
@@ -1132,6 +1180,42 @@ export const reviewInstallmentPayment = asyncHandler(async (req, res) => {
     .filter(Boolean)
     .join(" | ");
   await order.save();
+  await createNotifications({
+    settings: storeSettings,
+    settingKey: "paymentReceived",
+    type: decision === "approved" ? "payment_approved" : "payment_rejected",
+    title: decision === "approved" ? "Installment payment approved" : "Installment payment rejected",
+    message:
+      decision === "approved"
+        ? `Your installment payment for order ${order.orderNumber || order._id.toString()} has been approved.`
+        : `Your installment payment for order ${order.orderNumber || order._id.toString()} was rejected.`,
+    link: `/installments`,
+    data: {
+      orderId: order._id.toString(),
+      paymentId: payment._id,
+      paymentStatus: decision
+    },
+    recipients: [
+      {
+        userId: order.user?._id || order.user,
+        title: decision === "approved" ? "Installment payment approved" : "Installment payment rejected",
+        message:
+          decision === "approved"
+            ? `Your installment payment for order ${order.orderNumber || order._id.toString()} has been approved.`
+            : `Your installment payment for order ${order.orderNumber || order._id.toString()} was rejected.`,
+        link: `/installments`
+      },
+      {
+        role: "admin",
+        title: decision === "approved" ? "Installment payment approved" : "Installment payment rejected",
+        message:
+          decision === "approved"
+            ? `An installment payment for order ${order.orderNumber || order._id.toString()} was approved.`
+            : `An installment payment for order ${order.orderNumber || order._id.toString()} was rejected.`,
+        link: `/admin/installments`
+      }
+    ]
+  });
 
   res.json({
     message: `Installment payment ${decision}.`,
@@ -1180,6 +1264,25 @@ export const requestRefund = asyncHandler(async (req, res) => {
     .filter(Boolean)
     .join(" | ");
   await order.save();
+  await createNotifications({
+    settings: storeSettings,
+    type: "refund_requested",
+    title: "Refund request submitted",
+    message: `A refund request was submitted for order ${order.orderNumber || order._id.toString()}.`,
+    link: `/admin/orders`,
+    data: {
+      orderId: order._id.toString(),
+      reason
+    },
+    recipients: [
+      {
+        role: "admin",
+        title: "Refund request submitted",
+        message: `A refund request was submitted for order ${order.orderNumber || order._id.toString()}.`,
+        link: `/admin/orders`
+      }
+    ]
+  });
 
   res.status(201).json({
     message: "Refund request submitted successfully",
@@ -1234,6 +1337,53 @@ export const updateRefundStatus = asyncHandler(async (req, res) => {
     .join(" | ");
 
   await order.save();
+  await createNotifications({
+    settings: storeSettings,
+    type: `refund_${nextStatus}`,
+    title:
+      nextStatus === "approved"
+        ? "Refund request approved"
+        : nextStatus === "rejected"
+          ? "Refund request rejected"
+          : nextStatus === "refunded"
+            ? "Refund completed"
+            : "Refund updated",
+    message:
+      nextStatus === "approved"
+        ? `Your refund request for order ${order.orderNumber || order._id.toString()} was approved.`
+        : nextStatus === "rejected"
+          ? `Your refund request for order ${order.orderNumber || order._id.toString()} was rejected.`
+          : nextStatus === "refunded"
+            ? `Your refund for order ${order.orderNumber || order._id.toString()} has been completed.`
+            : `Your refund request for order ${order.orderNumber || order._id.toString()} was updated.`,
+    link: `/orders`,
+    data: {
+      orderId: order._id.toString(),
+      refundStatus: nextStatus
+    },
+    recipients: [
+      {
+        userId: order.user?._id || order.user,
+        title:
+          nextStatus === "approved"
+            ? "Refund request approved"
+            : nextStatus === "rejected"
+              ? "Refund request rejected"
+              : nextStatus === "refunded"
+                ? "Refund completed"
+                : "Refund updated",
+        message:
+          nextStatus === "approved"
+            ? `Your refund request for order ${order.orderNumber || order._id.toString()} was approved.`
+            : nextStatus === "rejected"
+              ? `Your refund request for order ${order.orderNumber || order._id.toString()} was rejected.`
+              : nextStatus === "refunded"
+                ? `Your refund for order ${order.orderNumber || order._id.toString()} has been completed.`
+                : `Your refund request for order ${order.orderNumber || order._id.toString()} was updated.`,
+        link: `/orders`
+      }
+    ]
+  });
 
   res.json({
     message: `Refund marked as ${nextStatus}`,
@@ -1312,6 +1462,94 @@ export const updateInstallmentStatus = asyncHandler(async (req, res) => {
     recalculateInstallmentState(order);
   }
   await order.save();
+  if (action === "cancel") {
+    await createNotifications({
+      settings: storeSettings,
+      type: "installment_cancelled",
+      title: "Installment cancelled",
+      message: `Your installment order ${order.orderNumber || order._id.toString()} was cancelled.`,
+      link: `/installments`,
+      data: {
+        orderId: order._id.toString(),
+        action
+      },
+      recipients: [
+        {
+          userId: order.user?._id || order.user,
+          title: "Installment cancelled",
+          message: `Your installment order ${order.orderNumber || order._id.toString()} was cancelled.`,
+          link: `/installments`
+        }
+      ]
+    });
+  } else if (action === "extend_due_date") {
+    await createNotifications({
+      settings: storeSettings,
+      type: "installment_due_updated",
+      title: "Installment due date updated",
+      message: `The due date for installment order ${order.orderNumber || order._id.toString()} was updated.`,
+      link: `/installments`,
+      data: {
+        orderId: order._id.toString(),
+        action,
+        scheduleSequence
+      },
+      recipients: [
+        {
+          userId: order.user?._id || order.user,
+          title: "Installment due date updated",
+          message: `The due date for installment order ${order.orderNumber || order._id.toString()} was updated.`,
+          link: `/installments`
+        }
+      ]
+    });
+  } else if (action === "approve_early_release") {
+    await createNotifications({
+      settings: storeSettings,
+      type: "installment_release_approved",
+      title: "Installment release approved",
+      message: `Your installment order ${order.orderNumber || order._id.toString()} is ready for release.`,
+      link: `/installments`,
+      data: {
+        orderId: order._id.toString(),
+        action
+      },
+      recipients: [
+        {
+          userId: order.user?._id || order.user,
+          title: "Installment release approved",
+          message: `Your installment order ${order.orderNumber || order._id.toString()} is ready for release.`,
+          link: `/installments`
+        }
+      ]
+    });
+  } else if (action === "mark_completed") {
+    await createNotifications({
+      settings: storeSettings,
+      type: "installment_completed",
+      title: "Installment completed",
+      message: `Your installment order ${order.orderNumber || order._id.toString()} is fully paid.`,
+      link: `/installments`,
+      data: {
+        orderId: order._id.toString(),
+        action
+      },
+      recipients: [
+        {
+          userId: order.user?._id || order.user,
+          title: "Installment completed",
+          message: `Your installment order ${order.orderNumber || order._id.toString()} is fully paid.`,
+          link: `/installments`
+        },
+        {
+          role: "admin",
+          title: "Installment completed",
+          message: `Installment order ${order.orderNumber || order._id.toString()} was manually marked as completed.`,
+          link: `/admin/installments`
+        }
+      ]
+    });
+  }
 
   res.json({
     message: "Installment updated successfully.",
@@ -1391,5 +1629,26 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
   }
 
   await order.save();
+  if (status && status !== previousStatus && order.user) {
+    await createNotifications({
+      type: "order_status_updated",
+      title: "Order status updated",
+      message: `Your order ${order.orderNumber || order._id.toString()} is now ${String(status).replaceAll("_", " ")}.`,
+      link: `/orders`,
+      data: {
+        orderId: order._id.toString(),
+        status,
+        paymentStatus: order.payment?.status
+      },
+      recipients: [
+        {
+          userId: order.user,
+          title: "Order status updated",
+          message: `Your order ${order.orderNumber || order._id.toString()} is now ${String(status).replaceAll("_", " ")}.`,
+          link: `/orders`
+        }
+      ]
+    });
+  }
   res.json(serializeOrder(order, storeSettings));
 });

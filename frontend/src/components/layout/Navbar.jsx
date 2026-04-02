@@ -2,6 +2,7 @@ import { CreditCard, Heart, LayoutDashboard, LogOut, Search, ShoppingBag } from 
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
+import NotificationBell from "./NotificationBell";
 import { useStoreSettings } from "../../context/StoreSettingsContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { optimizeImageUrl } from "../../utils/media";
@@ -87,6 +88,7 @@ export default function Navbar() {
             >
               <Search size={16} />
             </button>
+            {user ? <NotificationBell /> : null}
             <Link to="/wishlist" className="glass-panel inline-flex h-9 min-w-[2.8rem] items-center justify-center gap-2 rounded-full px-2.5 text-sm text-white sm:h-10 sm:min-w-[3rem] sm:px-3">
               <Heart size={16} />
               <span>{wishlistIds.length}</span>

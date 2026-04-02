@@ -20,6 +20,7 @@ import HomePage from "./pages/store/HomePage";
 import InstallmentsPage from "./pages/store/InstallmentsPage";
 import OrdersPage from "./pages/store/OrdersPage";
 import OrderSuccessPage from "./pages/store/OrderSuccessPage";
+import NotificationsPage from "./pages/store/NotificationsPage";
 import PrivacyPolicyPage from "./pages/store/PrivacyPolicyPage";
 import ProductDetailsPage from "./pages/store/ProductDetailsPage";
 import ReturnPolicyPage from "./pages/store/ReturnPolicyPage";
@@ -96,6 +97,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <OrdersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <NotificationsPage />
                 </ProtectedRoute>
               }
             />
