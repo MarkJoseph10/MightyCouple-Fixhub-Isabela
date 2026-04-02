@@ -1156,76 +1156,6 @@ function DashboardPage() {
                       </div>
                     </div>
 
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="self-start rounded-[28px] border border-white/10 bg-white/5 p-4 xl:h-fit">
-                      <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
-                        <CreditCard size={16} className="text-emerald-300" />
-                        Payment settings
-                      </div>
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        {[
-                          ["gcash", "GCash"],
-                          ["bankTransfer", "Bank transfer"],
-                          ["cod", "Cash on delivery"],
-                          ["stripe", "Stripe"],
-                          ["paypal", "PayPal"],
-                          ["maya", "Maya"]
-                        ].map(([key, label]) => (
-                          <label key={key} className="flex items-center justify-between rounded-[20px] border border-white/10 bg-slate-950/25 px-3 py-3 text-sm text-slate-200">
-                            <span>{label}</span>
-                            <input type="checkbox" checked={settingsForm.paymentOptions[key]} onChange={(event) => updateNestedField("paymentOptions", key, event.target.checked)} />
-                          </label>
-                        ))}
-                      </div>
-
-                      <div className="mt-4 grid gap-3 md:grid-cols-2">
-                        <InputField label="GCash account name">
-                          <input value={settingsForm.gcashAccountName} onChange={(event) => updateFormField("gcashAccountName", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                        </InputField>
-                        <InputField label="GCash number">
-                          <input value={settingsForm.gcashNumber} onChange={(event) => updateFormField("gcashNumber", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                        </InputField>
-                        <InputField label="Bank name">
-                          <input value={settingsForm.bankName} onChange={(event) => updateFormField("bankName", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                        </InputField>
-                        <InputField label="Bank account name">
-                          <input value={settingsForm.bankAccountName} onChange={(event) => updateFormField("bankAccountName", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                        </InputField>
-                        <InputField label="Bank account number">
-                          <input value={settingsForm.bankAccountNumber} onChange={(event) => updateFormField("bankAccountNumber", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                        </InputField>
-                        <InputField label="Auto-cancel unpaid orders (hours)">
-                          <input type="number" value={settingsForm.autoCancelUnpaidHours} onChange={(event) => updateFormField("autoCancelUnpaidHours", Number(event.target.value || 0))} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                        </InputField>
-                        <InputField label="Refund request window (days)">
-                          <input type="number" min="0" value={settingsForm.refundWindowDays} onChange={(event) => updateFormField("refundWindowDays", Number(event.target.value || 0))} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                        </InputField>
-                      </div>
-
-                      <div className="mt-4 rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
-                        <p className="text-sm font-medium text-white">Refund policy</p>
-                        <p className="mt-2 text-sm text-slate-400">
-                          Choose which order progress points allow customers to request a refund.
-                        </p>
-                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                          {[
-                            ["paid", "Paid orders"],
-                            ["delivered", "Delivered orders"]
-                          ].map(([status, label]) => (
-                            <label key={status} className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
-                              <span>{label}</span>
-                              <input
-                                type="checkbox"
-                                checked={settingsForm.refundEligibleStatuses.includes(status)}
-                                onChange={(event) => updateRefundEligibleStatus(status, event.target.checked)}
-                              />
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
                       <div className="mt-4 rounded-[24px] border border-cyan-400/20 bg-cyan-500/10 p-4">
                         <div className="flex items-center justify-between gap-3">
                           <div>
@@ -1350,6 +1280,76 @@ function DashboardPage() {
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="self-start rounded-[28px] border border-white/10 bg-white/5 p-4 xl:h-fit">
+                      <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
+                        <CreditCard size={16} className="text-emerald-300" />
+                        Payment settings
+                      </div>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {[
+                          ["gcash", "GCash"],
+                          ["bankTransfer", "Bank transfer"],
+                          ["cod", "Cash on delivery"],
+                          ["stripe", "Stripe"],
+                          ["paypal", "PayPal"],
+                          ["maya", "Maya"]
+                        ].map(([key, label]) => (
+                          <label key={key} className="flex items-center justify-between rounded-[20px] border border-white/10 bg-slate-950/25 px-3 py-3 text-sm text-slate-200">
+                            <span>{label}</span>
+                            <input type="checkbox" checked={settingsForm.paymentOptions[key]} onChange={(event) => updateNestedField("paymentOptions", key, event.target.checked)} />
+                          </label>
+                        ))}
+                      </div>
+
+                      <div className="mt-4 grid gap-3 md:grid-cols-2">
+                        <InputField label="GCash account name">
+                          <input value={settingsForm.gcashAccountName} onChange={(event) => updateFormField("gcashAccountName", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                        </InputField>
+                        <InputField label="GCash number">
+                          <input value={settingsForm.gcashNumber} onChange={(event) => updateFormField("gcashNumber", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                        </InputField>
+                        <InputField label="Bank name">
+                          <input value={settingsForm.bankName} onChange={(event) => updateFormField("bankName", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                        </InputField>
+                        <InputField label="Bank account name">
+                          <input value={settingsForm.bankAccountName} onChange={(event) => updateFormField("bankAccountName", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                        </InputField>
+                        <InputField label="Bank account number">
+                          <input value={settingsForm.bankAccountNumber} onChange={(event) => updateFormField("bankAccountNumber", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                        </InputField>
+                        <InputField label="Auto-cancel unpaid orders (hours)">
+                          <input type="number" value={settingsForm.autoCancelUnpaidHours} onChange={(event) => updateFormField("autoCancelUnpaidHours", Number(event.target.value || 0))} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                        </InputField>
+                        <InputField label="Refund request window (days)">
+                          <input type="number" min="0" value={settingsForm.refundWindowDays} onChange={(event) => updateFormField("refundWindowDays", Number(event.target.value || 0))} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                        </InputField>
+                      </div>
+
+                      <div className="mt-4 rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
+                        <p className="text-sm font-medium text-white">Refund policy</p>
+                        <p className="mt-2 text-sm text-slate-400">
+                          Choose which order progress points allow customers to request a refund.
+                        </p>
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                          {[
+                            ["paid", "Paid orders"],
+                            ["delivered", "Delivered orders"]
+                          ].map(([status, label]) => (
+                            <label key={status} className="flex items-center justify-between rounded-[20px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                              <span>{label}</span>
+                              <input
+                                type="checkbox"
+                                checked={settingsForm.refundEligibleStatuses.includes(status)}
+                                onChange={(event) => updateRefundEligibleStatus(status, event.target.checked)}
+                              />
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
                   </div>
                 </div>
 
