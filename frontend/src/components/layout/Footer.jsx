@@ -18,16 +18,16 @@ export default function Footer() {
           <p>{settings.storeName} offers affordable gadgets with secure account-based checkout, shipping transparency, and trackable orders.</p>
           <p className="mt-2">Support: <a href="mailto:supportmightycouple@gmail.com" className="text-slate-200 hover:text-white">supportmightycouple@gmail.com</a></p>
         </div>
-        <div className="max-w-[220px]">
+        <div className="w-full">
           <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Follow us</p>
-          <div className="mt-3 flex flex-wrap gap-3">
+          <div className="mt-3 flex flex-row flex-nowrap items-center gap-3 overflow-x-auto pb-1 md:justify-start lg:justify-between">
             {socialLinks.map(({ label, href, icon: Icon }) => (
               <a
                 key={label}
                 href={href}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-slate-200 transition duration-300 hover:border-white/20 hover:bg-white/10 hover:text-white"
+                className="inline-flex h-11 min-w-[150px] flex-none items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 text-slate-200 transition duration-300 hover:scale-[1.02] hover:border-white/20 hover:bg-white/10 hover:text-white"
               >
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-slate-950/30 text-slate-200">
                   <Icon size={15} />
