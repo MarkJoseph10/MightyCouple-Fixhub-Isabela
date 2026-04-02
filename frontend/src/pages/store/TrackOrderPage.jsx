@@ -2,13 +2,15 @@ import { Copy, ReceiptText, RotateCcw, SearchCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import api from "../../api/client";
+import InstallmentCompletionSnapshot from "../../components/common/InstallmentCompletionSnapshot";
 import OrderStatusBadge from "../../components/common/OrderStatusBadge";
+import OrderTimeline from "../../components/common/OrderTimeline";
 import RefundRequestModal from "../../components/store/RefundRequestModal";
 import { useAuth } from "../../context/AuthContext";
 import { useStoreSettings } from "../../context/StoreSettingsContext";
 import { peso } from "../../utils/commerce";
 import { resolveMediaUrl } from "../../utils/media";
-import { buildTrackOrderUrl, copyText, formatRefundReason, getOrderReference } from "../../utils/orders";
+import { buildTrackOrderUrl, copyText, formatRefundReason, getOrderReference, getOrderTrackingSteps } from "../../utils/orders";
 import { printOrderReceipt } from "../../utils/receipt";
 
 export default function TrackOrderPage() {
@@ -23,6 +25,7 @@ export default function TrackOrderPage() {
   const [proofStatus, setProofStatus] = useState("");
   const [copyStatus, setCopyStatus] = useState("");
   const [refundModalOpen, setRefundModalOpen] = useState(false);
+  const trackingSteps = getOrderTrackingSteps(order);
 
   async function handleTrack(event) {
     event?.preventDefault();
@@ -184,6 +187,7 @@ export default function TrackOrderPage() {
                   This is an installment transaction. Refund requests stay disabled because payments made are non-refundable under the installment agreement.
                 </div>
               ) : null}
+              {order.orderType === "installment" ? <InstallmentCompletionSnapshot order={order} /> : null}
 
               <div className="grid gap-4 xl:grid-cols-3">
                 <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
@@ -259,7 +263,14 @@ export default function TrackOrderPage() {
               )}
 
               <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
-                <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Timeline</p>
+                <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Tracking workflow</p>
+                <div className="mt-4">
+                  <OrderTimeline steps={trackingSteps} />
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
+                <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Timeline history</p>
                 <div className="mt-4 space-y-4">
                   {(order.timeline || []).map((entry, index) => (
                     <div key={`${entry.status}-${index}`} className="flex gap-4">

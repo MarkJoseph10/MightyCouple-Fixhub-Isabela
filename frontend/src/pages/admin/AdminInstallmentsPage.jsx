@@ -1,6 +1,8 @@
 import { CalendarRange, CheckCircle2, CreditCard, Search, ShieldAlert, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import api from "../../api/client";
+import InstallmentCompletionSnapshot from "../../components/common/InstallmentCompletionSnapshot";
+import OrderTimeline from "../../components/common/OrderTimeline";
 import { peso } from "../../utils/commerce";
 import { resolveMediaUrl } from "../../utils/media";
 import {
@@ -9,7 +11,7 @@ import {
   getInstallmentProgress,
   getInstallmentStatusTone
 } from "../../utils/installments";
-import { getOrderReference } from "../../utils/orders";
+import { getOrderReference, getOrderTrackingSteps } from "../../utils/orders";
 
 const sections = [
   { key: "active", label: "Active" },
@@ -307,9 +309,19 @@ export default function AdminInstallmentsPage() {
                   <div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-cyan-400" style={{ width: `${progress}%` }} />
                 </div>
               </div>
+              {isArchivedInstallment ? <InstallmentCompletionSnapshot order={order} /> : null}
 
               <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
                 <div className="space-y-4">
+                  <div className="rounded-[26px] border border-white/10 bg-white/5 p-4">
+                    <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
+                      <CheckCircle2 size={16} className="text-cyan-300" />
+                      Fulfillment timeline
+                    </div>
+                    <div className="mt-4">
+                      <OrderTimeline steps={getOrderTrackingSteps(order)} compact />
+                    </div>
+                  </div>
                   <div className="rounded-[26px] border border-white/10 bg-white/5 p-4">
                     <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
                       <CreditCard size={16} className="text-amber-300" />

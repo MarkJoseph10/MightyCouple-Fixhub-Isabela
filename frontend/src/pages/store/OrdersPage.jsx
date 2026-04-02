@@ -2,6 +2,8 @@ import { Copy, ReceiptText, RotateCcw, SearchCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../api/client";
+import InstallmentCompletionSnapshot from "../../components/common/InstallmentCompletionSnapshot";
+import OrderTimeline from "../../components/common/OrderTimeline";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import OrderStatusBadge from "../../components/common/OrderStatusBadge";
 import RefundRequestModal from "../../components/store/RefundRequestModal";
@@ -9,7 +11,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useStoreSettings } from "../../context/StoreSettingsContext";
 import { peso } from "../../utils/commerce";
 import { resolveMediaUrl } from "../../utils/media";
-import { buildTrackOrderUrl, copyText, formatRefundReason, getOrderReference } from "../../utils/orders";
+import { buildTrackOrderUrl, copyText, formatRefundReason, getOrderReference, getOrderTrackingSteps } from "../../utils/orders";
 import { printOrderReceipt } from "../../utils/receipt";
 
 export default function OrdersPage() {
@@ -114,6 +116,13 @@ export default function OrdersPage() {
                   </p>
                 </div>
               )}
+              <div className="mt-4 rounded-[24px] border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Shipping workflow</p>
+                <div className="mt-4">
+                  <OrderTimeline steps={getOrderTrackingSteps(order)} compact />
+                </div>
+              </div>
+              {order.orderType === "installment" ? <div className="mt-4"><InstallmentCompletionSnapshot order={order} /></div> : null}
               {order.payment.instructions && (
                 <div className="mt-4 rounded-[24px] border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
                   {order.payment.instructions}

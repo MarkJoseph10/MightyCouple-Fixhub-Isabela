@@ -2,7 +2,9 @@ import { CalendarClock, CheckCircle2, PackageCheck, Truck, Upload } from "lucide
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../api/client";
+import InstallmentCompletionSnapshot from "../../components/common/InstallmentCompletionSnapshot";
 import LoadingScreen from "../../components/common/LoadingScreen";
+import OrderTimeline from "../../components/common/OrderTimeline";
 import { peso } from "../../utils/commerce";
 import {
   formatInstallmentStatus,
@@ -10,7 +12,7 @@ import {
   getInstallmentProgress,
   getInstallmentStatusTone
 } from "../../utils/installments";
-import { buildTrackOrderUrl, getOrderReference } from "../../utils/orders";
+import { buildTrackOrderUrl, getOrderReference, getOrderTrackingSteps } from "../../utils/orders";
 
 const initialDraft = {
   amount: "",
@@ -295,9 +297,19 @@ export default function InstallmentsPage() {
                   ) : null}
                 </div>
               </div>
+              {isArchived ? <InstallmentCompletionSnapshot order={order} /> : null}
 
               <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
                 <div className="space-y-4">
+                  <div className="rounded-[26px] border border-white/10 bg-white/5 p-4">
+                    <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
+                      <Truck size={16} className="text-cyan-300" />
+                      Shipping timeline
+                    </div>
+                    <div className="mt-4">
+                      <OrderTimeline steps={getOrderTrackingSteps(order)} compact />
+                    </div>
+                  </div>
                   <div className="rounded-[26px] border border-white/10 bg-white/5 p-4">
                     <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
                       <CalendarClock size={16} className="text-cyan-300" />
