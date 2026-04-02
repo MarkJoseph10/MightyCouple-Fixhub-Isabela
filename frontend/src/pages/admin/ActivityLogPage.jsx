@@ -1,4 +1,4 @@
-import { Clock3, ExternalLink, FileClock, Filter, Search } from "lucide-react";
+import { Clock3, Download, ExternalLink, FileClock, Filter, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 import api from "../../api/client";
@@ -52,6 +52,7 @@ export default function ActivityLogPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchValue, setSearchValue] = useState("");
   const [querySearch, setQuerySearch] = useState("");
@@ -87,6 +88,31 @@ export default function ActivityLogPage() {
     [categoryFilter, querySearch]
   );
 
+  const handleExport = useCallback(async () => {
+    setExporting(true);
+    try {
+      const response = await api.get("/activity-logs/export", {
+        params: {
+          category: categoryFilter,
+          search: querySearch
+        },
+        responseType: "blob"
+      });
+
+      const blob = new Blob([response.data], { type: "text/csv;charset=utf-8;" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "activity-log.csv";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  }, [categoryFilter, querySearch]);
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setQuerySearch(searchValue.trim());
@@ -115,9 +141,20 @@ export default function ActivityLogPage() {
             Track seller actions, settings changes, order status updates, refunds, payouts, and installment decisions from one place.
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200">
-          <FileClock size={16} />
-          {summary.all || 0} total entries
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200">
+            <FileClock size={16} />
+            {summary.all || 0} total entries
+          </div>
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exporting}
+            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Download size={16} />
+            {exporting ? "Exporting..." : "Export CSV"}
+          </button>
         </div>
       </div>
 
