@@ -28,7 +28,7 @@ export default function InstallmentCompletionSnapshot({ order }) {
         <PackageCheck size={16} className="text-emerald-300" />
         Completed installment snapshot
       </div>
-      <div className="mt-4 grid gap-4 md:grid-cols-3">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <SnapshotItem
           icon={CalendarClock}
           label="Fully paid"

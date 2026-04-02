@@ -93,19 +93,25 @@ export default function TrackOrderPage() {
 
   useEffect(() => {
     const previousTitle = document.title;
+    const descriptionMetaElement = document.querySelector('meta[name="description"]');
+    const previousDescription = descriptionMetaElement?.getAttribute("content");
     document.title = "Track Order | Mighty Couple";
 
-    let descriptionMeta = document.querySelector('meta[name="description"]');
-    if (!descriptionMeta) {
-      descriptionMeta = document.createElement("meta");
-      descriptionMeta.setAttribute("name", "description");
-      document.head.appendChild(descriptionMeta);
+    const activeDescriptionMeta = descriptionMetaElement || document.createElement("meta");
+    if (!descriptionMetaElement) {
+      activeDescriptionMeta.setAttribute("name", "description");
+      document.head.appendChild(activeDescriptionMeta);
     }
 
-    descriptionMeta.setAttribute("content", "Track your Mighty Couple order status, payment proof, shipping progress, and delivery timeline.");
+    activeDescriptionMeta.setAttribute("content", "Track your Mighty Couple order status, payment proof, shipping progress, and delivery timeline.");
 
     return () => {
       document.title = previousTitle;
+      if (previousDescription !== null && previousDescription !== undefined) {
+        activeDescriptionMeta.setAttribute("content", previousDescription);
+      } else if (!descriptionMetaElement) {
+        activeDescriptionMeta.remove();
+      }
     };
   }, []);
 

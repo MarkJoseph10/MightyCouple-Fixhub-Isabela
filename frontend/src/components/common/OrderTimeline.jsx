@@ -26,6 +26,9 @@ export default function OrderTimeline({ steps = [], compact = false }) {
     return null;
   }
 
+  const hasMoreThanVisibleSteps = steps.length > 3;
+  const toggleLabel = expanded ? "See less" : "See more";
+
   return (
     <div className="space-y-3">
       <div className={`grid gap-3 ${compact ? "sm:grid-cols-2 lg:grid-cols-3" : "md:grid-cols-2 xl:grid-cols-3"}`}>
@@ -54,14 +57,15 @@ export default function OrderTimeline({ steps = [], compact = false }) {
           );
         })}
       </div>
-      {steps.length > 3 ? (
+      {hasMoreThanVisibleSteps ? (
         <button
           type="button"
           onClick={() => setExpanded((current) => !current)}
+          aria-expanded={expanded}
           className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
         >
           {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          {expanded ? "See less" : "See more"}
+          {toggleLabel}
         </button>
       ) : null}
     </div>
