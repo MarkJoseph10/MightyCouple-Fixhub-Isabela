@@ -25,12 +25,13 @@ function serializeActivityLog(log) {
   };
 }
 
-export const getActivityLogs = asyncHandler(async (req, res) => {
-  const limit = Math.min(50, Math.max(1, Number(req.query.limit || 12)));
-  const page = Math.max(1, Number(req.query.page || 1));
-  const category = String(req.query.category || "").trim().toLowerCase();
-  const action = String(req.query.action || "").trim().toLowerCase();
-  const search = String(req.query.search || "").trim();
+function buildActivityFilter(query = {}) {
+  const category = String(query.category || "").trim().toLowerCase();
+  const action = String(query.action || "").trim().toLowerCase();
+  const severity = String(query.severity || "").trim().toLowerCase();
+  const search = String(query.search || "").trim();
+  const from = String(query.from || "").trim();
+  const to = String(query.to || "").trim();
 
   const filter = {};
 
@@ -40,6 +41,33 @@ export const getActivityLogs = asyncHandler(async (req, res) => {
 
   if (action) {
     filter.action = action;
+  }
+
+  if (severity && severity !== "all") {
+    filter.severity = severity;
+  }
+
+  if (from || to) {
+    filter.createdAt = {};
+
+    if (from) {
+      const fromDate = new Date(from);
+      if (!Number.isNaN(fromDate.getTime())) {
+        filter.createdAt.$gte = fromDate;
+      }
+    }
+
+    if (to) {
+      const toDate = new Date(to);
+      if (!Number.isNaN(toDate.getTime())) {
+        toDate.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = toDate;
+      }
+    }
+
+    if (!Object.keys(filter.createdAt).length) {
+      delete filter.createdAt;
+    }
   }
 
   if (search) {
@@ -52,6 +80,14 @@ export const getActivityLogs = asyncHandler(async (req, res) => {
       { subjectId: { $regex: escaped, $options: "i" } }
     ];
   }
+
+  return filter;
+}
+
+export const getActivityLogs = asyncHandler(async (req, res) => {
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit || 12)));
+  const page = Math.max(1, Number(req.query.page || 1));
+  const filter = buildActivityFilter(req.query);
 
   const [logs, total] = await Promise.all([
     ActivityLog.find(filter)
@@ -84,30 +120,7 @@ export const getActivityLogs = asyncHandler(async (req, res) => {
 });
 
 export const exportActivityLogs = asyncHandler(async (req, res) => {
-  const category = String(req.query.category || "").trim().toLowerCase();
-  const action = String(req.query.action || "").trim().toLowerCase();
-  const search = String(req.query.search || "").trim();
-
-  const filter = {};
-
-  if (category && category !== "all") {
-    filter.category = category;
-  }
-
-  if (action) {
-    filter.action = action;
-  }
-
-  if (search) {
-    const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    filter.$or = [
-      { title: { $regex: escaped, $options: "i" } },
-      { message: { $regex: escaped, $options: "i" } },
-      { actorName: { $regex: escaped, $options: "i" } },
-      { subjectType: { $regex: escaped, $options: "i" } },
-      { subjectId: { $regex: escaped, $options: "i" } }
-    ];
-  }
+  const filter = buildActivityFilter(req.query);
 
   const logs = await ActivityLog.find(filter).sort({ createdAt: -1 }).limit(5000);
 

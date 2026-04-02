@@ -1,4 +1,4 @@
-import { Download, ExternalLink, FileClock, ShoppingBag } from "lucide-react";
+import { Download, ExternalLink, FileClock, RefreshCcw, ShoppingBag } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../api/client";
@@ -8,6 +8,36 @@ import OrderStatusBadge from "../../components/common/OrderStatusBadge";
 import { peso } from "../../utils/commerce";
 import { resolveMediaUrl } from "../../utils/media";
 import { getOrderReference } from "../../utils/orders";
+
+const REPORT_RANGES = [
+  { key: "7d", label: "7 days" },
+  { key: "30d", label: "30 days" },
+  { key: "90d", label: "90 days" },
+  { key: "12m", label: "12 months" },
+  { key: "all", label: "All time" }
+];
+
+function formatDate(value) {
+  if (!value) {
+    return "Just now";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "Just now";
+  }
+
+  return date.toLocaleString("en-PH", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
+}
+
+function formatRangeLabel(range) {
+  return REPORT_RANGES.find((option) => option.key === range)?.label || "All time";
+}
 
 function SectionCard({ eyebrow, title, description, children }) {
   return (
@@ -55,31 +85,196 @@ function MiniBarChart({ title, series = [], accentClass }) {
   );
 }
 
+function downloadCsv(filename, rows) {
+  const csv = rows
+    .map((row) =>
+      row
+        .map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`)
+        .join(",")
+    )
+    .join("\n");
+
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+function buildReportCsv({
+  reportRange,
+  stats,
+  adminActions,
+  systemIncidents,
+  recentOrders,
+  topProducts,
+  viewedProducts,
+  lowStockProducts
+}) {
+  const overview = stats?.overview || {};
+  const insights = stats?.insights || {};
+
+  return [
+    ["Section", "Metric", "Value"],
+    ["Report range", "Current period", formatRangeLabel(reportRange)],
+    ["Overview", "Total sales", peso(overview.totalSales || 0)],
+    ["Overview", "Orders", overview.totalOrders || 0],
+    ["Overview", "Products", overview.totalProducts || 0],
+    ["Overview", "Users", overview.totalUsers || 0],
+    ["Overview", "Estimated profit", peso(overview.estimatedProfit || 0)],
+    ["Overview", "Conversion rate", `${Number(overview.conversionRate || 0).toFixed(1)}%`],
+    ["Overview", "Newsletter subscribers", overview.newsletterSubscribers || 0],
+    ["Insights", "Cart adds tracked", insights.cartAdds || 0],
+    ["Insights", "Best sellers listed", topProducts.length],
+    ["Insights", "Most viewed listed", viewedProducts.length],
+    ["Insights", "Low stock items listed", lowStockProducts.length],
+    ["Revenue", "Daily points", (stats?.charts?.dailyRevenue || []).length],
+    ["Revenue", "Weekly points", (stats?.charts?.weeklyRevenue || []).length],
+    ["Revenue", "Monthly points", (stats?.charts?.monthlyRevenue || []).length],
+    [],
+    ["Recent Orders"],
+    ["Created", "Order Reference", "Customer", "Email", "Status", "Total"],
+    ...(recentOrders || []).map((order) => [
+      formatDate(order.createdAt),
+      getOrderReference(order),
+      order.user?.name || "Guest",
+      order.user?.email || order.shippingAddress?.email || "No email",
+      order.status || "",
+      peso(order.pricing?.total || 0)
+    ]),
+    [],
+    ["Recent Admin Activity"],
+    ["Created", "Title", "Actor", "Role", "Category", "Severity", "Link"],
+    ...(adminActions || []).map((entry) => [
+      formatDate(entry.createdAt),
+      entry.title || "",
+      entry.actorName || "System",
+      entry.actorRole || "system",
+      entry.category || "system",
+      entry.severity || "info",
+      entry.link || ""
+    ]),
+    [],
+    ["System Incidents"],
+    ["Created", "Title", "Message", "Actor", "Severity"],
+    ...(systemIncidents || []).map((entry) => [
+      formatDate(entry.createdAt),
+      entry.title || "",
+      entry.message || "",
+      entry.actorName || "System",
+      entry.severity || "danger"
+    ]),
+    [],
+    ["Products"],
+    ["Top Seller", "Product", "Sold", "Price"],
+    ...(topProducts || []).map((product) => [product.name || "", product.totalSold || 0, peso(product.price || 0)]),
+    [],
+    ["Products"],
+    ["Most Viewed", "Product", "Views", "Sold"],
+    ...(viewedProducts || []).map((product) => [product.name || "", product.viewsCount || 0, product.totalSold || 0]),
+    [],
+    ["Products"],
+    ["Low Stock", "Product", "Stock", "Category"],
+    ...(lowStockProducts || []).map((product) => [product.name || "", product.stock || 0, product.category || ""])
+  ];
+}
+
+function MonitoringCard({ incidents = [] }) {
+  return (
+    <div className="rounded-[28px] border border-white/10 bg-white/5 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Production monitoring</p>
+          <h3 className="mt-2 text-lg font-semibold text-white">Recent system incidents</h3>
+        </div>
+        <div className="rounded-full border border-rose-400/20 bg-rose-500/10 px-3 py-1 text-xs text-rose-100">
+          {incidents.length} alerts
+        </div>
+      </div>
+      <div className="mt-4 space-y-3">
+        {incidents.length ? (
+          incidents.map((entry) => (
+            <div key={entry._id} className="rounded-[24px] border border-rose-400/15 bg-rose-500/10 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-white">{entry.title}</p>
+                  <p className="mt-1 text-sm text-rose-100/80">{entry.message}</p>
+                </div>
+                <span className="rounded-full border border-rose-400/20 bg-black/20 px-3 py-1 text-xs uppercase tracking-[0.2em] text-rose-100">
+                  {entry.severity || "danger"}
+                </span>
+              </div>
+              <p className="mt-3 text-xs uppercase tracking-[0.22em] text-rose-100/70">
+                {formatDate(entry.createdAt)} · {entry.actorName || "System"} · {entry.category || "system"}
+              </p>
+            </div>
+          ))
+        ) : (
+          <div className="rounded-2xl border border-dashed border-white/10 px-4 py-6 text-sm text-slate-400">
+            No recent critical incidents. Backend errors will appear here automatically.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function ReportsPage() {
   const [stats, setStats] = useState(null);
-  const [activityLogs, setActivityLogs] = useState([]);
+  const [adminActions, setAdminActions] = useState([]);
+  const [systemIncidents, setSystemIncidents] = useState([]);
+  const [reportRange, setReportRange] = useState("30d");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState("");
+  const [lastRefreshedAt, setLastRefreshedAt] = useState(null);
 
   useEffect(() => {
+    let active = true;
+
     async function loadReports() {
+      setLoading(true);
       try {
-        const [{ data: statsData }, { data: activityData }] = await Promise.all([
-          api.get("/stats"),
-          api.get("/activity-logs", { params: { limit: 6 } })
+        const [{ data: statsData }, { data: adminActivityData }, { data: incidentsData }] = await Promise.all([
+          api.get("/stats", { params: { range: reportRange } }),
+          api.get("/activity-logs", { params: { limit: 6, category: "all" } }),
+          api.get("/activity-logs", { params: { limit: 6, category: "system", severity: "danger" } })
         ]);
 
+        if (!active) {
+          return;
+        }
+
         setStats(statsData);
-        setActivityLogs(activityData.logs || []);
+        setAdminActions(adminActivityData.logs || []);
+        setSystemIncidents(incidentsData.logs || []);
+        setLastRefreshedAt(new Date());
+        setError("");
       } catch (requestError) {
+        if (!active) {
+          return;
+        }
+
         setError(requestError.response?.data?.message || "Unable to load reports.");
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
     }
 
     loadReports();
-  }, []);
+
+    return () => {
+      active = false;
+    };
+  }, [reportRange]);
 
   const overview = stats?.overview || {};
   const insights = stats?.insights || {};
@@ -87,6 +282,46 @@ export default function ReportsPage() {
   const topProducts = useMemo(() => (insights.bestSellingProducts || []).slice(0, 4), [insights.bestSellingProducts]);
   const viewedProducts = useMemo(() => (insights.mostViewedProducts || []).slice(0, 4), [insights.mostViewedProducts]);
   const lowStockProducts = useMemo(() => (insights.lowStockProducts || []).slice(0, 4), [insights.lowStockProducts]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const [{ data: statsData }, { data: adminActivityData }, { data: incidentsData }] = await Promise.all([
+        api.get("/stats", { params: { range: reportRange } }),
+        api.get("/activity-logs", { params: { limit: 6, category: "all" } }),
+        api.get("/activity-logs", { params: { limit: 6, category: "system", severity: "danger" } })
+      ]);
+
+      setStats(statsData);
+      setAdminActions(adminActivityData.logs || []);
+      setSystemIncidents(incidentsData.logs || []);
+      setLastRefreshedAt(new Date());
+      setError("");
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to refresh reports.");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleExport = () => {
+    setExporting(true);
+    try {
+      const rows = buildReportCsv({
+        reportRange,
+        stats,
+        adminActions,
+        systemIncidents,
+        recentOrders,
+        topProducts,
+        viewedProducts,
+        lowStockProducts
+      });
+      downloadCsv(`shopverse-report-${reportRange}.csv`, rows);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   if (loading) {
     return <LoadingScreen label="Loading reports..." />;
@@ -99,7 +334,7 @@ export default function ReportsPage() {
           <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Analytics</p>
           <h1 className="mt-2 text-4xl font-semibold text-white">Reports and store intelligence</h1>
           <p className="mt-3 max-w-3xl text-slate-300">
-            Review revenue, fulfillment, low stock pressure, and recent admin activity in one place without digging through other pages.
+            Review revenue, fulfillment, restock pressure, and recent admin activity in one place without digging through other pages.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -114,6 +349,50 @@ export default function ReportsPage() {
         </div>
       </div>
 
+      <div className="rounded-[28px] border border-white/10 bg-white/5 p-4 sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Report period</p>
+            <p className="mt-2 text-sm text-slate-300">Current view: {formatRangeLabel(reportRange)}</p>
+            {lastRefreshedAt ? <p className="mt-1 text-xs text-slate-500">Last refreshed {formatDate(lastRefreshedAt)}</p> : null}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {REPORT_RANGES.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => setReportRange(option.key)}
+                className={`rounded-full border px-4 py-2 text-sm transition ${
+                  reportRange === option.key
+                    ? "border-brand-400/40 bg-brand-500/20 text-white"
+                    : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCcw size={16} className={refreshing ? "animate-spin" : ""} />
+              {refreshing ? "Refreshing..." : "Refresh"}
+            </button>
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={exporting}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Download size={16} />
+              {exporting ? "Exporting..." : "Export CSV"}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {error ? <div className="rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{error}</div> : null}
 
       <SectionCard
@@ -123,11 +402,55 @@ export default function ReportsPage() {
       >
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
           <StatsCard label="Total sales" value={{ numericValue: overview.totalSales || 0, type: "currency" }} helper="Paid orders collected to date." tone="brand" />
-          <StatsCard label="Orders" value={{ numericValue: overview.totalOrders || 0, type: "number" }} helper="All orders in the database." tone="emerald" />
+          <StatsCard label="Orders" value={{ numericValue: overview.totalOrders || 0, type: "number" }} helper="All orders in the selected period." tone="emerald" />
           <StatsCard label="Products" value={{ numericValue: overview.totalProducts || 0, type: "number" }} helper="Active catalog size." tone="cyan" />
           <StatsCard label="Users" value={{ numericValue: overview.totalUsers || 0, type: "number" }} helper="Registered customer and seller accounts." tone="amber" />
           <StatsCard label="Profit" value={{ numericValue: overview.estimatedProfit || 0, type: "currency" }} helper="Estimated product margin after cost prices." tone="brand" />
           <StatsCard label="Conversion" value={{ numericValue: overview.conversionRate || 0, type: "percent" }} helper={`${insights.cartAdds || 0} tracked cart adds.`} tone="cyan" />
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        eyebrow="Monitoring"
+        title="Production health and system incidents"
+        description="Backend errors are surfaced here so we can spot regressions without waiting for a customer report."
+      >
+        <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+          <MonitoringCard incidents={systemIncidents} />
+          <div className="rounded-[28px] border border-white/10 bg-white/5 p-4">
+            <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Live signals</p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
+                <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Admin actions</p>
+                <p className="mt-2 text-3xl font-semibold text-white">{adminActions.length}</p>
+                <p className="mt-2 text-sm text-slate-400">Recent audit entries pulled for this report.</p>
+              </div>
+              <div className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
+                <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Critical incidents</p>
+                <p className="mt-2 text-3xl font-semibold text-white">{systemIncidents.length}</p>
+                <p className="mt-2 text-sm text-slate-400">Danger-level logs automatically recorded from backend failures.</p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Alert routing</p>
+                  <p className="mt-2 font-semibold text-white">Admin notifications receive critical errors</p>
+                </div>
+                <Link
+                  to="/notifications"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-white transition hover:bg-white/10"
+                >
+                  View alerts
+                  <ExternalLink size={14} />
+                </Link>
+              </div>
+              <p className="mt-3 text-sm text-slate-400">
+                When a backend 500 happens in production, it is captured in the activity log and pushed as an admin notification.
+              </p>
+            </div>
+          </div>
         </div>
       </SectionCard>
 
@@ -232,13 +555,15 @@ export default function ReportsPage() {
             <div className="rounded-[28px] border border-white/10 bg-white/5 p-4">
               <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Recent admin actions</p>
               <div className="mt-4 space-y-3">
-                {activityLogs.length ? (
-                  activityLogs.map((entry) => (
+                {adminActions.length ? (
+                  adminActions.map((entry) => (
                     <div key={entry._id} className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="font-semibold text-white">{entry.title}</p>
-                          <p className="mt-1 text-sm text-slate-400">{entry.actorName || "System"} · {entry.category || "system"}</p>
+                          <p className="mt-1 text-sm text-slate-400">
+                            {entry.actorName || "System"} · {entry.category || "system"}
+                          </p>
                         </div>
                         {entry.link ? (
                           <Link to={entry.link} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-white transition hover:bg-white/10">

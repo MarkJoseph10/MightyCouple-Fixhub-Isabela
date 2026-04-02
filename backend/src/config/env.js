@@ -10,6 +10,9 @@ const clientUrls = (process.env.CLIENT_URL || defaultClientUrl)
 
 export const env = {
   nodeEnv: process.env.NODE_ENV || "development",
+  monitorErrors: process.env.MONITOR_ERRORS
+    ? process.env.MONITOR_ERRORS !== "false"
+    : process.env.NODE_ENV === "production",
   port: process.env.PORT || 5000,
   mongoUri: process.env.MONGO_URI || "mongodb://127.0.0.1:27017/shopverse",
   jwtSecret: process.env.JWT_SECRET || "development-secret",

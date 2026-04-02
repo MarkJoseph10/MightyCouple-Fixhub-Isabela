@@ -53,10 +53,36 @@ function estimateProfit(orders) {
   }, 0);
 }
 
-export async function getDashboardAnalytics() {
+function getDateRangeStart(range) {
+  const nextRange = String(range || "").trim().toLowerCase();
+
+  if (!nextRange || nextRange === "all") {
+    return null;
+  }
+
+  const now = new Date();
+  const days = {
+    "7d": 7,
+    "30d": 30,
+    "90d": 90,
+    "12m": 365
+  }[nextRange];
+
+  if (!days) {
+    return null;
+  }
+
+  const start = new Date(now);
+  start.setDate(start.getDate() - days);
+  return start;
+}
+
+export async function getDashboardAnalytics({ range = "all" } = {}) {
   const settings = await getOrCreateStoreSettings();
   await autoCancelStalePendingOrders(settings);
   const lowStockThreshold = Number(settings.metrics?.lowStockThreshold || 5);
+  const rangeStart = getDateRangeStart(range);
+  const orderFilter = rangeStart ? { createdAt: { $gte: rangeStart } } : {};
 
   const [
     paidOrders,
@@ -70,15 +96,18 @@ export async function getDashboardAnalytics() {
     lowStockProducts,
     newsletterSubscribers
   ] = await Promise.all([
-    Order.find({ "payment.status": "paid" }).lean(),
-    Order.find().lean(),
+    Order.find({ "payment.status": "paid", ...orderFilter }).lean(),
+    Order.find(orderFilter).lean(),
     Product.countDocuments(),
     User.countDocuments(),
-    Order.find()
+    Order.find(orderFilter)
       .sort({ createdAt: -1 })
       .limit(6)
       .populate("user", "name email"),
     Order.aggregate([
+      {
+        $match: orderFilter,
+      },
       {
         $group: {
           _id: "$status",
