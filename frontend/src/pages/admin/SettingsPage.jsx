@@ -756,6 +756,24 @@ function DashboardPage() {
         ))}
       </div>
 
+      <div className="hidden rounded-[28px] border border-white/10 bg-white/5 p-3 lg:block">
+        <div className="flex flex-wrap gap-3">
+          {sectionTabs.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setActiveSection(id)}
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm font-medium transition ${
+                activeSection === id ? "bg-brand-500 text-white shadow-lg shadow-brand-500/20" : "border border-white/10 bg-slate-950/30 text-slate-300 hover:bg-white/5"
+              }`}
+            >
+              <Icon size={16} />
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {status && <div className="rounded-2xl bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">{status}</div>}
       {error && <div className="rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{error}</div>}
 
