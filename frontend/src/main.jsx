@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, HashRouter } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
@@ -14,9 +15,11 @@ if (import.meta.env.PROD) {
   registerPwa();
 }
 
+const Router = Capacitor.isNativePlatform() ? HashRouter : BrowserRouter;
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <Router>
       <AuthProvider>
         <StoreSettingsProvider>
           <NotificationProvider>
@@ -26,8 +29,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
               </CartProvider>
             </WishlistProvider>
           </NotificationProvider>
-        </StoreSettingsProvider>
-      </AuthProvider>
-    </BrowserRouter>
+          </StoreSettingsProvider>
+        </AuthProvider>
+    </Router>
   </React.StrictMode>
 );
