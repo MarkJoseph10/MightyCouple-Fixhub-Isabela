@@ -224,7 +224,7 @@ export default function ActivityLogPage() {
                   <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.28em] text-slate-400">
                     <Clock3 size={14} />
                     <span>{entry.category || "system"}</span>
-                    <span>â€¢</span>
+                    <span>•</span>
                     <span>{entry.actorRole || "system"}</span>
                   </div>
                   <h2 className="text-lg font-semibold text-white">{entry.title}</h2>
@@ -248,9 +248,9 @@ export default function ActivityLogPage() {
 
               <div className="mt-4 flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.22em] text-slate-500">
                 <span>{formatDate(entry.createdAt)}</span>
-                {entry.subjectType ? <span>â€¢ {entry.subjectType}</span> : null}
-                {entry.subjectId ? <span>â€¢ {entry.subjectId}</span> : null}
-                {entry.metadata?.action ? <span>â€¢ {entry.metadata.action}</span> : null}
+                {entry.subjectType ? <span>• {entry.subjectType}</span> : null}
+                {entry.subjectId ? <span>• {entry.subjectId}</span> : null}
+                {entry.metadata?.action ? <span>• {entry.metadata.action}</span> : null}
               </div>
             </article>
           ))
@@ -283,3 +283,4 @@ export default function ActivityLogPage() {
     </section>
   );
 }
+

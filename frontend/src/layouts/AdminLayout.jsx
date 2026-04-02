@@ -7,6 +7,7 @@ import AdminSidebar from "../components/layout/AdminSidebar";
 
 const pageLabels = {
   "/admin": "Overview",
+  "/admin/reports": "Reports",
   "/admin/products": "Products",
   "/admin/orders": "Orders",
   "/admin/installments": "Installments",

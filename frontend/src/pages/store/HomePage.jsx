@@ -24,6 +24,7 @@ import { useStoreSettings } from "../../context/StoreSettingsContext";
 import { peso } from "../../utils/commerce";
 import { optimizeImageUrl, resolveMediaUrl } from "../../utils/media";
 import { readRecentlyViewed } from "../../utils/recentlyViewed";
+import { getSiteUrl } from "../../utils/site";
 
 export default function HomePage() {
   const location = useLocation();
@@ -50,6 +51,15 @@ export default function HomePage() {
 
   useEffect(() => {
     const previousTitle = document.title;
+    const canonicalElement = document.querySelector('link[rel="canonical"]');
+    const ogUrlElement = document.querySelector('meta[property="og:url"]');
+    const previousCanonical = canonicalElement?.getAttribute("href");
+    const previousOgUrl = ogUrlElement?.getAttribute("content");
+    const createdCanonicalElement = !canonicalElement;
+    const createdOgUrlElement = !ogUrlElement;
+    const activeCanonicalElement = canonicalElement || document.createElement("link");
+    const activeOgUrlElement = ogUrlElement || document.createElement("meta");
+    const canonicalUrl = getSiteUrl(window.location.pathname + window.location.search);
     document.title = `${settings.storeName} | Affordable gadgets, COD, and installment checkout`;
 
     let descriptionMeta = document.querySelector('meta[name="description"]');
@@ -65,8 +75,31 @@ export default function HomePage() {
         `Shop ${settings.storeName} for affordable gadgets, installment checkout, COD, shipping tracking, and live product updates.`
     );
 
+    if (createdCanonicalElement) {
+      activeCanonicalElement.setAttribute("rel", "canonical");
+      document.head.appendChild(activeCanonicalElement);
+    }
+    activeCanonicalElement.setAttribute("href", canonicalUrl);
+
+    if (createdOgUrlElement) {
+      activeOgUrlElement.setAttribute("property", "og:url");
+      document.head.appendChild(activeOgUrlElement);
+    }
+    activeOgUrlElement.setAttribute("content", canonicalUrl);
+
     return () => {
       document.title = previousTitle;
+      if (previousCanonical !== null && previousCanonical !== undefined) {
+        activeCanonicalElement.setAttribute("href", previousCanonical);
+      } else if (createdCanonicalElement) {
+        activeCanonicalElement.remove();
+      }
+
+      if (previousOgUrl !== null && previousOgUrl !== undefined) {
+        activeOgUrlElement.setAttribute("content", previousOgUrl);
+      } else if (createdOgUrlElement) {
+        activeOgUrlElement.remove();
+      }
     };
   }, [settings.content?.heroDescription, settings.storeName]);
 

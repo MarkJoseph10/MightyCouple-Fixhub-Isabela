@@ -12,6 +12,7 @@ import { peso } from "../../utils/commerce";
 import { resolveMediaUrl } from "../../utils/media";
 import { buildTrackOrderUrl, copyText, formatRefundReason, getOrderReference, getOrderTrackingSteps } from "../../utils/orders";
 import { printOrderReceipt } from "../../utils/receipt";
+import { getSiteUrl } from "../../utils/site";
 
 export default function TrackOrderPage() {
   const { isAuthenticated, isAdmin } = useAuth();
@@ -94,10 +95,17 @@ export default function TrackOrderPage() {
   useEffect(() => {
     const previousTitle = document.title;
     const descriptionMetaElement = document.querySelector('meta[name="description"]');
+    const canonicalElement = document.querySelector('link[rel="canonical"]');
+    const ogUrlElement = document.querySelector('meta[property="og:url"]');
     const previousDescription = descriptionMetaElement?.getAttribute("content");
+    const previousCanonical = canonicalElement?.getAttribute("href");
+    const previousOgUrl = ogUrlElement?.getAttribute("content");
     document.title = "Track Order | Mighty Couple";
 
     const activeDescriptionMeta = descriptionMetaElement || document.createElement("meta");
+    const activeCanonicalElement = canonicalElement || document.createElement("link");
+    const activeOgUrlElement = ogUrlElement || document.createElement("meta");
+    const canonicalUrl = getSiteUrl(window.location.pathname + window.location.search);
     if (!descriptionMetaElement) {
       activeDescriptionMeta.setAttribute("name", "description");
       document.head.appendChild(activeDescriptionMeta);
@@ -105,12 +113,36 @@ export default function TrackOrderPage() {
 
     activeDescriptionMeta.setAttribute("content", "Track your Mighty Couple order status, payment proof, shipping progress, and delivery timeline.");
 
+    if (!canonicalElement) {
+      activeCanonicalElement.setAttribute("rel", "canonical");
+      document.head.appendChild(activeCanonicalElement);
+    }
+    activeCanonicalElement.setAttribute("href", canonicalUrl);
+
+    if (!ogUrlElement) {
+      activeOgUrlElement.setAttribute("property", "og:url");
+      document.head.appendChild(activeOgUrlElement);
+    }
+    activeOgUrlElement.setAttribute("content", canonicalUrl);
+
     return () => {
       document.title = previousTitle;
       if (previousDescription !== null && previousDescription !== undefined) {
         activeDescriptionMeta.setAttribute("content", previousDescription);
       } else if (!descriptionMetaElement) {
         activeDescriptionMeta.remove();
+      }
+
+      if (previousCanonical !== null && previousCanonical !== undefined) {
+        activeCanonicalElement.setAttribute("href", previousCanonical);
+      } else if (!canonicalElement) {
+        activeCanonicalElement.remove();
+      }
+
+      if (previousOgUrl !== null && previousOgUrl !== undefined) {
+        activeOgUrlElement.setAttribute("content", previousOgUrl);
+      } else if (!ogUrlElement) {
+        activeOgUrlElement.remove();
       }
     };
   }, []);

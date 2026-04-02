@@ -240,6 +240,7 @@ export default function DashboardPage() {
         <div className="mt-6 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
           <div className="grid gap-4 sm:grid-cols-2">
             <QuickLink to="/admin/settings" icon={Palette} title="Settings" caption="Branding, admin account, operations, and checkout rules." />
+            <QuickLink to="/admin/reports" icon={BarChart3} title="Reports" caption="Revenue trends, recent actions, and operational health." tone="amber" />
             <QuickLink to="/admin/products" icon={Boxes} title="Products" caption="Catalog, variants, trending tags, and inventory polish." tone="cyan" />
             <QuickLink to="/admin/orders" icon={ShoppingBag} title="Orders" caption="Verify payment and move orders through fulfillment." tone="emerald" />
             <QuickLink to="/admin/customers" icon={Users} title="Customers" caption="Seller workflow, payout review, and discipline actions." tone="cyan" />
