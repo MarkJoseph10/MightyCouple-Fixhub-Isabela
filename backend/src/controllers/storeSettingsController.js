@@ -30,6 +30,11 @@ export const updateStoreSettings = asyncHandler(async (req, res) => {
     paymentDetails,
     orderRules,
     promotions,
+    content,
+    seo,
+    notifications,
+    policyLinks,
+    maintenance,
     metrics,
     installment
   } = req.body;
@@ -195,6 +200,63 @@ export const updateStoreSettings = asyncHandler(async (req, res) => {
         }))
         .filter((promo) => promo.code);
     }
+  }
+
+  if (content) {
+    settings.content = {
+      ...settings.content,
+      announcement: content.announcement ?? settings.content.announcement,
+      heroEyebrow: content.heroEyebrow ?? settings.content.heroEyebrow,
+      heroTitle: content.heroTitle ?? settings.content.heroTitle,
+      heroDescription: content.heroDescription ?? settings.content.heroDescription,
+      primaryCtaLabel: content.primaryCtaLabel ?? settings.content.primaryCtaLabel,
+      secondaryCtaLabel: content.secondaryCtaLabel ?? settings.content.secondaryCtaLabel,
+      featuredEyebrow: content.featuredEyebrow ?? settings.content.featuredEyebrow,
+      featuredTitle: content.featuredTitle ?? settings.content.featuredTitle,
+      featuredCaption: content.featuredCaption ?? settings.content.featuredCaption,
+      nextStepTitle: content.nextStepTitle ?? settings.content.nextStepTitle,
+      nextStepDescription: content.nextStepDescription ?? settings.content.nextStepDescription
+    };
+  }
+
+  if (seo) {
+    settings.seo = {
+      ...settings.seo,
+      title: seo.title ?? settings.seo.title,
+      description: seo.description ?? settings.seo.description,
+      socialImage: seo.socialImage ?? settings.seo.socialImage
+    };
+  }
+
+  if (notifications) {
+    settings.notifications = {
+      ...settings.notifications,
+      orderPlaced: notifications.orderPlaced ?? settings.notifications.orderPlaced,
+      paymentReceived: notifications.paymentReceived ?? settings.notifications.paymentReceived,
+      installmentDue: notifications.installmentDue ?? settings.notifications.installmentDue,
+      sellerSuspended: notifications.sellerSuspended ?? settings.notifications.sellerSuspended,
+      appealSubmitted: notifications.appealSubmitted ?? settings.notifications.appealSubmitted,
+      appealResolved: notifications.appealResolved ?? settings.notifications.appealResolved
+    };
+  }
+
+  if (policyLinks) {
+    settings.policyLinks = {
+      ...settings.policyLinks,
+      privacyPolicyUrl: policyLinks.privacyPolicyUrl ?? settings.policyLinks.privacyPolicyUrl,
+      shippingPolicyUrl: policyLinks.shippingPolicyUrl ?? settings.policyLinks.shippingPolicyUrl,
+      returnPolicyUrl: policyLinks.returnPolicyUrl ?? settings.policyLinks.returnPolicyUrl,
+      installmentTermsUrl: policyLinks.installmentTermsUrl ?? settings.policyLinks.installmentTermsUrl
+    };
+  }
+
+  if (maintenance) {
+    settings.maintenance = {
+      ...settings.maintenance,
+      enabled: maintenance.enabled ?? settings.maintenance.enabled,
+      message: maintenance.message ?? settings.maintenance.message,
+      readOnly: maintenance.readOnly ?? settings.maintenance.readOnly
+    };
   }
 
   if (metrics?.lowStockThreshold !== undefined) {

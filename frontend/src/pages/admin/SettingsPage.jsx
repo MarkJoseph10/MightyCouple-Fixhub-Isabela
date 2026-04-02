@@ -28,8 +28,13 @@ import { resolveMediaUrl } from "../../utils/media";
 import { getOrderReference } from "../../utils/orders";
 
 const sectionTabs = [
+  { id: "content", label: "Content", icon: ShoppingBag },
   { id: "operations", label: "Operations", icon: Settings2 },
-  { id: "branding", label: "Branding", icon: Palette }
+  { id: "branding", label: "Branding", icon: Palette },
+  { id: "seo", label: "SEO", icon: Sparkles },
+  { id: "policies", label: "Policies", icon: ShieldCheck },
+  { id: "notifications", label: "Notifications", icon: Gift },
+  { id: "admin", label: "Admin", icon: Users }
 ];
 
 function createLocationFee() {
@@ -116,6 +121,33 @@ function buildSettingsForm(settings) {
     installmentReleaseCondition: settings.installment?.releaseCondition === "admin_approved_early_release"
       ? "admin_approved_early_release"
       : "after_full_payment",
+    announcementText: settings.content?.announcement || "",
+    heroEyebrow: settings.content?.heroEyebrow || "",
+    heroTitle: settings.content?.heroTitle || "",
+    heroDescription: settings.content?.heroDescription || "",
+    primaryCtaLabel: settings.content?.primaryCtaLabel || "",
+    secondaryCtaLabel: settings.content?.secondaryCtaLabel || "",
+    featuredEyebrow: settings.content?.featuredEyebrow || "",
+    featuredTitle: settings.content?.featuredTitle || "",
+    featuredCaption: settings.content?.featuredCaption || "",
+    nextStepTitle: settings.content?.nextStepTitle || "",
+    nextStepDescription: settings.content?.nextStepDescription || "",
+    seoTitle: settings.seo?.title || "",
+    seoDescription: settings.seo?.description || "",
+    seoSocialImage: settings.seo?.socialImage || "",
+    maintenanceEnabled: settings.maintenance?.enabled === true,
+    maintenanceMessage: settings.maintenance?.message || "",
+    maintenanceReadOnly: settings.maintenance?.readOnly === true,
+    policyPrivacyUrl: settings.policyLinks?.privacyPolicyUrl || "",
+    policyShippingUrl: settings.policyLinks?.shippingPolicyUrl || "",
+    policyReturnUrl: settings.policyLinks?.returnPolicyUrl || "",
+    policyInstallmentUrl: settings.policyLinks?.installmentTermsUrl || "",
+    notificationOrderPlaced: settings.notifications?.orderPlaced !== false,
+    notificationPaymentReceived: settings.notifications?.paymentReceived !== false,
+    notificationInstallmentDue: settings.notifications?.installmentDue !== false,
+    notificationSellerSuspended: settings.notifications?.sellerSuspended !== false,
+    notificationAppealSubmitted: settings.notifications?.appealSubmitted !== false,
+    notificationAppealResolved: settings.notifications?.appealResolved !== false,
     promoCodes: settings.promotions?.promoCodes?.length
       ? settings.promotions.promoCodes.map((promo) => ({
           code: promo.code || "",
@@ -331,7 +363,7 @@ function DashboardPage() {
     newPassword: "",
     confirmPassword: ""
   });
-  const [activeSection, setActiveSection] = useState("branding");
+  const [activeSection, setActiveSection] = useState("content");
   const [loading, setLoading] = useState(true);
   const [savingDashboard, setSavingDashboard] = useState(false);
   const [savingAdmin, setSavingAdmin] = useState(false);
@@ -591,6 +623,43 @@ function DashboardPage() {
               active: promo.active !== false
             }))
             .filter((promo) => promo.code)
+        },
+        content: {
+          announcement: settingsForm.announcementText,
+          heroEyebrow: settingsForm.heroEyebrow,
+          heroTitle: settingsForm.heroTitle,
+          heroDescription: settingsForm.heroDescription,
+          primaryCtaLabel: settingsForm.primaryCtaLabel,
+          secondaryCtaLabel: settingsForm.secondaryCtaLabel,
+          featuredEyebrow: settingsForm.featuredEyebrow,
+          featuredTitle: settingsForm.featuredTitle,
+          featuredCaption: settingsForm.featuredCaption,
+          nextStepTitle: settingsForm.nextStepTitle,
+          nextStepDescription: settingsForm.nextStepDescription
+        },
+        seo: {
+          title: settingsForm.seoTitle,
+          description: settingsForm.seoDescription,
+          socialImage: settingsForm.seoSocialImage
+        },
+        notifications: {
+          orderPlaced: settingsForm.notificationOrderPlaced,
+          paymentReceived: settingsForm.notificationPaymentReceived,
+          installmentDue: settingsForm.notificationInstallmentDue,
+          sellerSuspended: settingsForm.notificationSellerSuspended,
+          appealSubmitted: settingsForm.notificationAppealSubmitted,
+          appealResolved: settingsForm.notificationAppealResolved
+        },
+        policyLinks: {
+          privacyPolicyUrl: settingsForm.policyPrivacyUrl,
+          shippingPolicyUrl: settingsForm.policyShippingUrl,
+          returnPolicyUrl: settingsForm.policyReturnUrl,
+          installmentTermsUrl: settingsForm.policyInstallmentUrl
+        },
+        maintenance: {
+          enabled: settingsForm.maintenanceEnabled,
+          message: settingsForm.maintenanceMessage,
+          readOnly: settingsForm.maintenanceReadOnly
         },
         metrics: {
           lowStockThreshold: Number(settingsForm.lowStockThreshold || 0)
@@ -894,6 +963,57 @@ function DashboardPage() {
                     )}
                   </div>
                 </div>
+              </div>
+            </SectionCard>
+          </div>
+
+          <div className={sectionClassName("content")}>
+            <SectionCard
+              eyebrow="Content"
+              title="Homepage copy and call-to-action text"
+              description="Edit the words shoppers see first so your homepage stays easy to update without touching code."
+            >
+              <div className="grid gap-4">
+                <InputField label="Promo banner text">
+                  <input value={settingsForm.announcementText} onChange={(event) => updateFormField("announcementText", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                </InputField>
+                <InputField label="Hero eyebrow">
+                  <input value={settingsForm.heroEyebrow} onChange={(event) => updateFormField("heroEyebrow", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                </InputField>
+                <InputField label="Hero title">
+                  <textarea value={settingsForm.heroTitle} onChange={(event) => updateFormField("heroTitle", event.target.value)} rows={3} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                </InputField>
+                <InputField label="Hero description">
+                  <textarea value={settingsForm.heroDescription} onChange={(event) => updateFormField("heroDescription", event.target.value)} rows={4} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                </InputField>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <InputField label="Primary CTA label">
+                    <input value={settingsForm.primaryCtaLabel} onChange={(event) => updateFormField("primaryCtaLabel", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                  </InputField>
+                  <InputField label="Secondary CTA label">
+                    <input value={settingsForm.secondaryCtaLabel} onChange={(event) => updateFormField("secondaryCtaLabel", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                  </InputField>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <InputField label="Featured eyebrow">
+                    <input value={settingsForm.featuredEyebrow} onChange={(event) => updateFormField("featuredEyebrow", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                  </InputField>
+                  <InputField label="Featured title">
+                    <input value={settingsForm.featuredTitle} onChange={(event) => updateFormField("featuredTitle", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                  </InputField>
+                </div>
+                <InputField label="Featured caption">
+                  <textarea value={settingsForm.featuredCaption} onChange={(event) => updateFormField("featuredCaption", event.target.value)} rows={3} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                </InputField>
+                <InputField label="Next step title">
+                  <input value={settingsForm.nextStepTitle} onChange={(event) => updateFormField("nextStepTitle", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                </InputField>
+                <InputField label="Next step description">
+                  <textarea value={settingsForm.nextStepDescription} onChange={(event) => updateFormField("nextStepDescription", event.target.value)} rows={4} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                </InputField>
+              </div>
+              <div className="mt-6 rounded-[24px] border border-cyan-400/15 bg-cyan-500/10 p-4 text-sm text-cyan-50">
+                These content fields drive the homepage hero, announcement banner, featured category copy, and the closing sales pitch.
               </div>
             </SectionCard>
           </div>
@@ -1222,6 +1342,96 @@ function DashboardPage() {
                 </div>
               </SectionCard>
             </form>
+          </div>
+
+          <div className={sectionClassName("seo")}>
+            <SectionCard
+              eyebrow="SEO"
+              title="Search and share preview"
+              description="Control the browser tab title and the description people see when the store is shared."
+            >
+              <div className="grid gap-4">
+                <InputField label="Page title">
+                  <input value={settingsForm.seoTitle} onChange={(event) => updateFormField("seoTitle", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                </InputField>
+                <InputField label="Meta description">
+                  <textarea value={settingsForm.seoDescription} onChange={(event) => updateFormField("seoDescription", event.target.value)} rows={4} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                </InputField>
+                <InputField label="Social preview image URL" helper="Use a wide image for link previews in Facebook, Messenger, and browser shares.">
+                  <input value={settingsForm.seoSocialImage} onChange={(event) => updateFormField("seoSocialImage", event.target.value)} placeholder="https://..." className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                </InputField>
+              </div>
+            </SectionCard>
+          </div>
+
+          <div className={sectionClassName("policies")}>
+            <SectionCard
+              eyebrow="Policies"
+              title="Policy links and maintenance notice"
+              description="Keep the public policy pages and downtime messaging easy to update from one place."
+            >
+              <div className="grid gap-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <InputField label="Privacy policy URL">
+                    <input value={settingsForm.policyPrivacyUrl} onChange={(event) => updateFormField("policyPrivacyUrl", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                  </InputField>
+                  <InputField label="Shipping policy URL">
+                    <input value={settingsForm.policyShippingUrl} onChange={(event) => updateFormField("policyShippingUrl", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                  </InputField>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <InputField label="Return policy URL">
+                    <input value={settingsForm.policyReturnUrl} onChange={(event) => updateFormField("policyReturnUrl", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                  </InputField>
+                  <InputField label="Installment terms URL">
+                    <input value={settingsForm.policyInstallmentUrl} onChange={(event) => updateFormField("policyInstallmentUrl", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                  </InputField>
+                </div>
+                <div className="rounded-[28px] border border-white/10 bg-white/5 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-white">Maintenance mode</p>
+                      <p className="mt-1 text-sm text-slate-400">Use this when the store needs a short public pause or read-only mode.</p>
+                    </div>
+                    <input type="checkbox" checked={settingsForm.maintenanceEnabled} onChange={(event) => updateFormField("maintenanceEnabled", event.target.checked)} />
+                  </div>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <label className="block space-y-2">
+                      <span className="text-xs uppercase tracking-[0.28em] text-slate-400">Maintenance message</span>
+                      <textarea value={settingsForm.maintenanceMessage} onChange={(event) => updateFormField("maintenanceMessage", event.target.value)} rows={3} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                    </label>
+                    <label className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3 text-sm text-slate-200">
+                      <span>Read-only mode</span>
+                      <input type="checkbox" checked={settingsForm.maintenanceReadOnly} onChange={(event) => updateFormField("maintenanceReadOnly", event.target.checked)} />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </SectionCard>
+          </div>
+
+          <div className={sectionClassName("notifications")}>
+            <SectionCard
+              eyebrow="Notifications"
+              title="Operational alerts"
+              description="These toggles control which store events should generate attention inside the system later."
+            >
+              <div className="grid gap-4 md:grid-cols-2">
+                {[
+                  ["notificationOrderPlaced", "Order placed"],
+                  ["notificationPaymentReceived", "Payment received"],
+                  ["notificationInstallmentDue", "Installment due"],
+                  ["notificationSellerSuspended", "Seller suspended"],
+                  ["notificationAppealSubmitted", "Appeal submitted"],
+                  ["notificationAppealResolved", "Appeal resolved"]
+                ].map(([field, label]) => (
+                  <label key={field} className="flex items-center justify-between gap-3 rounded-[24px] border border-white/10 bg-slate-950/25 px-4 py-3 text-sm text-slate-200">
+                    <span>{label}</span>
+                    <input type="checkbox" checked={settingsForm[field]} onChange={(event) => updateFormField(field, event.target.checked)} />
+                  </label>
+                ))}
+              </div>
+            </SectionCard>
           </div>
 
           <div className={sectionClassName("branding")}>

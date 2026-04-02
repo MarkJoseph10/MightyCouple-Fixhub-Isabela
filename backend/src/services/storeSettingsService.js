@@ -84,6 +84,45 @@ const defaultSettings = {
     },
     promoCodes: []
   },
+  content: {
+    announcement: "Affordable gadget deals are live.",
+    heroEyebrow: "Affordable gadgets for every budget",
+    heroTitle: "Mighty Couple makes phones, laptops, and trending tech feel reachable.",
+    heroDescription:
+      "Sell brand-new or budget-friendly gadgets with stronger trust signals: ratings, real buyer counts, promo timers, flexible payments, and COD for Philippine customers.",
+    primaryCtaLabel: "Shop gadgets",
+    secondaryCtaLabel: "Track an order",
+    featuredEyebrow: "Featured categories",
+    featuredTitle: "Browse by gadget type",
+    featuredCaption: "Jump into the categories customers search for most.",
+    nextStepTitle: "Turn Mighty Couple into a gadget brand people trust",
+    nextStepDescription:
+      "Build trust with clear shipping policies, flexible payments, strong product pages, and a support channel buyers can rely on."
+  },
+  seo: {
+    title: "Mighty Couple Commerce Platform",
+    description: "Shop phones, laptops, gadgets, and installment-ready deals from Mighty Couple.",
+    socialImage: ""
+  },
+  notifications: {
+    orderPlaced: true,
+    paymentReceived: true,
+    installmentDue: true,
+    sellerSuspended: true,
+    appealSubmitted: true,
+    appealResolved: true
+  },
+  policyLinks: {
+    privacyPolicyUrl: "/privacy-policy",
+    shippingPolicyUrl: "/shipping-policy",
+    returnPolicyUrl: "/return-policy",
+    installmentTermsUrl: "/installments"
+  },
+  maintenance: {
+    enabled: false,
+    message: "We are making improvements and will be back shortly.",
+    readOnly: false
+  },
   metrics: {
     cartAdds: 0,
     lowStockThreshold: 5
@@ -200,6 +239,43 @@ export function serializeStoreSettings(settings) {
         value: Number(promo.value || 0),
         active: promo.active !== false
       }))
+    },
+    content: {
+      announcement: settings.content?.announcement || defaultSettings.content.announcement,
+      heroEyebrow: settings.content?.heroEyebrow || defaultSettings.content.heroEyebrow,
+      heroTitle: settings.content?.heroTitle || defaultSettings.content.heroTitle,
+      heroDescription: settings.content?.heroDescription || defaultSettings.content.heroDescription,
+      primaryCtaLabel: settings.content?.primaryCtaLabel || defaultSettings.content.primaryCtaLabel,
+      secondaryCtaLabel: settings.content?.secondaryCtaLabel || defaultSettings.content.secondaryCtaLabel,
+      featuredEyebrow: settings.content?.featuredEyebrow || defaultSettings.content.featuredEyebrow,
+      featuredTitle: settings.content?.featuredTitle || defaultSettings.content.featuredTitle,
+      featuredCaption: settings.content?.featuredCaption || defaultSettings.content.featuredCaption,
+      nextStepTitle: settings.content?.nextStepTitle || defaultSettings.content.nextStepTitle,
+      nextStepDescription: settings.content?.nextStepDescription || defaultSettings.content.nextStepDescription
+    },
+    seo: {
+      title: settings.seo?.title || defaultSettings.seo.title,
+      description: settings.seo?.description || defaultSettings.seo.description,
+      socialImage: settings.seo?.socialImage || defaultSettings.seo.socialImage
+    },
+    notifications: {
+      orderPlaced: settings.notifications?.orderPlaced ?? defaultSettings.notifications.orderPlaced,
+      paymentReceived: settings.notifications?.paymentReceived ?? defaultSettings.notifications.paymentReceived,
+      installmentDue: settings.notifications?.installmentDue ?? defaultSettings.notifications.installmentDue,
+      sellerSuspended: settings.notifications?.sellerSuspended ?? defaultSettings.notifications.sellerSuspended,
+      appealSubmitted: settings.notifications?.appealSubmitted ?? defaultSettings.notifications.appealSubmitted,
+      appealResolved: settings.notifications?.appealResolved ?? defaultSettings.notifications.appealResolved
+    },
+    policyLinks: {
+      privacyPolicyUrl: settings.policyLinks?.privacyPolicyUrl || defaultSettings.policyLinks.privacyPolicyUrl,
+      shippingPolicyUrl: settings.policyLinks?.shippingPolicyUrl || defaultSettings.policyLinks.shippingPolicyUrl,
+      returnPolicyUrl: settings.policyLinks?.returnPolicyUrl || defaultSettings.policyLinks.returnPolicyUrl,
+      installmentTermsUrl: settings.policyLinks?.installmentTermsUrl || defaultSettings.policyLinks.installmentTermsUrl
+    },
+    maintenance: {
+      enabled: settings.maintenance?.enabled ?? defaultSettings.maintenance.enabled,
+      message: settings.maintenance?.message || defaultSettings.maintenance.message,
+      readOnly: settings.maintenance?.readOnly ?? defaultSettings.maintenance.readOnly
     },
     metrics: {
       cartAdds: Number(settings.metrics?.cartAdds ?? defaultSettings.metrics.cartAdds),

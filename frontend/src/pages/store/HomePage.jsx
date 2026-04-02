@@ -108,6 +108,7 @@ export default function HomePage() {
   const limitedOffer = settings.promotions?.limitedOffer;
   const bundle = settings.promotions?.bundle;
   const freeGift = settings.promotions?.freeGift;
+  const content = settings.content || {};
   const bestSellers = [...products]
     .sort((left, right) => {
       const soldGap = Number(right.soldCount || 0) - Number(left.soldCount || 0);
@@ -186,7 +187,7 @@ export default function HomePage() {
             <div className="flex items-start gap-3">
               <Sparkles className="mt-1 text-orange-300" size={18} />
               <div>
-                <p className="font-semibold text-white">Affordable gadget deals are live.</p>
+                <p className="font-semibold text-white">{content.announcement || "Affordable gadget deals are live."}</p>
                 <p className="text-sm text-orange-100/85">
                   Browse phones, laptops, and trending tech with COD-ready checkout, social proof, and bundle savings.
                 </p>
@@ -220,21 +221,20 @@ export default function HomePage() {
             <div className="min-w-0 space-y-4">
               <div className="inline-flex max-w-full items-center rounded-full bg-white/10 px-3.5 py-2 text-xs text-slate-200 sm:text-sm">
                 <Sparkles size={15} className="mr-2 text-orange-300" />
-                Affordable gadgets for every budget
+                {content.heroEyebrow || "Affordable gadgets for every budget"}
               </div>
               <h1 className="max-w-[13ch] text-[clamp(1.8rem,4.15vw,3.35rem)] font-semibold leading-[0.94] tracking-tight text-white">
-                {settings.storeName} makes phones, laptops, and trending tech feel reachable.
+                {content.heroTitle || `${settings.storeName} makes phones, laptops, and trending tech feel reachable.`}
               </h1>
               <p className="max-w-[42rem] text-[0.92rem] leading-6 text-slate-300 sm:text-[0.98rem]">
-                Sell brand-new or budget-friendly gadgets with stronger trust signals: ratings, real buyer counts, promo timers,
-                flexible payments, and COD for Philippine customers.
+                {content.heroDescription || "Sell brand-new or budget-friendly gadgets with stronger trust signals: ratings, real buyer counts, promo timers, flexible payments, and COD for Philippine customers."}
               </p>
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <a href="#catalog" className="inline-flex items-center justify-center rounded-full bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white">
-                  Shop gadgets
+                  {content.primaryCtaLabel || "Shop gadgets"}
                 </a>
                 <Link to="/track-order" className="inline-flex items-center justify-center rounded-full border border-white/10 px-5 py-2.5 text-sm text-slate-100">
-                  Track an order
+                  {content.secondaryCtaLabel || "Track an order"}
                 </Link>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
@@ -335,11 +335,11 @@ export default function HomePage() {
         <section className="page-shell space-y-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Featured categories</p>
-              <h2 className="mt-2 text-2xl font-semibold text-white md:text-3xl">Browse by gadget type</h2>
+              <p className="text-sm uppercase tracking-[0.3em] text-slate-400">{content.featuredEyebrow || "Featured categories"}</p>
+              <h2 className="mt-2 text-2xl font-semibold text-white md:text-3xl">{content.featuredTitle || "Browse by gadget type"}</h2>
             </div>
             <p className="max-w-2xl text-sm text-slate-400">
-              Extra shortcut cards para mas mabilis makapunta ang buyers sa category na gusto nila, without changing your existing catalog flow.
+              {content.featuredCaption || "Extra shortcut cards para mas mabilis makapunta ang buyers sa category na gusto nila, without changing your existing catalog flow."}
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -592,9 +592,9 @@ export default function HomePage() {
       <section className="page-shell grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="glass-panel rounded-[32px] p-6 shadow-ambient">
           <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Next step</p>
-          <h2 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">Turn {settings.storeName} into a gadget brand people trust</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">{content.nextStepTitle || `Turn ${settings.storeName} into a gadget brand people trust`}</h2>
           <p className="mt-3 max-w-2xl text-slate-300">
-            Build trust with clear shipping policies, flexible payments, strong product pages, and a support channel buyers can rely on.
+            {content.nextStepDescription || "Build trust with clear shipping policies, flexible payments, strong product pages, and a support channel buyers can rely on."}
           </p>
           {isAdmin ? (
             <Link to="/admin" className="mt-6 inline-flex items-center rounded-full bg-white px-5 py-3 font-semibold text-slate-900">

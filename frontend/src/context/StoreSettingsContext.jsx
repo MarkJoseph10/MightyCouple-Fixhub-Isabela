@@ -86,6 +86,45 @@ const fallbackSettings = {
     },
     promoCodes: []
   },
+  content: {
+    announcement: "Affordable gadget deals are live.",
+    heroEyebrow: "Affordable gadgets for every budget",
+    heroTitle: "Mighty Couple makes phones, laptops, and trending tech feel reachable.",
+    heroDescription:
+      "Sell brand-new or budget-friendly gadgets with stronger trust signals: ratings, real buyer counts, promo timers, flexible payments, and COD for Philippine customers.",
+    primaryCtaLabel: "Shop gadgets",
+    secondaryCtaLabel: "Track an order",
+    featuredEyebrow: "Featured categories",
+    featuredTitle: "Browse by gadget type",
+    featuredCaption: "Jump into the categories customers search for most.",
+    nextStepTitle: "Turn Mighty Couple into a gadget brand people trust",
+    nextStepDescription:
+      "Build trust with clear shipping policies, flexible payments, strong product pages, and a support channel buyers can rely on."
+  },
+  seo: {
+    title: "Mighty Couple Commerce Platform",
+    description: "Shop phones, laptops, gadgets, and installment-ready deals from Mighty Couple.",
+    socialImage: ""
+  },
+  notifications: {
+    orderPlaced: true,
+    paymentReceived: true,
+    installmentDue: true,
+    sellerSuspended: true,
+    appealSubmitted: true,
+    appealResolved: true
+  },
+  policyLinks: {
+    privacyPolicyUrl: "/privacy-policy",
+    shippingPolicyUrl: "/shipping-policy",
+    returnPolicyUrl: "/return-policy",
+    installmentTermsUrl: "/installments"
+  },
+  maintenance: {
+    enabled: false,
+    message: "We are making improvements and will be back shortly.",
+    readOnly: false
+  },
   metrics: {
     cartAdds: 0,
     lowStockThreshold: 5
@@ -114,7 +153,7 @@ export function StoreSettingsProvider({ children }) {
         ? "image/svg+xml"
         : "image/png";
 
-    document.title = settings.storeName ? `${settings.storeName} Commerce Platform` : "Mighty Couple Commerce Platform";
+    document.title = settings.seo?.title || (settings.storeName ? `${settings.storeName} Commerce Platform` : "Mighty Couple Commerce Platform");
 
     let favicon = document.querySelector("link[data-store-favicon='true']");
 

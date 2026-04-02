@@ -150,6 +150,87 @@ const promotionSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const contentSchema = new mongoose.Schema(
+  {
+    announcement: { type: String, default: "Affordable gadget deals are live." },
+    heroEyebrow: { type: String, default: "Affordable gadgets for every budget" },
+    heroTitle: {
+      type: String,
+      default: "Mighty Couple makes phones, laptops, and trending tech feel reachable."
+    },
+    heroDescription: {
+      type: String,
+      default:
+        "Sell brand-new or budget-friendly gadgets with stronger trust signals: ratings, real buyer counts, promo timers, flexible payments, and COD for Philippine customers."
+    },
+    primaryCtaLabel: { type: String, default: "Shop gadgets" },
+    secondaryCtaLabel: { type: String, default: "Track an order" },
+    featuredEyebrow: { type: String, default: "Featured categories" },
+    featuredTitle: { type: String, default: "Browse by gadget type" },
+    featuredCaption: {
+      type: String,
+      default: "Jump into the categories customers search for most."
+    },
+    nextStepTitle: {
+      type: String,
+      default: "Turn Mighty Couple into a gadget brand people trust"
+    },
+    nextStepDescription: {
+      type: String,
+      default:
+        "Build trust with clear shipping policies, flexible payments, strong product pages, and a support channel buyers can rely on."
+    }
+  },
+  { _id: false }
+);
+
+const seoSchema = new mongoose.Schema(
+  {
+    title: { type: String, default: "Mighty Couple Commerce Platform" },
+    description: {
+      type: String,
+      default:
+        "Shop phones, laptops, gadgets, and installment-ready deals from Mighty Couple."
+    },
+    socialImage: { type: String, default: "" }
+  },
+  { _id: false }
+);
+
+const notificationSchema = new mongoose.Schema(
+  {
+    orderPlaced: { type: Boolean, default: true },
+    paymentReceived: { type: Boolean, default: true },
+    installmentDue: { type: Boolean, default: true },
+    sellerSuspended: { type: Boolean, default: true },
+    appealSubmitted: { type: Boolean, default: true },
+    appealResolved: { type: Boolean, default: true }
+  },
+  { _id: false }
+);
+
+const policyLinksSchema = new mongoose.Schema(
+  {
+    privacyPolicyUrl: { type: String, default: "/privacy-policy" },
+    shippingPolicyUrl: { type: String, default: "/shipping-policy" },
+    returnPolicyUrl: { type: String, default: "/return-policy" },
+    installmentTermsUrl: { type: String, default: "/installments" }
+  },
+  { _id: false }
+);
+
+const maintenanceSchema = new mongoose.Schema(
+  {
+    enabled: { type: Boolean, default: false },
+    message: {
+      type: String,
+      default: "We are making improvements and will be back shortly."
+    },
+    readOnly: { type: Boolean, default: false }
+  },
+  { _id: false }
+);
+
 const metricsSchema = new mongoose.Schema(
   {
     cartAdds: { type: Number, default: 0 },
@@ -232,6 +313,26 @@ const storeSettingsSchema = new mongoose.Schema(
     },
     promotions: {
       type: promotionSchema,
+      default: () => ({})
+    },
+    content: {
+      type: contentSchema,
+      default: () => ({})
+    },
+    seo: {
+      type: seoSchema,
+      default: () => ({})
+    },
+    notifications: {
+      type: notificationSchema,
+      default: () => ({})
+    },
+    policyLinks: {
+      type: policyLinksSchema,
+      default: () => ({})
+    },
+    maintenance: {
+      type: maintenanceSchema,
       default: () => ({})
     },
     metrics: {
