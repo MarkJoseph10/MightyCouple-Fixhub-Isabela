@@ -6,7 +6,7 @@ import AccessPromptModal from "../common/AccessPromptModal";
 import TiltCard from "../common/TiltCard";
 import { useAuth } from "../../context/AuthContext";
 import { useWishlist } from "../../context/WishlistContext";
-import { peso } from "../../utils/commerce";
+import { formatCompactCount, peso } from "../../utils/commerce";
 import { optimizeImageUrl } from "../../utils/media";
 
 export default function ProductCard({ product, onAddToCart, compact = false, eagerImage = false }) {
@@ -134,7 +134,7 @@ export default function ProductCard({ product, onAddToCart, compact = false, eag
             >
               <div className="flex min-w-0 items-center gap-2 rounded-2xl bg-slate-950/20 px-3 py-2">
                 <Users size={14} className="text-orange-300" />
-                <span>{product.soldCount || 0} sold</span>
+                <span>{formatCompactCount(product.soldCount)} sold</span>
               </div>
               <div className="flex min-w-0 items-center gap-2 rounded-2xl bg-slate-950/20 px-3 py-2">
                 <Star size={14} className="text-amber-300" />
@@ -143,7 +143,7 @@ export default function ProductCard({ product, onAddToCart, compact = false, eag
               {!compact ? (
                 <div className="col-span-2 flex min-w-0 items-center gap-2 rounded-2xl bg-slate-950/20 px-3 py-2 sm:col-span-1">
                   <TrendingUp size={14} className="text-cyan-300" />
-                  <span>{product.recentSales24h || 0} today</span>
+                  <span>{formatCompactCount(product.recentSales24h)} today</span>
                 </div>
               ) : null}
             </div>

@@ -6,6 +6,28 @@ export function peso(value) {
   }).format(value || 0);
 }
 
+export function formatCompactCount(value) {
+  const number = Number(value || 0);
+
+  if (!Number.isFinite(number)) {
+    return "0";
+  }
+
+  if (number >= 1_000_000) {
+    return `${Number((number / 1_000_000).toFixed(number % 1_000_000 === 0 ? 0 : 1)).toString().replace(/\.0$/, "")}M`;
+  }
+
+  if (number >= 100_000) {
+    return `${Math.round(number / 1_000)}k`;
+  }
+
+  if (number >= 1_000) {
+    return `${Math.round(number / 1_000)}k`;
+  }
+
+  return `${Math.round(number)}`;
+}
+
 export function resolveShippingPreview(settings, address = {}, hasItems = true) {
   if (!hasItems) {
     return {
