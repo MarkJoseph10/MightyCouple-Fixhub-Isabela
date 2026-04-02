@@ -7,6 +7,7 @@ import AdminInstallmentsPage from "./pages/admin/AdminInstallmentsPage";
 import AdminOrdersPage from "./pages/admin/AdminOrdersPage";
 import CustomersPage from "./pages/admin/CustomersPage";
 import DropshippingPage from "./pages/admin/DropshippingPage";
+import ActivityLogPage from "./pages/admin/ActivityLogPage";
 import ProductsPage from "./pages/admin/ProductsPage";
 import SettingsPage from "./pages/admin/SettingsPage";
 import SellerLayout from "./layouts/SellerLayout";
@@ -131,6 +132,7 @@ export default function App() {
             <Route path="/admin/installments" element={<AdminInstallmentsPage />} />
             <Route path="/admin/customers" element={<CustomersPage />} />
             <Route path="/admin/dropshipping" element={<DropshippingPage />} />
+            <Route path="/admin/activity-log" element={<ActivityLogPage />} />
             <Route path="/admin/settings" element={<SettingsPage />} />
           </Route>
 

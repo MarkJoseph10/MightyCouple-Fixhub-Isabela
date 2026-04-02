@@ -1,4 +1,4 @@
-import { Boxes, ChartColumn, CreditCard, PackageSearch, Settings2, ShoppingCart, Truck, Users } from "lucide-react";
+import { Boxes, ChartColumn, Clock3, CreditCard, PackageSearch, Settings2, ShoppingCart, Truck, Users } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useStoreSettings } from "../../context/StoreSettingsContext";
 import { resolveMediaUrl } from "../../utils/media";
@@ -10,6 +10,7 @@ const links = [
   { to: "/admin/installments", label: "Installments", icon: CreditCard },
   { to: "/admin/customers", label: "Customers", icon: Users },
   { to: "/admin/dropshipping", label: "Dropshipping", icon: Truck },
+  { to: "/admin/activity-log", label: "Activity Log", icon: Clock3 },
   { to: "/admin/settings", label: "Settings", icon: Settings2 },
   { to: "/", label: "Storefront", icon: PackageSearch }
 ];

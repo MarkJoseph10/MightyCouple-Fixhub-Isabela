@@ -12,6 +12,7 @@ const pageLabels = {
   "/admin/installments": "Installments",
   "/admin/customers": "Customers",
   "/admin/dropshipping": "Dropshipping",
+  "/admin/activity-log": "Activity Log",
   "/admin/settings": "Settings"
 };
 

@@ -6,6 +6,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ensureSellerDisciplineShape, getNextSellerDisciplineStep, normalizeSellerSuspensionState } from "../utils/sellerDiscipline.js";
 import { createNotifications } from "../services/notificationService.js";
 import { getOrCreateStoreSettings } from "../services/storeSettingsService.js";
+import { recordActivity } from "../services/activityLogService.js";
 
 function generatePayoutReference(prefix = "PO") {
   const now = new Date();
@@ -194,6 +195,21 @@ export const applyAsSeller = asyncHandler(async (req, res) => {
       }
     ]
   });
+
+  await recordActivity({
+    actor: req.user,
+    category: "seller",
+    action: "seller_application_submitted",
+    title: "Seller application submitted",
+    message: `${displayName || user.name} submitted a seller application.`,
+    link: "/admin/customers",
+    subjectType: "seller_application",
+    subjectId: user._id.toString(),
+    metadata: {
+      businessName,
+      displayName
+    }
+  }).catch(() => {});
 
   res.status(201).json({
     message: "Seller application submitted successfully.",
@@ -386,6 +402,33 @@ export const reviewSellerApplication = asyncHandler(async (req, res) => {
       }
     ]
   });
+
+  await recordActivity({
+    actor: req.user,
+    category: "seller",
+    action: `seller_application_${decision}`,
+    title:
+      decision === "approved"
+        ? "Seller application approved"
+        : decision === "rejected"
+          ? "Seller application rejected"
+          : "Seller suspended",
+    message:
+      decision === "approved"
+        ? `${user.sellerApplication.displayName || user.name} was approved as a seller.`
+        : decision === "rejected"
+          ? `${user.sellerApplication.displayName || user.name} was rejected as a seller.`
+          : `${user.sellerApplication.displayName || user.name} was suspended as a seller.`,
+    link: "/admin/customers",
+    subjectType: "seller_application",
+    subjectId: user._id.toString(),
+    severity: decision === "approved" ? "success" : decision === "rejected" ? "warning" : "danger",
+    metadata: {
+      decision,
+      adminNote,
+      rejectionReason
+    }
+  }).catch(() => {});
   res.json({
     message: `Seller application ${decision}.`,
     user
@@ -487,6 +530,20 @@ export const submitSellerAppeal = asyncHandler(async (req, res) => {
     ]
   });
 
+  await recordActivity({
+    actor: req.user,
+    category: "seller",
+    action: "seller_appeal_submitted",
+    title: "Seller appeal submitted",
+    message: `${user.sellerProfile?.displayName || user.name} submitted a seller appeal.`,
+    link: "/admin/customers",
+    subjectType: "seller_appeal",
+    subjectId: user._id.toString(),
+    metadata: {
+      appealMessage: message
+    }
+  }).catch(() => {});
+
   res.status(201).json({
     message: "Seller appeal submitted successfully.",
     user
@@ -572,6 +629,25 @@ export const reviewSellerAppeal = asyncHandler(async (req, res) => {
       }
     ]
   });
+
+  await recordActivity({
+    actor: req.user,
+    category: "seller",
+    action: `seller_appeal_${decision}`,
+    title: decision === "approved" ? "Seller appeal approved" : "Seller appeal rejected",
+    message:
+      decision === "approved"
+        ? `${user.sellerProfile?.displayName || user.name} was restored after appeal approval.`
+        : `${user.sellerProfile?.displayName || user.name} appeal was rejected.`,
+    link: "/admin/customers",
+    subjectType: "seller_appeal",
+    subjectId: user._id.toString(),
+    severity: decision === "approved" ? "success" : "warning",
+    metadata: {
+      decision,
+      adminNote
+    }
+  }).catch(() => {});
 
   res.json({
     message: `Seller appeal ${decision}.`,
@@ -715,6 +791,21 @@ export const requestSellerPayout = asyncHandler(async (req, res) => {
       ]
     });
 
+    await recordActivity({
+      actor: req.user,
+      category: "seller",
+      action: "seller_payout_requested",
+      title: "Seller payout requested",
+      message: `${updatedUser.name || "A seller"} submitted a payout request for ${requestedAmount}.`,
+      link: "/admin/customers",
+      subjectType: "seller_payout",
+      subjectId: updatedUser._id.toString(),
+      metadata: {
+        requestedAmount,
+        requestCode: nextPayoutRequests[nextPayoutRequests.length - 1]?.requestCode || ""
+      }
+    }).catch(() => {});
+
     res.status(201).json({
       message: "Payout request submitted successfully.",
       payoutRequests: updatedUser.sellerProfile?.payoutRequests || []
@@ -811,6 +902,28 @@ export const reviewSellerPayout = asyncHandler(async (req, res) => {
       }
     ]
   });
+
+  await recordActivity({
+    actor: req.user,
+    category: "seller",
+    action: `seller_payout_${nextStatus}`,
+    title:
+      nextStatus === "approved"
+        ? "Seller payout approved"
+        : nextStatus === "paid"
+          ? "Seller payout paid"
+          : "Seller payout rejected",
+    message: `Seller payout request ${nextStatus} for ${user.name || "seller"}.`,
+    link: "/admin/customers",
+    subjectType: "seller_payout",
+    subjectId: user._id.toString(),
+    severity: nextStatus === "paid" ? "success" : nextStatus === "approved" ? "info" : "warning",
+    metadata: {
+      requestId,
+      nextStatus,
+      amount: targetRequest.requestedAmount
+    }
+  }).catch(() => {});
 
   res.json({
     message: `Payout request ${nextStatus}.`,

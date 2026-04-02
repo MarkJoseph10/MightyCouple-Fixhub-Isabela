@@ -4,6 +4,7 @@ import {
   getOrCreateStoreSettings,
   serializeStoreSettings
 } from "../services/storeSettingsService.js";
+import { recordActivity } from "../services/activityLogService.js";
 
 export const getPublicStoreSettings = asyncHandler(async (_, res) => {
   const settings = await getOrCreateStoreSettings();
@@ -296,6 +297,40 @@ export const updateStoreSettings = asyncHandler(async (req, res) => {
   }
 
   await settings.save();
+
+  await recordActivity({
+    actor: req.user,
+    category: "system",
+    action: "store_settings_updated",
+    title: "Store settings updated",
+    message: "Admin updated store branding, operations, policies, or notification settings.",
+    link: "/admin/settings",
+    subjectType: "store_settings",
+    subjectId: settings._id.toString(),
+    severity: "info",
+    metadata: {
+      changedSections: [
+        storeName ? "storeName" : null,
+        shipping ? "shipping" : null,
+        logo ? "logo" : null,
+        banner ? "banner" : null,
+        heroImage ? "heroImage" : null,
+        backgroundImage ? "backgroundImage" : null,
+        favicon ? "favicon" : null,
+        paymentOptions ? "paymentOptions" : null,
+        paymentDetails ? "paymentDetails" : null,
+        orderRules ? "orderRules" : null,
+        promotions ? "promotions" : null,
+        content ? "content" : null,
+        seo ? "seo" : null,
+        notifications ? "notifications" : null,
+        policyLinks ? "policyLinks" : null,
+        maintenance ? "maintenance" : null,
+        metrics ? "metrics" : null,
+        installment ? "installment" : null
+      ].filter(Boolean)
+    }
+  }).catch(() => {});
 
   res.json({
     message: "Store settings updated successfully",

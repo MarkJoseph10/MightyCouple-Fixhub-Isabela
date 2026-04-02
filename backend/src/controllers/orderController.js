@@ -6,6 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { getOrCreateStoreSettings } from "../services/storeSettingsService.js";
 import { autoCancelStalePendingOrders } from "../services/orderAutomationService.js";
 import { createNotifications } from "../services/notificationService.js";
+import { recordActivity } from "../services/activityLogService.js";
 import { uploadBufferToCloudinary } from "./uploadController.js";
 import {
   calculateCartDiscounts,
@@ -830,6 +831,23 @@ export const createOrder = asyncHandler(async (req, res) => {
     ]
   });
 
+  await recordActivity({
+    actor: req.user,
+    category: "order",
+    action: "order_created",
+    title: "Order placed",
+    message: `Order ${order.orderNumber || order._id.toString()} was placed.`,
+    link: `/admin/orders`,
+    subjectType: "order",
+    subjectId: order._id.toString(),
+    severity: "success",
+    metadata: {
+      orderType,
+      paymentMethod,
+      total
+    }
+  }).catch(() => {});
+
   res.status(201).json({
     ...serializeOrder(order, storeSettings),
     paymentMessage: orderType === "installment"
@@ -1044,6 +1062,22 @@ export const submitInstallmentPayment = asyncHandler(async (req, res) => {
     ]
   });
 
+  await recordActivity({
+    actor: req.user,
+    category: "installment",
+    action: "installment_payment_submitted",
+    title: "Installment payment submitted",
+    message: `Installment payment for order ${order.orderNumber || order._id.toString()} was submitted.`,
+    link: "/admin/installments",
+    subjectType: "installment",
+    subjectId: order._id.toString(),
+    metadata: {
+      paymentId: paymentRecord._id?.toString?.() || "",
+      phase,
+      amount
+    }
+  }).catch(() => {});
+
   res.status(201).json({
     message: "Installment payment submitted successfully",
     order: serializeOrder(order, storeSettings)
@@ -1217,6 +1251,23 @@ export const reviewInstallmentPayment = asyncHandler(async (req, res) => {
     ]
   });
 
+  await recordActivity({
+    actor: req.user,
+    category: "installment",
+    action: `installment_payment_${decision}`,
+    title: decision === "approved" ? "Installment payment approved" : "Installment payment rejected",
+    message: `Installment payment for order ${order.orderNumber || order._id.toString()} was ${decision}.`,
+    link: "/admin/installments",
+    subjectType: "installment",
+    subjectId: order._id.toString(),
+    severity: decision === "approved" ? "success" : "warning",
+    metadata: {
+      paymentId: payment._id?.toString?.() || "",
+      decision,
+      amount: payment.amount
+    }
+  }).catch(() => {});
+
   res.json({
     message: `Installment payment ${decision}.`,
     order: serializeOrder(order, storeSettings)
@@ -1283,6 +1334,21 @@ export const requestRefund = asyncHandler(async (req, res) => {
       }
     ]
   });
+
+  await recordActivity({
+    actor: req.user,
+    category: "refund",
+    action: "refund_requested",
+    title: "Refund request submitted",
+    message: `Refund request for order ${order.orderNumber || order._id.toString()} was submitted.`,
+    link: "/admin/orders",
+    subjectType: "refund",
+    subjectId: order._id.toString(),
+    severity: "warning",
+    metadata: {
+      reason
+    }
+  }).catch(() => {});
 
   res.status(201).json({
     message: "Refund request submitted successfully",
@@ -1385,6 +1451,29 @@ export const updateRefundStatus = asyncHandler(async (req, res) => {
     ]
   });
 
+  await recordActivity({
+    actor: req.user,
+    category: "refund",
+    action: `refund_${nextStatus}`,
+    title:
+      nextStatus === "approved"
+        ? "Refund approved"
+        : nextStatus === "rejected"
+          ? "Refund rejected"
+          : nextStatus === "refunded"
+            ? "Refund completed"
+            : "Refund updated",
+    message: `Refund status for order ${order.orderNumber || order._id.toString()} changed to ${nextStatus}.`,
+    link: "/admin/orders",
+    subjectType: "refund",
+    subjectId: order._id.toString(),
+    severity: nextStatus === "refunded" ? "success" : nextStatus === "approved" ? "info" : "warning",
+    metadata: {
+      nextStatus,
+      adminMessage
+    }
+  }).catch(() => {});
+
   res.json({
     message: `Refund marked as ${nextStatus}`,
     order: serializeOrder(order, storeSettings)
@@ -1457,6 +1546,32 @@ export const updateInstallmentStatus = asyncHandler(async (req, res) => {
   } else {
     throw new ApiError(400, "Unsupported installment action");
   }
+
+  await recordActivity({
+    actor: req.user,
+    category: "installment",
+    action: `installment_${action}`,
+    title:
+      action === "cancel"
+        ? "Installment cancelled"
+        : action === "extend_due_date"
+          ? "Installment due date updated"
+          : action === "approve_early_release"
+            ? "Installment early release approved"
+            : action === "add_note"
+              ? "Installment note updated"
+              : "Installment completed",
+    message: `Installment order ${order.orderNumber || order._id.toString()} was updated: ${action}.`,
+    link: "/admin/installments",
+    subjectType: "installment",
+    subjectId: order._id.toString(),
+    severity: action === "cancel" ? "warning" : action === "mark_completed" ? "success" : "info",
+    metadata: {
+      action,
+      note,
+      scheduleSequence
+    }
+  }).catch(() => {});
 
   if (shouldRecalculate) {
     recalculateInstallmentState(order);
@@ -1649,6 +1764,25 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
         }
       ]
     });
+  }
+
+  if (status && status !== previousStatus) {
+    await recordActivity({
+      actor: req.user,
+      category: "order",
+      action: `order_status_${String(status).trim().toLowerCase()}`,
+      title: "Order status updated",
+      message: `Order ${order.orderNumber || order._id.toString()} changed to ${status}.`,
+      link: "/admin/orders",
+      subjectType: "order",
+      subjectId: order._id.toString(),
+      severity: status === "delivered" ? "success" : status === "cancelled" ? "warning" : "info",
+      metadata: {
+        previousStatus,
+        nextStatus: status,
+        paymentStatus: order.payment?.status
+      }
+    }).catch(() => {});
   }
   res.json(serializeOrder(order, storeSettings));
 });

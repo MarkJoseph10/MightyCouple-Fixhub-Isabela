@@ -9,6 +9,7 @@ import authRoutes from "./routes/authRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import newsletterRoutes from "./routes/newsletterRoutes.js";
+import activityLogRoutes from "./routes/activityLogRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
@@ -52,6 +53,7 @@ export function createApp() {
   app.use("/api/analytics", analyticsRoutes);
   app.use("/api/contact", contactRoutes);
   app.use("/api/newsletter", newsletterRoutes);
+  app.use("/api/activity-logs", activityLogRoutes);
   app.use("/api/notifications", notificationRoutes);
   app.use("/api/products", productRoutes);
   app.use("/api/reviews", reviewRoutes);
