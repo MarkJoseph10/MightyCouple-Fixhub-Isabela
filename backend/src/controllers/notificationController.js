@@ -31,16 +31,49 @@ function canAccessNotification(notification, user) {
 
 export const getMyNotifications = asyncHandler(async (req, res) => {
   const limit = Math.min(50, Math.max(1, Number(req.query.limit || 15)));
+  const page = Math.max(1, Number(req.query.page || 1));
+  const status = String(req.query.status || "all").trim().toLowerCase();
+  const group = String(req.query.group || "all").trim().toLowerCase();
+  const type = String(req.query.type || "").trim().toLowerCase();
   const filter = notificationAccessFilter(req.user);
 
+  if (status === "read") {
+    filter.readAt = { $ne: null };
+  } else if (status === "unread") {
+    filter.readAt = null;
+  }
+
+  if (type) {
+    filter.type = type;
+  } else if (group && group !== "all") {
+    const groupPatterns = {
+      order: /^order_/i,
+      installment: /^installment_/i,
+      refund: /^refund_/i,
+      seller: /^seller_/i,
+      payout: /^seller_payout_/i,
+      system: /^system_/i,
+      account: /^(auth_|account_|profile_)/i
+    };
+
+    if (groupPatterns[group]) {
+      filter.type = groupPatterns[group];
+    }
+  }
+
   const [notifications, unreadCount] = await Promise.all([
-    Notification.find(filter).sort({ createdAt: -1 }).limit(limit),
+    Notification.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit),
     Notification.countDocuments({ ...filter, readAt: null })
   ]);
+  const total = await Notification.countDocuments(filter);
 
   res.json({
     notifications: notifications.map(serializeNotification),
-    unreadCount
+    unreadCount,
+    page,
+    limit,
+    total,
+    hasMore: page * limit < total
   });
 });
 
