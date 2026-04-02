@@ -1043,37 +1043,37 @@ function DashboardPage() {
                 title="Shipping, payment, promotion, and stock controls"
                 description="Everything here updates the live store after saving, including checkout fees and accepted payment methods."
               >
-                <div className="grid gap-4 xl:grid-cols-2">
-                  <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
+                <div className="grid gap-4 xl:grid-cols-2 xl:items-start">
+                  <div className="self-start rounded-[28px] border border-white/10 bg-white/5 p-4 xl:h-fit">
                     <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
                       <MapPinned size={16} className="text-cyan-300" />
                       Shipping settings
                     </div>
-                    <div className="mt-5 grid gap-4">
+                    <div className="mt-4 grid gap-3">
                       <div className="grid gap-3 sm:grid-cols-2">
                         <button
                           type="button"
                           onClick={() => updateFormField("shippingMode", "fixed")}
-                          className={`rounded-[24px] border px-4 py-4 text-left transition ${
+                          className={`rounded-[20px] border px-3 py-3 text-left transition ${
                             settingsForm.shippingMode === "fixed"
                               ? "border-brand-400/30 bg-brand-500/10 text-white"
                               : "border-white/10 bg-slate-950/20 text-slate-300"
                           }`}
                         >
-                          <p className="font-semibold">Fixed fee</p>
-                          <p className="mt-1 text-sm text-slate-400">One shipping fee for all areas.</p>
+                          <p className="text-sm font-semibold">Fixed fee</p>
+                          <p className="mt-1 text-xs text-slate-400">One fee for all areas.</p>
                         </button>
                         <button
                           type="button"
                           onClick={() => updateFormField("shippingMode", "location")}
-                          className={`rounded-[24px] border px-4 py-4 text-left transition ${
+                          className={`rounded-[20px] border px-3 py-3 text-left transition ${
                             settingsForm.shippingMode === "location"
                               ? "border-brand-400/30 bg-brand-500/10 text-white"
                               : "border-white/10 bg-slate-950/20 text-slate-300"
                           }`}
                         >
-                          <p className="font-semibold">Location based</p>
-                          <p className="mt-1 text-sm text-slate-400">Different fees for Metro Manila, Luzon, and VisMin.</p>
+                          <p className="text-sm font-semibold">Location based</p>
+                          <p className="mt-1 text-xs text-slate-400">Different fees by area.</p>
                         </button>
                       </div>
 
@@ -1106,14 +1106,14 @@ function DashboardPage() {
                         </div>
                       )}
                     </div>
-                  </div>
+                </div>
 
-                  <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
+                  <div className="self-start rounded-[28px] border border-white/10 bg-white/5 p-4 xl:h-fit">
                     <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
                       <CreditCard size={16} className="text-emerald-300" />
                       Payment settings
                     </div>
-                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
                       {[
                         ["gcash", "GCash"],
                         ["bankTransfer", "Bank transfer"],
@@ -1122,14 +1122,14 @@ function DashboardPage() {
                         ["paypal", "PayPal"],
                         ["maya", "Maya"]
                       ].map(([key, label]) => (
-                        <label key={key} className="flex items-center justify-between rounded-[24px] border border-white/10 bg-slate-950/25 px-4 py-4 text-sm text-slate-200">
+                        <label key={key} className="flex items-center justify-between rounded-[20px] border border-white/10 bg-slate-950/25 px-3 py-3 text-sm text-slate-200">
                           <span>{label}</span>
                           <input type="checkbox" checked={settingsForm.paymentOptions[key]} onChange={(event) => updateNestedField("paymentOptions", key, event.target.checked)} />
                         </label>
                       ))}
                     </div>
 
-                    <div className="mt-5 grid gap-4 md:grid-cols-2">
+                    <div className="mt-4 grid gap-3 md:grid-cols-2">
                       <InputField label="GCash account name">
                         <input value={settingsForm.gcashAccountName} onChange={(event) => updateFormField("gcashAccountName", event.target.value)} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
                       </InputField>
@@ -1153,7 +1153,7 @@ function DashboardPage() {
                       </InputField>
                     </div>
 
-                    <div className="mt-5 rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
+                    <div className="mt-4 rounded-[24px] border border-white/10 bg-slate-950/25 p-4">
                       <p className="text-sm font-medium text-white">Refund policy</p>
                       <p className="mt-2 text-sm text-slate-400">
                         Choose which order progress points allow customers to request a refund.
@@ -1175,7 +1175,7 @@ function DashboardPage() {
                       </div>
                     </div>
 
-                    <div className="mt-5 rounded-[24px] border border-cyan-400/20 bg-cyan-500/10 p-4">
+                    <div className="mt-4 rounded-[24px] border border-cyan-400/20 bg-cyan-500/10 p-4">
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="text-sm font-medium text-white">Installment / Paluwagan</p>
@@ -1244,13 +1244,13 @@ function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
-                  <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
+                <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] xl:items-start">
+                  <div className="self-start rounded-[28px] border border-white/10 bg-white/5 p-4 xl:h-fit">
                     <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
                       <Gift size={16} className="text-orange-300" />
                       Promotions
                     </div>
-                    <div className="mt-5 space-y-4">
+                    <div className="mt-4 space-y-4">
                       <div className="grid gap-4 md:grid-cols-2">
                         <label className="rounded-[24px] border border-white/10 bg-slate-950/25 p-4 text-sm text-slate-200">
                           <div className="flex items-center justify-between gap-3">
@@ -1292,7 +1292,7 @@ function DashboardPage() {
                     </div>
                   </div>
 
-                  <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
+                  <div className="self-start rounded-[28px] border border-white/10 bg-white/5 p-4 xl:h-fit">
                     <div className="flex items-center gap-2 text-sm uppercase tracking-[0.28em] text-slate-400">
                       <AlertTriangle size={16} className="text-orange-300" />
                       Inventory watch
