@@ -20,14 +20,14 @@ export default function Footer() {
         </div>
         <div className="w-full">
           <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Follow us</p>
-          <div className="mt-3 flex flex-row flex-nowrap items-center gap-3 overflow-x-auto pb-1 md:justify-start lg:justify-between">
+          <div className="mt-3 flex flex-row flex-nowrap items-center justify-start gap-2 overflow-x-auto pb-1 sm:gap-3">
             {socialLinks.map(({ label, href, icon: Icon }) => (
               <a
                 key={label}
                 href={href}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-11 min-w-[150px] flex-none items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 text-slate-200 transition duration-300 hover:scale-[1.02] hover:border-white/20 hover:bg-white/10 hover:text-white"
+                className="inline-flex h-11 min-w-[136px] flex-none items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 text-slate-200 transition duration-300 hover:scale-[1.02] hover:border-white/20 hover:bg-white/10 hover:text-white"
               >
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-slate-950/30 text-slate-200">
                   <Icon size={15} />
