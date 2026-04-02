@@ -104,6 +104,12 @@ const defaultSettings = {
     description: "Shop phones, laptops, gadgets, and installment-ready deals from Mighty Couple.",
     socialImage: ""
   },
+  socialLinks: {
+    facebook: "https://www.facebook.com/",
+    instagram: "https://www.instagram.com/",
+    twitter: "https://x.com/",
+    linkedin: "https://www.linkedin.com/"
+  },
   notifications: {
     orderPlaced: true,
     paymentReceived: true,
@@ -257,6 +263,12 @@ export function serializeStoreSettings(settings) {
       title: settings.seo?.title || defaultSettings.seo.title,
       description: settings.seo?.description || defaultSettings.seo.description,
       socialImage: settings.seo?.socialImage || defaultSettings.seo.socialImage
+    },
+    socialLinks: {
+      facebook: settings.socialLinks?.facebook || defaultSettings.socialLinks.facebook,
+      instagram: settings.socialLinks?.instagram || defaultSettings.socialLinks.instagram,
+      twitter: settings.socialLinks?.twitter || defaultSettings.socialLinks.twitter,
+      linkedin: settings.socialLinks?.linkedin || defaultSettings.socialLinks.linkedin
     },
     notifications: {
       orderPlaced: settings.notifications?.orderPlaced ?? defaultSettings.notifications.orderPlaced,

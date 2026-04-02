@@ -33,6 +33,7 @@ export const updateStoreSettings = asyncHandler(async (req, res) => {
     promotions,
     content,
     seo,
+    socialLinks,
     notifications,
     policyLinks,
     maintenance,
@@ -229,6 +230,16 @@ export const updateStoreSettings = asyncHandler(async (req, res) => {
     };
   }
 
+  if (socialLinks) {
+    settings.socialLinks = {
+      ...settings.socialLinks,
+      facebook: socialLinks.facebook ?? settings.socialLinks.facebook,
+      instagram: socialLinks.instagram ?? settings.socialLinks.instagram,
+      twitter: socialLinks.twitter ?? settings.socialLinks.twitter,
+      linkedin: socialLinks.linkedin ?? settings.socialLinks.linkedin
+    };
+  }
+
   if (notifications) {
     settings.notifications = {
       ...settings.notifications,
@@ -323,6 +334,7 @@ export const updateStoreSettings = asyncHandler(async (req, res) => {
         promotions ? "promotions" : null,
         content ? "content" : null,
         seo ? "seo" : null,
+        socialLinks ? "socialLinks" : null,
         notifications ? "notifications" : null,
         policyLinks ? "policyLinks" : null,
         maintenance ? "maintenance" : null,

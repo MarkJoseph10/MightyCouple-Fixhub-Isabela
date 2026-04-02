@@ -106,6 +106,12 @@ const fallbackSettings = {
     description: "Shop phones, laptops, gadgets, and installment-ready deals from Mighty Couple.",
     socialImage: ""
   },
+  socialLinks: {
+    facebook: "https://www.facebook.com/",
+    instagram: "https://www.instagram.com/",
+    twitter: "https://x.com/",
+    linkedin: "https://www.linkedin.com/"
+  },
   notifications: {
     orderPlaced: true,
     paymentReceived: true,

@@ -9,6 +9,7 @@ import {
   ImagePlus,
   MapPinned,
   Palette,
+  Share2,
   Settings2,
   ShieldCheck,
   ShoppingBag,
@@ -31,6 +32,7 @@ const sectionTabs = [
   { id: "content", label: "Content", icon: ShoppingBag },
   { id: "operations", label: "Operations", icon: Settings2 },
   { id: "branding", label: "Branding", icon: Palette },
+  { id: "social", label: "Social", icon: Share2 },
   { id: "seo", label: "SEO", icon: Sparkles },
   { id: "policies", label: "Policies", icon: ShieldCheck },
   { id: "notifications", label: "Notifications", icon: Gift },
@@ -135,6 +137,10 @@ function buildSettingsForm(settings) {
     seoTitle: settings.seo?.title || "",
     seoDescription: settings.seo?.description || "",
     seoSocialImage: settings.seo?.socialImage || "",
+    socialFacebook: settings.socialLinks?.facebook || "",
+    socialInstagram: settings.socialLinks?.instagram || "",
+    socialTwitter: settings.socialLinks?.twitter || "",
+    socialLinkedin: settings.socialLinks?.linkedin || "",
     maintenanceEnabled: settings.maintenance?.enabled === true,
     maintenanceMessage: settings.maintenance?.message || "",
     maintenanceReadOnly: settings.maintenance?.readOnly === true,
@@ -641,6 +647,12 @@ function DashboardPage() {
           title: settingsForm.seoTitle,
           description: settingsForm.seoDescription,
           socialImage: settingsForm.seoSocialImage
+        },
+        socialLinks: {
+          facebook: settingsForm.socialFacebook,
+          instagram: settingsForm.socialInstagram,
+          twitter: settingsForm.socialTwitter,
+          linkedin: settingsForm.socialLinkedin
         },
         notifications: {
           orderPlaced: settingsForm.notificationOrderPlaced,
@@ -1363,6 +1375,49 @@ function DashboardPage() {
                 </div>
               </SectionCard>
             </form>
+          </div>
+
+          <div className={sectionClassName("social")}>
+            <SectionCard
+              eyebrow="Social"
+              title="Follow us links"
+              description="Set the footer social buttons from one place so the store always points to the right accounts."
+            >
+              <div className="grid gap-4 md:grid-cols-2">
+                <InputField label="Facebook URL">
+                  <input
+                    value={settingsForm.socialFacebook}
+                    onChange={(event) => updateFormField("socialFacebook", event.target.value)}
+                    placeholder="https://facebook.com/..."
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                  />
+                </InputField>
+                <InputField label="Instagram URL">
+                  <input
+                    value={settingsForm.socialInstagram}
+                    onChange={(event) => updateFormField("socialInstagram", event.target.value)}
+                    placeholder="https://instagram.com/..."
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                  />
+                </InputField>
+                <InputField label="Twitter / X URL">
+                  <input
+                    value={settingsForm.socialTwitter}
+                    onChange={(event) => updateFormField("socialTwitter", event.target.value)}
+                    placeholder="https://x.com/..."
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                  />
+                </InputField>
+                <InputField label="LinkedIn URL">
+                  <input
+                    value={settingsForm.socialLinkedin}
+                    onChange={(event) => updateFormField("socialLinkedin", event.target.value)}
+                    placeholder="https://linkedin.com/..."
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                  />
+                </InputField>
+              </div>
+            </SectionCard>
           </div>
 
           <div className={sectionClassName("seo")}>

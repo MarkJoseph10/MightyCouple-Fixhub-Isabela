@@ -438,7 +438,7 @@ export default function HomePage() {
               See all products
             </a>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {bestSellers.map((product) => (
               <ProductCard key={`best-seller-${product._id}`} product={product} onAddToCart={addToCart} compact eagerImage />
             ))}
@@ -474,15 +474,15 @@ export default function HomePage() {
         {error && <div className="rounded-3xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-200">{error}</div>}
 
         {loading ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {[...Array(10)].map((_, index) => (
               <div key={index} className="glass-panel h-[360px] animate-pulse rounded-[26px]" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {paginatedProducts.map((product) => (
-              <ProductCard key={product._id} product={product} onAddToCart={addToCart} eagerImage={currentPage === 1} />
+              <ProductCard key={product._id} product={product} onAddToCart={addToCart} compact eagerImage={currentPage === 1} />
             ))}
           </div>
         )}

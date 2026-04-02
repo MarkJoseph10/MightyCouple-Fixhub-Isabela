@@ -87,6 +87,16 @@ const paymentDetailsSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const socialLinksSchema = new mongoose.Schema(
+  {
+    facebook: { type: String, default: "" },
+    instagram: { type: String, default: "" },
+    twitter: { type: String, default: "" },
+    linkedin: { type: String, default: "" }
+  },
+  { _id: false }
+);
+
 const orderRulesSchema = new mongoose.Schema(
   {
     autoCancelUnpaidHours: {
@@ -321,6 +331,10 @@ const storeSettingsSchema = new mongoose.Schema(
     },
     seo: {
       type: seoSchema,
+      default: () => ({})
+    },
+    socialLinks: {
+      type: socialLinksSchema,
       default: () => ({})
     },
     notifications: {
