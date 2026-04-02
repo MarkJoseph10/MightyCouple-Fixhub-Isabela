@@ -17,6 +17,12 @@ export default function ProductCard({ product, onAddToCart, compact = false, eag
   const wished = isWishlisted(product._id);
   const availableStock = Number(product.stock || 0);
   const isLowStock = availableStock > 0 && availableStock <= 5;
+  const descriptionStyle = {
+    display: "-webkit-box",
+    WebkitBoxOrient: "vertical",
+    WebkitLineClamp: 2,
+    overflow: "hidden"
+  };
 
   async function handleWishlistClick() {
     const result = await toggleWishlist(product._id);
@@ -46,7 +52,7 @@ export default function ProductCard({ product, onAddToCart, compact = false, eag
           whileHover={{ y: -4 }}
           className="group glass-panel flex h-full flex-col overflow-hidden rounded-[26px] shadow-ambient transition duration-300 hover:shadow-[0_24px_72px_rgba(37,99,235,0.18)]"
         >
-          <div className={`relative flex items-center justify-center overflow-hidden bg-slate-950/30 ${compact ? "h-[156px] sm:h-[168px]" : "h-[188px] sm:h-[200px]"}`}>
+          <div className={`relative flex items-center justify-center overflow-hidden bg-slate-950/30 ${compact ? "h-[142px] sm:h-[154px]" : "h-[188px] sm:h-[200px]"}`}>
             <img
               src={optimizeImageUrl(product.images?.[0]?.url, {
                 width: compact ? 480 : 560,
@@ -86,12 +92,18 @@ export default function ProductCard({ product, onAddToCart, compact = false, eag
               <Heart size={16} fill={wished ? "currentColor" : "none"} />
             </button>
           </div>
-          <div className={`flex flex-1 flex-col gap-3 ${compact ? "p-3" : "p-3.5"}`}>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className={`flex flex-1 flex-col ${compact ? "gap-2.5 p-3" : "gap-3 p-3.5"}`}>
+            <div className={`flex flex-col ${compact ? "gap-2" : "gap-4"} sm:flex-row sm:items-start sm:justify-between`}>
               <div className="min-w-0 flex-1">
-                <h3 className={`break-words font-semibold leading-snug text-white ${compact ? "min-h-[2.3rem] text-[0.95rem]" : "min-h-[2.6rem] text-[1rem]"}`}>{product.name}</h3>
-                <p className={`mt-1.5 text-sm text-slate-300 ${compact ? "min-h-[2.6rem] leading-5" : "min-h-[3.3rem] leading-5"}`}>{product.shortDescription}</p>
-                <div className="mt-2.5 flex flex-wrap gap-2">
+                <h3 className={`break-words font-semibold leading-snug text-white ${compact ? "min-h-[2.5rem] text-[0.95rem]" : "min-h-[2.6rem] text-[1rem]"}`}>
+                  {product.name}
+                </h3>
+                {!compact ? (
+                  <p className="mt-1.5 text-sm leading-5 text-slate-300" style={descriptionStyle}>
+                    {product.shortDescription}
+                  </p>
+                ) : null}
+                <div className={`mt-2.5 flex flex-wrap gap-2 ${compact ? "text-[0.68rem]" : ""}`}>
                   <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs text-emerald-200">
                     {product.condition || "Affordable tech"}
                   </span>
