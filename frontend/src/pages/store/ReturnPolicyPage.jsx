@@ -20,7 +20,7 @@ export default function ReturnPolicyPage() {
         <section className="rounded-[28px] border border-white/10 bg-white/5 p-6">
           <h2 className="text-2xl font-semibold text-white">How to request a return</h2>
           <div className="mt-4 space-y-3 text-slate-300">
-            <p>Email <a href="mailto:support@mightycouple.com" className="text-slate-100 hover:text-white">support@mightycouple.com</a> with your order ID, issue details, and clear photos or videos.</p>
+            <p>Email <a href="mailto:supportmightycouple@gmail.com" className="text-slate-100 hover:text-white">supportmightycouple@gmail.com</a> with your order ID, issue details, and clear photos or videos.</p>
             <p>Wait for approval before shipping the item back.</p>
             <p>Once approved, we will give you return instructions and confirm whether the item will be replaced or refunded.</p>
           </div>

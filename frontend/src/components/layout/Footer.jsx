@@ -9,7 +9,7 @@ export default function Footer() {
       <div className="page-shell grid gap-6 text-sm text-slate-400 md:grid-cols-[minmax(0,1fr)_auto]">
         <div>
           <p>{settings.storeName} offers affordable gadgets with secure account-based checkout, shipping transparency, and trackable orders.</p>
-          <p className="mt-2">Support: <a href="mailto:support@mightycouple.com" className="text-slate-200 hover:text-white">support@mightycouple.com</a></p>
+          <p className="mt-2">Support: <a href="mailto:supportmightycouple@gmail.com" className="text-slate-200 hover:text-white">supportmightycouple@gmail.com</a></p>
         </div>
         <div className="flex flex-wrap gap-4">
           <Link to="/contact" className="hover:text-white">Contact</Link>

@@ -30,7 +30,7 @@ export default function PrivacyPolicyPage() {
         <div className="mt-4 space-y-3 text-slate-300">
           <p>We do not sell your personal data to other companies.</p>
           <p>We only share information when it is necessary to complete your order, verify payments, or comply with legal obligations.</p>
-          <p>If you have privacy questions, contact us at <a href="mailto:support@mightycouple.com" className="text-slate-100 hover:text-white">support@mightycouple.com</a>.</p>
+            <p>If you have privacy questions, contact us at <a href="mailto:supportmightycouple@gmail.com" className="text-slate-100 hover:text-white">supportmightycouple@gmail.com</a>.</p>
         </div>
       </section>
     </InfoPageShell>

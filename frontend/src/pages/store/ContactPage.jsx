@@ -48,8 +48,8 @@ export default function ContactPage() {
           </div>
           <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
             <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Support email</p>
-            <a href="mailto:support@mightycouple.com" className="mt-3 block text-lg font-semibold text-white hover:text-brand-100">
-              support@mightycouple.com
+            <a href="mailto:supportmightycouple@gmail.com" className="mt-3 block text-lg font-semibold text-white hover:text-brand-100">
+              supportmightycouple@gmail.com
             </a>
           </div>
           <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
