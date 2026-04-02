@@ -2,10 +2,6 @@ import { CheckCircle2, ChevronDown, ChevronUp, Circle, Clock3, Truck } from "luc
 import { useMemo, useState } from "react";
 
 export default function OrderTimeline({ steps = [], compact = false }) {
-  if (!steps.length) {
-    return null;
-  }
-
   const [expanded, setExpanded] = useState(false);
   const visibleSteps = useMemo(() => {
     if (expanded || steps.length <= 3) {
@@ -26,9 +22,13 @@ export default function OrderTimeline({ steps = [], compact = false }) {
     return steps.slice(pivotIndex - 1, pivotIndex + 2);
   }, [expanded, steps]);
 
+  if (!steps.length) {
+    return null;
+  }
+
   return (
     <div className="space-y-3">
-      <div className={`grid gap-3 ${compact ? "md:grid-cols-2 xl:grid-cols-3" : "md:grid-cols-2 xl:grid-cols-3"}`}>
+      <div className={`grid gap-3 ${compact ? "sm:grid-cols-2 lg:grid-cols-3" : "md:grid-cols-2 xl:grid-cols-3"}`}>
         {visibleSteps.map((step) => {
           const Icon = step.complete ? CheckCircle2 : step.active ? Truck : step.at ? Clock3 : Circle;
 
