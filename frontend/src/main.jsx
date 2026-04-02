@@ -7,7 +7,12 @@ import { CartProvider } from "./context/CartContext.jsx";
 import { NotificationProvider } from "./context/NotificationContext.jsx";
 import { StoreSettingsProvider } from "./context/StoreSettingsContext.jsx";
 import { WishlistProvider } from "./context/WishlistContext.jsx";
+import { registerPwa } from "./pwa/registerPwa";
 import "./index.css";
+
+if (import.meta.env.PROD) {
+  registerPwa();
+}
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
