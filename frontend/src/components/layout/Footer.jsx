@@ -16,6 +16,7 @@ export default function Footer() {
           <Link to="/shipping-policy" className="hover:text-white">Shipping Policy</Link>
           <Link to="/return-policy" className="hover:text-white">Return Policy</Link>
           <Link to="/privacy-policy" className="hover:text-white">Privacy Policy</Link>
+          <Link to="/terms" className="hover:text-white">Terms</Link>
         </div>
       </div>
     </footer>

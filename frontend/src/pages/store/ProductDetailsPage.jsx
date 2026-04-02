@@ -88,6 +88,25 @@ export default function ProductDetailsPage() {
     };
   }, [product, settings.storeName]);
 
+  useEffect(() => {
+    if (!product) {
+      return undefined;
+    }
+
+    let descriptionMeta = document.querySelector('meta[name="description"]');
+
+    if (!descriptionMeta) {
+      descriptionMeta = document.createElement("meta");
+      descriptionMeta.setAttribute("name", "description");
+      document.head.appendChild(descriptionMeta);
+    }
+
+    descriptionMeta.setAttribute(
+      "content",
+      product.shortDescription || product.description || `${product.name} available now on ${settings.storeName}.`
+    );
+  }, [product, settings.storeName]);
+
   const selectedVariant = useMemo(
     () => product?.variants?.find((variant) => String(variant._id) === String(selectedVariantId)) || null,
     [product, selectedVariantId]
@@ -427,8 +446,8 @@ export default function ProductDetailsPage() {
               ))}
             </div>
 
-            <div className="mt-6 flex flex-wrap items-stretch gap-3">
-              <div className="w-[110px] shrink-0">
+            <div className="mt-6 grid gap-3 sm:grid-cols-[110px_minmax(0,1fr)_minmax(0,1fr)_58px]">
+              <div className="w-full shrink-0">
                 <input
                   type="number"
                   min="1"
@@ -443,7 +462,7 @@ export default function ProductDetailsPage() {
                 onClick={handleAddToCart}
                 disabled={!activeStock}
                 title={!isAuthenticated ? "Please log in to add items to your cart." : ""}
-                className="inline-flex min-h-[58px] min-w-[160px] flex-1 items-center justify-center gap-2 rounded-2xl bg-brand-500 px-5 py-4 text-center font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex min-h-[58px] items-center justify-center gap-2 rounded-2xl bg-brand-500 px-5 py-4 text-center font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <ShoppingBag size={16} />
                 <span className="whitespace-nowrap">{isAuthenticated ? "Add to cart" : "Log in to add"}</span>
@@ -453,16 +472,16 @@ export default function ProductDetailsPage() {
                 onClick={handleBuyNow}
                 disabled={!activeStock}
                 title={!isAuthenticated ? "Please log in to continue with Buy now." : ""}
-                className="inline-flex min-h-[58px] min-w-[140px] flex-1 items-center justify-center rounded-2xl border border-cyan-400/30 bg-cyan-500/15 px-5 py-4 text-center font-semibold text-cyan-50 transition duration-300 hover:-translate-y-0.5 hover:bg-cyan-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex min-h-[58px] items-center justify-center rounded-2xl border border-cyan-400/30 bg-cyan-500/15 px-5 py-4 text-center font-semibold text-cyan-50 transition duration-300 hover:-translate-y-0.5 hover:bg-cyan-500/25 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <span className="whitespace-nowrap">Buy now</span>
               </button>
               <button
                 type="button"
                 onClick={handleWishlistClick}
-                className={`rounded-2xl border px-4 py-4 transition duration-300 ${
+                className={`inline-flex min-h-[58px] items-center justify-center rounded-2xl border px-4 py-4 transition duration-300 ${
                   wished ? "border-rose-400 bg-rose-500/10 text-rose-100" : "border-white/10 bg-white/5 text-white"
-                } min-h-[58px] min-w-[58px] shrink-0`}
+                } w-full shrink-0 sm:w-[58px]`}
               >
                 <Heart size={18} fill={wished ? "currentColor" : "none"} />
               </button>

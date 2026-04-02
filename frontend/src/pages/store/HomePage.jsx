@@ -49,6 +49,28 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    const previousTitle = document.title;
+    document.title = `${settings.storeName} | Affordable gadgets, COD, and installment checkout`;
+
+    let descriptionMeta = document.querySelector('meta[name="description"]');
+    if (!descriptionMeta) {
+      descriptionMeta = document.createElement("meta");
+      descriptionMeta.setAttribute("name", "description");
+      document.head.appendChild(descriptionMeta);
+    }
+
+    descriptionMeta.setAttribute(
+      "content",
+      settings.content?.heroDescription ||
+        `Shop ${settings.storeName} for affordable gadgets, installment checkout, COD, shipping tracking, and live product updates.`
+    );
+
+    return () => {
+      document.title = previousTitle;
+    };
+  }, [settings.content?.heroDescription, settings.storeName]);
+
+  useEffect(() => {
     async function loadProducts() {
       setLoading(true);
 

@@ -18,6 +18,27 @@ export default function ContactPage() {
     }));
   }, [user?.email, user?.name]);
 
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = "Contact Support | Mighty Couple";
+
+    let descriptionMeta = document.querySelector('meta[name="description"]');
+    if (!descriptionMeta) {
+      descriptionMeta = document.createElement("meta");
+      descriptionMeta.setAttribute("name", "description");
+      document.head.appendChild(descriptionMeta);
+    }
+
+    descriptionMeta.setAttribute(
+      "content",
+      "Contact Mighty Couple support for order concerns, shipping questions, payment verification, or gadget inquiries."
+    );
+
+    return () => {
+      document.title = previousTitle;
+    };
+  }, []);
+
   async function handleSubmit(event) {
     event.preventDefault();
     setSubmitting(true);

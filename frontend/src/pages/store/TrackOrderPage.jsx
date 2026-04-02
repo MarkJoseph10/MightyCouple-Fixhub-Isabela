@@ -91,12 +91,30 @@ export default function TrackOrderPage() {
     setRefundModalOpen(false);
   }
 
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = "Track Order | Mighty Couple";
+
+    let descriptionMeta = document.querySelector('meta[name="description"]');
+    if (!descriptionMeta) {
+      descriptionMeta = document.createElement("meta");
+      descriptionMeta.setAttribute("name", "description");
+      document.head.appendChild(descriptionMeta);
+    }
+
+    descriptionMeta.setAttribute("content", "Track your Mighty Couple order status, payment proof, shipping progress, and delivery timeline.");
+
+    return () => {
+      document.title = previousTitle;
+    };
+  }, []);
+
   return (
     <>
-    <div className="page-shell py-10">
-      <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
-        <form onSubmit={handleTrack} className="glass-panel rounded-[32px] p-6 shadow-ambient">
-          <h1 className="text-3xl font-semibold text-white">Track an order</h1>
+    <div className="page-shell py-6 sm:py-8 lg:py-10">
+      <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
+        <form onSubmit={handleTrack} className="glass-panel rounded-[28px] p-5 shadow-ambient sm:rounded-[32px] sm:p-6">
+          <h1 className="text-2xl font-semibold text-white sm:text-3xl">Track an order</h1>
           <p className="mt-2 text-sm text-slate-400">Enter your Order ID to see the latest payment, fulfillment, and delivery updates.</p>
           <div className="mt-6 space-y-4">
             <input
@@ -120,13 +138,13 @@ export default function TrackOrderPage() {
             </details>
           </div>
           {error && <div className="mt-4 rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{error}</div>}
-          <button className="mt-6 inline-flex items-center rounded-2xl bg-brand-500 px-5 py-3 font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-brand-600">
+          <button className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-brand-500 px-5 py-3 font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-brand-600 sm:w-auto">
             <SearchCheck size={16} className="mr-2" />
             Track order
           </button>
         </form>
 
-        <section className="glass-panel rounded-[32px] p-6 shadow-ambient">
+        <section className="glass-panel rounded-[28px] p-5 shadow-ambient sm:rounded-[32px] sm:p-6">
           <h2 className="text-2xl font-semibold text-white">Order status</h2>
           {!order && !error && <p className="mt-4 text-slate-300">Enter your order ID to see the latest status.</p>}
 
@@ -135,7 +153,7 @@ export default function TrackOrderPage() {
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Order ID</p>
-                  <p className="mt-2 text-xl font-semibold tracking-[0.08em] text-white">{getOrderReference(order)}</p>
+                  <p className="mt-2 break-all text-lg font-semibold tracking-[0.06em] text-white sm:text-xl">{getOrderReference(order)}</p>
                   <p className="text-sm text-slate-400">{new Date(order.createdAt).toLocaleString()}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -145,11 +163,11 @@ export default function TrackOrderPage() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-3">
+              <div className="grid gap-3 sm:flex sm:flex-wrap">
                 <button
                   type="button"
                   onClick={handleCopyOrderId}
-                  className="inline-flex items-center rounded-full border border-white/10 px-4 py-2 text-sm text-slate-100 transition hover:bg-white/5"
+                  className="inline-flex w-full items-center justify-center rounded-full border border-white/10 px-4 py-2 text-sm text-slate-100 transition hover:bg-white/5 sm:w-auto"
                 >
                   <Copy size={15} className="mr-2" />
                   Copy Order ID
@@ -157,7 +175,7 @@ export default function TrackOrderPage() {
                 <button
                   type="button"
                   onClick={() => copyText(`${window.location.origin}${buildTrackOrderUrl(getOrderReference(order), order.shippingAddress?.email || email || "")}`).then((copied) => setCopyStatus(copied ? "Tracking link copied." : "Unable to copy the tracking link."))}
-                  className="inline-flex items-center rounded-full border border-brand-400/20 bg-brand-500/10 px-4 py-2 text-sm text-brand-50 transition hover:bg-brand-500/15"
+                  className="inline-flex w-full items-center justify-center rounded-full border border-brand-400/20 bg-brand-500/10 px-4 py-2 text-sm text-brand-50 transition hover:bg-brand-500/15 sm:w-auto"
                 >
                   <Copy size={15} className="mr-2" />
                   Copy tracking link
@@ -165,7 +183,7 @@ export default function TrackOrderPage() {
                 <button
                   type="button"
                   onClick={() => printOrderReceipt(order, settings.storeName)}
-                  className="inline-flex items-center rounded-full border border-cyan-400/20 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-50 transition hover:bg-cyan-500/15"
+                  className="inline-flex w-full items-center justify-center rounded-full border border-cyan-400/20 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-50 transition hover:bg-cyan-500/15 sm:w-auto"
                 >
                   <ReceiptText size={15} className="mr-2" />
                   Print receipt
@@ -174,7 +192,7 @@ export default function TrackOrderPage() {
                   <button
                     type="button"
                     onClick={() => setRefundModalOpen(true)}
-                    className="inline-flex items-center rounded-full border border-amber-400/20 bg-amber-500/10 px-4 py-2 text-sm text-amber-100 transition hover:bg-amber-500/15"
+                    className="inline-flex w-full items-center justify-center rounded-full border border-amber-400/20 bg-amber-500/10 px-4 py-2 text-sm text-amber-100 transition hover:bg-amber-500/15 sm:w-auto"
                   >
                     <RotateCcw size={15} className="mr-2" />
                     Request refund
@@ -189,21 +207,21 @@ export default function TrackOrderPage() {
               ) : null}
               {order.orderType === "installment" ? <InstallmentCompletionSnapshot order={order} /> : null}
 
-              <div className="grid gap-4 xl:grid-cols-3">
-                <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="rounded-[28px] border border-white/10 bg-white/5 p-4 sm:p-5">
                   <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Tracking summary</p>
                   <p className="mt-3 font-semibold capitalize text-white">{String(order.trackingStatus || order.status).replaceAll("_", " ")}</p>
                   <p className="mt-2 text-sm text-slate-300">{order.items?.length || 0} item(s) in this order</p>
                   <p className="mt-2 text-sm text-slate-300">Total: {peso(order.pricing?.total)}</p>
                 </div>
-                <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
+                <div className="rounded-[28px] border border-white/10 bg-white/5 p-4 sm:p-5">
                   <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Shipping</p>
                   <p className="mt-3 font-semibold text-white">{order.shippingAddress?.fullName}</p>
                   <p className="mt-1 text-sm text-slate-300">
                     {order.shippingAddress?.line1}, {order.shippingAddress?.city}, {order.shippingAddress?.province}
                   </p>
                 </div>
-                <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
+                <div className="rounded-[28px] border border-white/10 bg-white/5 p-4 sm:p-5">
                   <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Payment</p>
                   <p className="mt-3 font-semibold capitalize text-white">{String(order.payment?.method || "").replace("_", " ")}</p>
                   <p className="mt-1 text-sm text-slate-300">{order.payment?.instructions || "Awaiting update"}</p>
@@ -262,14 +280,14 @@ export default function TrackOrderPage() {
                 </form>
               )}
 
-              <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
+              <div className="rounded-[28px] border border-white/10 bg-white/5 p-4 sm:p-5">
                 <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Tracking workflow</p>
                 <div className="mt-4">
                   <OrderTimeline steps={trackingSteps} />
                 </div>
               </div>
 
-              <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
+              <div className="rounded-[28px] border border-white/10 bg-white/5 p-4 sm:p-5">
                 <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Timeline history</p>
                 <div className="mt-4 space-y-4">
                   {(order.timeline || []).map((entry, index) => (
@@ -284,7 +302,7 @@ export default function TrackOrderPage() {
                 </div>
               </div>
 
-              <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
+              <div className="rounded-[28px] border border-white/10 bg-white/5 p-4 sm:p-5">
                 <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Items</p>
                 <div className="mt-4 space-y-3">
                   {order.items.map((item) => (

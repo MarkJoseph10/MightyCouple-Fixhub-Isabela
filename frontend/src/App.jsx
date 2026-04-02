@@ -25,6 +25,7 @@ import NotificationsPage from "./pages/store/NotificationsPage";
 import PrivacyPolicyPage from "./pages/store/PrivacyPolicyPage";
 import ProductDetailsPage from "./pages/store/ProductDetailsPage";
 import ReturnPolicyPage from "./pages/store/ReturnPolicyPage";
+import TermsPage from "./pages/store/TermsPage";
 import SellerApplyPage from "./pages/store/SellerApplyPage";
 import ShippingPolicyPage from "./pages/store/ShippingPolicyPage";
 import TrackOrderPage from "./pages/store/TrackOrderPage";
@@ -68,6 +69,7 @@ export default function App() {
             <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
             <Route path="/return-policy" element={<ReturnPolicyPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
             <Route path="/track-order" element={<TrackOrderPage />} />
             <Route
               path="/become-seller"
