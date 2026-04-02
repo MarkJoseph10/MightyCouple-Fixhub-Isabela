@@ -1,5 +1,23 @@
 const mediaBaseUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace("/api", "");
 
+function buildCloudinaryTransformString(options = {}) {
+  const transforms = ["f_auto", "q_auto"];
+
+  if (options.width) {
+    transforms.push(`w_${Math.round(options.width)}`);
+  }
+
+  if (options.height) {
+    transforms.push(`h_${Math.round(options.height)}`);
+  }
+
+  if (options.fit) {
+    transforms.push(`c_${options.fit}`);
+  }
+
+  return transforms.join(",");
+}
+
 export function resolveMediaUrl(url = "") {
   const value = String(url || "").trim();
 
@@ -18,4 +36,23 @@ export function resolveMediaUrl(url = "") {
   }
 
   return value;
+}
+
+export function optimizeImageUrl(url = "", options = {}) {
+  const resolvedUrl = resolveMediaUrl(url);
+
+  if (!resolvedUrl) {
+    return "";
+  }
+
+  if (!resolvedUrl.includes("res.cloudinary.com/")) {
+    return resolvedUrl;
+  }
+
+  if (resolvedUrl.includes("/upload/f_auto") || resolvedUrl.includes("/upload/q_auto")) {
+    return resolvedUrl;
+  }
+
+  const transformString = buildCloudinaryTransformString(options);
+  return resolvedUrl.replace("/upload/", `/upload/${transformString}/`);
 }

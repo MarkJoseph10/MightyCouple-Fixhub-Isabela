@@ -7,9 +7,9 @@ import TiltCard from "../common/TiltCard";
 import { useAuth } from "../../context/AuthContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { peso } from "../../utils/commerce";
-import { resolveMediaUrl } from "../../utils/media";
+import { optimizeImageUrl } from "../../utils/media";
 
-export default function ProductCard({ product, onAddToCart, compact = false }) {
+export default function ProductCard({ product, onAddToCart, compact = false, eagerImage = false }) {
   const location = useLocation();
   const { isAuthenticated } = useAuth();
   const { isWishlisted, toggleWishlist } = useWishlist();
@@ -48,9 +48,14 @@ export default function ProductCard({ product, onAddToCart, compact = false }) {
         >
           <div className={`relative flex items-center justify-center overflow-hidden bg-slate-950/30 ${compact ? "h-[156px] sm:h-[168px]" : "h-[188px] sm:h-[200px]"}`}>
             <img
-              src={resolveMediaUrl(product.images?.[0]?.url)}
+              src={optimizeImageUrl(product.images?.[0]?.url, {
+                width: compact ? 480 : 560,
+                height: compact ? 336 : 400,
+                fit: "limit"
+              })}
               alt={product.images?.[0]?.alt || product.name}
-              loading="lazy"
+              loading={eagerImage ? "eager" : "lazy"}
+              fetchpriority={eagerImage ? "high" : "auto"}
               className="h-full w-full object-scale-down transition duration-500 group-hover:scale-[1.03]"
             />
             <div className="absolute left-4 top-4 flex flex-wrap gap-2">

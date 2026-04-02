@@ -22,7 +22,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import { useStoreSettings } from "../../context/StoreSettingsContext";
 import { peso } from "../../utils/commerce";
-import { resolveMediaUrl } from "../../utils/media";
+import { optimizeImageUrl, resolveMediaUrl } from "../../utils/media";
 import { readRecentlyViewed } from "../../utils/recentlyViewed";
 
 export default function HomePage() {
@@ -209,9 +209,9 @@ export default function HomePage() {
             className="grid gap-5 bg-mesh px-5 py-6 sm:px-6 sm:py-7 lg:grid-cols-[minmax(0,0.96fr)_280px] lg:px-7 lg:py-8 xl:grid-cols-[minmax(0,0.98fr)_300px]"
             style={{
               backgroundImage: settings.heroImage?.url
-                ? `linear-gradient(180deg, rgba(2,6,23,0.45), rgba(2,6,23,0.82)), url('${settings.heroImage.url}')`
+                ? `linear-gradient(180deg, rgba(2,6,23,0.45), rgba(2,6,23,0.82)), url('${optimizeImageUrl(settings.heroImage.url, { width: 1600, height: 960, fit: "fill" })}')`
                 : settings.banner?.url
-                  ? `linear-gradient(180deg, rgba(2,6,23,0.45), rgba(2,6,23,0.82)), url('${settings.banner.url}')`
+                  ? `linear-gradient(180deg, rgba(2,6,23,0.45), rgba(2,6,23,0.82)), url('${optimizeImageUrl(settings.banner.url, { width: 1600, height: 960, fit: "fill" })}')`
                   : undefined,
               backgroundSize: settings.heroImage?.url || settings.banner?.url ? "cover" : undefined,
               backgroundPosition: settings.heroImage?.url || settings.banner?.url ? "center" : undefined
@@ -352,7 +352,7 @@ export default function HomePage() {
                 <div className="relative h-44 overflow-hidden bg-slate-950/30">
                   {item.image ? (
                     <img
-                      src={resolveMediaUrl(item.image)}
+                      src={optimizeImageUrl(item.image, { width: 640, height: 360, fit: "fill" })}
                       alt={item.name}
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                       loading="lazy"
@@ -385,7 +385,7 @@ export default function HomePage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {bestSellers.map((product) => (
-              <ProductCard key={`best-seller-${product._id}`} product={product} onAddToCart={addToCart} compact />
+              <ProductCard key={`best-seller-${product._id}`} product={product} onAddToCart={addToCart} compact eagerImage />
             ))}
           </div>
         </section>
@@ -427,7 +427,7 @@ export default function HomePage() {
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
             {paginatedProducts.map((product) => (
-              <ProductCard key={product._id} product={product} onAddToCart={addToCart} />
+              <ProductCard key={product._id} product={product} onAddToCart={addToCart} eagerImage={currentPage === 1} />
             ))}
           </div>
         )}

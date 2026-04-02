@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import { useStoreSettings } from "../../context/StoreSettingsContext";
 import { useWishlist } from "../../context/WishlistContext";
-import { resolveMediaUrl } from "../../utils/media";
+import { optimizeImageUrl } from "../../utils/media";
 
 function navPillClass({ isActive }) {
   return `inline-flex h-8 items-center rounded-full px-2.5 py-1.5 text-[12px] leading-none whitespace-nowrap transition sm:h-9 sm:px-3 sm:py-2 sm:text-[13px] ${
@@ -52,7 +52,13 @@ export default function Navbar() {
           <Link to="/" className="group flex min-w-0 flex-1 items-center gap-2.5 lg:min-w-[220px] lg:flex-none sm:gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-brand-500 to-orange-400 font-bold text-white shadow-ambient transition duration-300 group-hover:scale-105">
               {settings.logo?.url ? (
-                <img src={resolveMediaUrl(settings.logo.url)} alt={settings.logo.alt || settings.storeName} className="h-full w-full object-cover" />
+                <img
+                  src={optimizeImageUrl(settings.logo.url, { width: 96, height: 96, fit: "fill" })}
+                  alt={settings.logo.alt || settings.storeName}
+                  className="h-full w-full object-cover"
+                  loading="eager"
+                  fetchpriority="high"
+                />
               ) : (
                 initials || "MC"
               )}
