@@ -19,7 +19,7 @@ export function createRateLimiter({ windowMs = 10 * 60 * 1000, maxAttempts = 5, 
     const entry = attempts.get(key);
 
     if (!entry || now > entry.resetAt) {
-      attempts.set(key, { count: 0, resetAt: now + windowMs });
+      attempts.set(key, { count: 1, resetAt: now + windowMs });
       next();
       return;
     }
@@ -30,6 +30,8 @@ export function createRateLimiter({ windowMs = 10 * 60 * 1000, maxAttempts = 5, 
       return;
     }
 
+    entry.count += 1;
+    attempts.set(key, entry);
     next();
   };
 }
