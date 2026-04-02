@@ -20,8 +20,6 @@ const initialReviewForm = {
   comment: ""
 };
 
-const mediaBaseUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace("/api", "");
-
 function withAbsoluteUrl(url = "") {
   return resolveMediaUrl(url);
 }
@@ -71,40 +69,32 @@ export default function ProductDetailsPage() {
       return undefined;
     }
 
+    const previousTitle = document.title;
+    const descriptionMetaElement = document.querySelector('meta[name="description"]');
+    const previousDescription = descriptionMetaElement?.getAttribute("content");
+    const createdDescriptionMeta = !descriptionMetaElement;
+    const activeDescriptionMeta = descriptionMetaElement || document.createElement("meta");
+
     document.title = `${product.name} | ${settings.storeName}`;
 
-    let descriptionMeta = document.querySelector('meta[name="description"]');
-
-    if (!descriptionMeta) {
-      descriptionMeta = document.createElement("meta");
-      descriptionMeta.setAttribute("name", "description");
-      document.head.appendChild(descriptionMeta);
+    if (createdDescriptionMeta) {
+      activeDescriptionMeta.setAttribute("name", "description");
+      document.head.appendChild(activeDescriptionMeta);
     }
 
-    descriptionMeta.setAttribute("content", product.shortDescription || product.description);
-
-    return () => {
-      document.title = settings.storeName;
-    };
-  }, [product, settings.storeName]);
-
-  useEffect(() => {
-    if (!product) {
-      return undefined;
-    }
-
-    let descriptionMeta = document.querySelector('meta[name="description"]');
-
-    if (!descriptionMeta) {
-      descriptionMeta = document.createElement("meta");
-      descriptionMeta.setAttribute("name", "description");
-      document.head.appendChild(descriptionMeta);
-    }
-
-    descriptionMeta.setAttribute(
+    activeDescriptionMeta.setAttribute(
       "content",
       product.shortDescription || product.description || `${product.name} available now on ${settings.storeName}.`
     );
+
+    return () => {
+      document.title = previousTitle;
+      if (previousDescription !== null && previousDescription !== undefined) {
+        activeDescriptionMeta.setAttribute("content", previousDescription);
+      } else if (createdDescriptionMeta) {
+        activeDescriptionMeta.remove();
+      }
+    };
   }, [product, settings.storeName]);
 
   const selectedVariant = useMemo(

@@ -3,21 +3,29 @@ import { useEffect } from "react";
 export default function InfoPageShell({ eyebrow, title, description, children }) {
   useEffect(() => {
     const previousTitle = document.title;
+    const descriptionMetaElement = document.querySelector('meta[name="description"]');
+    const previousDescription = descriptionMetaElement?.getAttribute("content");
+    const createdDescriptionMeta = !descriptionMetaElement;
+    const activeDescriptionMeta = descriptionMetaElement || document.createElement("meta");
+
     document.title = `${title} | Mighty Couple`;
 
-    let descriptionMeta = document.querySelector('meta[name="description"]');
-    if (!descriptionMeta) {
-      descriptionMeta = document.createElement("meta");
-      descriptionMeta.setAttribute("name", "description");
-      document.head.appendChild(descriptionMeta);
+    if (createdDescriptionMeta) {
+      activeDescriptionMeta.setAttribute("name", "description");
+      document.head.appendChild(activeDescriptionMeta);
     }
 
     if (description) {
-      descriptionMeta.setAttribute("content", description);
+      activeDescriptionMeta.setAttribute("content", description);
     }
 
     return () => {
       document.title = previousTitle;
+      if (previousDescription !== null && previousDescription !== undefined) {
+        activeDescriptionMeta.setAttribute("content", previousDescription);
+      } else if (createdDescriptionMeta) {
+        activeDescriptionMeta.remove();
+      }
     };
   }, [description, title]);
 
