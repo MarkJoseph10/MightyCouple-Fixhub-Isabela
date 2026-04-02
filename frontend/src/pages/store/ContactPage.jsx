@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import api from "../../api/client";
 import InfoPageShell from "../../components/common/InfoPageShell";
 import { useAuth } from "../../context/AuthContext";
@@ -17,27 +17,6 @@ export default function ContactPage() {
       email: current.email || user?.email || ""
     }));
   }, [user?.email, user?.name]);
-
-  useEffect(() => {
-    const previousTitle = document.title;
-    document.title = "Contact Support | Mighty Couple";
-
-    let descriptionMeta = document.querySelector('meta[name="description"]');
-    if (!descriptionMeta) {
-      descriptionMeta = document.createElement("meta");
-      descriptionMeta.setAttribute("name", "description");
-      document.head.appendChild(descriptionMeta);
-    }
-
-    descriptionMeta.setAttribute(
-      "content",
-      "Contact Mighty Couple support for order concerns, shipping questions, payment verification, or gadget inquiries."
-    );
-
-    return () => {
-      document.title = previousTitle;
-    };
-  }, []);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -64,6 +43,9 @@ export default function ContactPage() {
     >
       <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
         <div className="space-y-4">
+          <div className="rounded-[28px] border border-brand-400/20 bg-brand-500/10 p-5 text-sm text-brand-50">
+            Use this page for order concerns, shipping questions, payment verification, or general gadget inquiries. We keep the support path short so buyers can get help quickly.
+          </div>
           <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
             <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Support email</p>
             <a href="mailto:support@mightycouple.com" className="mt-3 block text-lg font-semibold text-white hover:text-brand-100">
@@ -72,7 +54,7 @@ export default function ContactPage() {
           </div>
           <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
             <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Facebook</p>
-            <p className="mt-3 text-lg font-semibold text-white">Fixhub Isabela</p>
+            <p className="mt-3 text-lg font-semibold text-white">Mighty Couple support page</p>
           </div>
           <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
             <p className="text-sm uppercase tracking-[0.28em] text-slate-400">WhatsApp</p>
@@ -81,7 +63,7 @@ export default function ContactPage() {
             </a>
           </div>
           <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 text-sm text-slate-300">
-            We usually reply within 24 hours for product questions, return requests, and payment concerns.
+            We usually reply within 24 hours for product questions, return requests, and payment concerns. For urgent order issues, include your order ID in the first message.
           </div>
         </div>
 
