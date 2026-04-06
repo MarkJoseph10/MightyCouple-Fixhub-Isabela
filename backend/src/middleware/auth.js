@@ -4,9 +4,22 @@ import { env } from "../config/env.js";
 import { ApiError } from "../utils/ApiError.js";
 import { normalizeSellerSuspensionState } from "../utils/sellerDiscipline.js";
 
-export async function protect(req, _, next) {
+function resolveToken(req) {
   const authHeader = req.headers.authorization || "";
-  const token = authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+
+  if (authHeader.startsWith("Bearer ")) {
+    return authHeader.split(" ")[1];
+  }
+
+  if (typeof req.query?.token === "string" && req.query.token.trim()) {
+    return req.query.token.trim();
+  }
+
+  return null;
+}
+
+export async function protect(req, _, next) {
+  const token = resolveToken(req);
 
   if (!token) {
     next(new ApiError(401, "Authentication required"));
@@ -34,8 +47,7 @@ export async function protect(req, _, next) {
 }
 
 export async function optionalAuth(req, _, next) {
-  const authHeader = req.headers.authorization || "";
-  const token = authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+  const token = resolveToken(req);
 
   if (!token) {
     next();

@@ -542,7 +542,9 @@ export default function ProductsPage() {
                     <select value={form.category} onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none">
                       <option>Phones</option>
                       <option>Laptops</option>
-                      <option>Gadgets</option>
+                    <option>Computer</option>
+                    <option>Parts</option>
+                    <option>Gadgets</option>
                       <option>Accessories</option>
                       <option>Wearables</option>
                       <option>Gaming</option>

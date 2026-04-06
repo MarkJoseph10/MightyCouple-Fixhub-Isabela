@@ -1,17 +1,15 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Heart, ShoppingBag, Star, TrendingUp, Users } from "lucide-react";
+import { ArrowRight, Heart, Star, TrendingUp, Users } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import AccessPromptModal from "../common/AccessPromptModal";
 import TiltCard from "../common/TiltCard";
-import { useAuth } from "../../context/AuthContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { formatCompactCount, peso } from "../../utils/commerce";
 import { optimizeImageUrl } from "../../utils/media";
 
 export default function ProductCard({ product, onAddToCart, compact = false, eagerImage = false }) {
   const location = useLocation();
-  const { isAuthenticated } = useAuth();
   const { isWishlisted, toggleWishlist } = useWishlist();
   const [accessPromptMessage, setAccessPromptMessage] = useState("");
   const wished = isWishlisted(product._id);
@@ -38,19 +36,6 @@ export default function ProductCard({ product, onAddToCart, compact = false, eag
     if (result?.requiresAuth) {
       setAccessPromptMessage("Please log in to save items to your wishlist.");
     }
-  }
-
-  async function handleAddClick() {
-    if (!availableStock) {
-      return;
-    }
-
-    if (!isAuthenticated) {
-      setAccessPromptMessage("Please log in to add items to your cart.");
-      return;
-    }
-
-    await onAddToCart(product);
   }
 
   return (
@@ -147,20 +132,13 @@ export default function ProductCard({ product, onAddToCart, compact = false, eag
                 </div>
               ) : null}
             </div>
-            <div className="mt-auto flex items-center gap-2.5">
-              <button
-                onClick={handleAddClick}
-                disabled={!availableStock}
-                title={!isAuthenticated ? "Please log in to add items to your cart." : ""}
-                className={`inline-flex flex-1 items-center justify-center rounded-2xl bg-brand-500 px-3 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60 ${compact ? "min-h-[42px] py-2.5 whitespace-nowrap" : "min-h-[46px] py-3"}`}
-              >
-                <ShoppingBag size={16} className="mr-2" />
-                {availableStock ? (isAuthenticated ? "Add to cart" : "Log in to add") : "Sold out"}
-              </button>
+            <div className="mt-auto flex items-center gap-2">
               <Link
                 to={`/product/${product.slug}`}
-                className={`inline-flex shrink-0 items-center justify-center rounded-2xl border border-white/10 text-sm text-slate-100 transition duration-300 hover:border-brand-500/40 hover:bg-white/5 ${compact ? "h-[42px] w-[42px]" : "h-[46px] w-[46px]"}`}
+                title="View product details"
+                className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 text-sm font-semibold text-slate-100 transition duration-300 hover:-translate-y-0.5 hover:border-brand-500/40 hover:bg-white/10 ${compact ? "min-h-[42px] py-2.5" : "min-h-[46px] py-3"}`}
               >
+                <span>View product</span>
                 <ArrowRight size={16} />
               </Link>
             </div>

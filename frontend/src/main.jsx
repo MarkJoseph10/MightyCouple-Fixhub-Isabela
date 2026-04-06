@@ -5,6 +5,7 @@ import { Capacitor } from "@capacitor/core";
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
+import { ChatProvider } from "./context/ChatContext.jsx";
 import { NotificationProvider } from "./context/NotificationContext.jsx";
 import { StoreSettingsProvider } from "./context/StoreSettingsContext.jsx";
 import { WishlistProvider } from "./context/WishlistContext.jsx";
@@ -23,13 +24,15 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <AuthProvider>
         <StoreSettingsProvider>
           <NotificationProvider>
-            <WishlistProvider>
-              <CartProvider>
-                <App />
-              </CartProvider>
-            </WishlistProvider>
+            <ChatProvider>
+              <WishlistProvider>
+                <CartProvider>
+                  <App />
+                </CartProvider>
+              </WishlistProvider>
+            </ChatProvider>
           </NotificationProvider>
-          </StoreSettingsProvider>
+        </StoreSettingsProvider>
         </AuthProvider>
     </Router>
   </React.StrictMode>

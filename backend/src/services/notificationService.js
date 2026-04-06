@@ -1,4 +1,5 @@
 import { Notification } from "../models/Notification.js";
+import { publishRealtimeEvent } from "./realtimeService.js";
 
 function normalizeRecipient(recipient = {}) {
   const userId = recipient.userId ? String(recipient.userId) : "";
@@ -61,7 +62,31 @@ export async function createNotifications({
     return [];
   }
 
-  return Notification.insertMany(docs);
+  const insertedDocs = await Notification.insertMany(docs);
+
+  insertedDocs.forEach((notification) => {
+    publishRealtimeEvent({
+      userId: notification.recipientUser || null,
+      role: notification.recipientRole || null,
+      event: "notification.created",
+      data: {
+        notification: {
+          _id: notification._id,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          link: notification.link || "",
+          data: notification.data || {},
+          recipientRole: notification.recipientRole || null,
+          readAt: notification.readAt || null,
+          createdAt: notification.createdAt,
+          updatedAt: notification.updatedAt
+        }
+      }
+    });
+  });
+
+  return insertedDocs;
 }
 
 export function notifyUser(userId, payload = {}) {

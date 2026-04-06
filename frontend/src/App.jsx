@@ -10,6 +10,8 @@ const SellerLayout = lazy(() => import("./layouts/SellerLayout"));
 const DashboardPage = lazy(() => import("./pages/admin/DashboardPage"));
 const AdminInstallmentsPage = lazy(() => import("./pages/admin/AdminInstallmentsPage"));
 const AdminOrdersPage = lazy(() => import("./pages/admin/AdminOrdersPage"));
+const AdminRepairsPage = lazy(() => import("./pages/admin/AdminRepairsPage"));
+const AdminTechniciansPage = lazy(() => import("./pages/admin/AdminTechniciansPage"));
 const CustomersPage = lazy(() => import("./pages/admin/CustomersPage"));
 const DropshippingPage = lazy(() => import("./pages/admin/DropshippingPage"));
 const ActivityLogPage = lazy(() => import("./pages/admin/ActivityLogPage"));
@@ -27,6 +29,9 @@ const InstallmentsPage = lazy(() => import("./pages/store/InstallmentsPage"));
 const OrdersPage = lazy(() => import("./pages/store/OrdersPage"));
 const OrderSuccessPage = lazy(() => import("./pages/store/OrderSuccessPage"));
 const NotificationsPage = lazy(() => import("./pages/store/NotificationsPage"));
+const ProfilePage = lazy(() => import("./pages/store/ProfilePage"));
+const MessagesPage = lazy(() => import("./pages/shared/MessagesPage"));
+const RepairsPage = lazy(() => import("./pages/store/RepairsPage"));
 const PrivacyPolicyPage = lazy(() => import("./pages/store/PrivacyPolicyPage"));
 const ProductDetailsPage = lazy(() => import("./pages/store/ProductDetailsPage"));
 const ReturnPolicyPage = lazy(() => import("./pages/store/ReturnPolicyPage"));
@@ -39,6 +44,8 @@ const SellerDashboardPage = lazy(() => import("./pages/seller/SellerDashboardPag
 const SellerOrdersPage = lazy(() => import("./pages/seller/SellerOrdersPage"));
 const SellerAppealPage = lazy(() => import("./pages/seller/SellerAppealPage"));
 const SellerProductsPage = lazy(() => import("./pages/seller/SellerProductsPage"));
+const SellerRepairsPage = lazy(() => import("./pages/seller/SellerRepairsPage"));
+const TechnicianApplyPage = lazy(() => import("./pages/seller/TechnicianApplyPage"));
 
 function LazyBoundary({ label, children }) {
   return <Suspense fallback={<LoadingScreen label={label} />}>{children}</Suspense>;
@@ -120,6 +127,30 @@ export default function App() {
               }
             />
             <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <LazyBoundary label="Loading profile..."><ProfilePage /></LazyBoundary>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/messages"
+              element={
+                <ProtectedRoute>
+                  <LazyBoundary label="Loading messages..."><MessagesPage /></LazyBoundary>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/repairs"
+              element={
+                <ProtectedRoute>
+                  <LazyBoundary label="Loading repairs..."><RepairsPage /></LazyBoundary>
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/installments"
               element={
                 <ProtectedRoute>
@@ -141,10 +172,13 @@ export default function App() {
             <Route path="/admin/products" element={<LazyBoundary label="Loading admin products..."><ProductsPage /></LazyBoundary>} />
             <Route path="/admin/orders" element={<LazyBoundary label="Loading admin orders..."><AdminOrdersPage /></LazyBoundary>} />
             <Route path="/admin/installments" element={<LazyBoundary label="Loading admin installments..."><AdminInstallmentsPage /></LazyBoundary>} />
+            <Route path="/admin/repairs" element={<LazyBoundary label="Loading admin repairs..."><AdminRepairsPage /></LazyBoundary>} />
+            <Route path="/admin/technicians" element={<LazyBoundary label="Loading repair team..."><AdminTechniciansPage /></LazyBoundary>} />
             <Route path="/admin/customers" element={<LazyBoundary label="Loading customers..."><CustomersPage /></LazyBoundary>} />
             <Route path="/admin/dropshipping" element={<LazyBoundary label="Loading dropshipping..."><DropshippingPage /></LazyBoundary>} />
             <Route path="/admin/activity-log" element={<LazyBoundary label="Loading activity log..."><ActivityLogPage /></LazyBoundary>} />
             <Route path="/admin/settings" element={<LazyBoundary label="Loading settings..."><SettingsPage /></LazyBoundary>} />
+            <Route path="/admin/messages" element={<LazyBoundary label="Loading admin messages..."><MessagesPage /></LazyBoundary>} />
           </Route>
 
           <Route
@@ -157,6 +191,9 @@ export default function App() {
             <Route path="/seller" element={<LazyBoundary label="Loading seller dashboard..."><SellerDashboardPage /></LazyBoundary>} />
             <Route path="/seller/products" element={<LazyBoundary label="Loading seller products..."><SellerProductsPage /></LazyBoundary>} />
             <Route path="/seller/orders" element={<LazyBoundary label="Loading seller orders..."><SellerOrdersPage /></LazyBoundary>} />
+            <Route path="/seller/repairs" element={<LazyBoundary label="Loading seller repairs..."><SellerRepairsPage /></LazyBoundary>} />
+            <Route path="/seller/technician" element={<LazyBoundary label="Loading technician application..."><TechnicianApplyPage /></LazyBoundary>} />
+            <Route path="/seller/messages" element={<LazyBoundary label="Loading seller messages..."><MessagesPage /></LazyBoundary>} />
           </Route>
         </Routes>
       </div>

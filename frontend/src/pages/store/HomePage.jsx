@@ -28,7 +28,7 @@ import { getSiteUrl } from "../../utils/site";
 
 export default function HomePage() {
   const location = useLocation();
-  const categories = ["Phones", "Laptops", "Gadgets", "Accessories", "Wearables", "Gaming"];
+const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Accessories", "Wearables", "Gaming"];
   const { isAdmin } = useAuth();
   const { addToCart } = useCart();
   const { settings } = useStoreSettings();

@@ -38,7 +38,7 @@ const fallbackTagSuggestions = [
   "#newarrival"
 ];
 
-const categoryOptions = ["Phones", "Laptops", "Accessories", "Wearables", "Audio", "Gaming", "Cameras", "Tablets"];
+const categoryOptions = ["Phones", "Laptops", "Computer", "Parts", "Accessories", "Wearables", "Audio", "Gaming", "Cameras", "Tablets"];
 
 const initialVariant = {
   name: "",

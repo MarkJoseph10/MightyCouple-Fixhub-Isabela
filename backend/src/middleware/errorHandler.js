@@ -7,12 +7,19 @@ export function notFound(req, res) {
 }
 
 export function errorHandler(error, req, res, __) {
-  const statusCode = error.statusCode || 500;
+  const statusCode = error.statusCode || (error.name === "MulterError" ? 400 : 500);
+  const message = error.name === "MulterError"
+    ? (error.code === "LIMIT_FILE_SIZE"
+        ? "Attachment is too large. Images and videos must be 20MB or less."
+        : error.code === "LIMIT_FILE_COUNT"
+          ? "You can send up to 4 attachments at a time."
+          : error.message)
+    : error.message;
 
   void reportServerError({ error, req, user: req?.user || null });
 
   res.status(statusCode).json({
-    message: error.message || "Server error",
+    message: message || "Server error",
     stack: process.env.NODE_ENV === "production" ? undefined : error.stack
   });
 }

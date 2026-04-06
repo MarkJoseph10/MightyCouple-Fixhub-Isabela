@@ -244,6 +244,9 @@ MONGO_URI=mongodb://127.0.0.1:27017/shopverse
 JWT_SECRET=replace-this-with-a-long-secret
 CLIENT_URL=http://localhost:5173
 STRIPE_SECRET_KEY=
+RESEND_API_KEY=
+ALERT_FROM_EMAIL=
+ALERT_REPLY_TO_EMAIL=
 CJ_API_KEY=
 ALIEXPRESS_APP_KEY=
 SPOCKET_API_KEY=
@@ -330,9 +333,34 @@ ADMIN_NAME=ShopVerse Admin
 ADMIN_EMAIL=your-admin-email@example.com
 ADMIN_PASSWORD=replace-this-with-a-strong-password
 STRIPE_SECRET_KEY=
+RESEND_API_KEY=re_xxxxxxxxx
+ALERT_FROM_EMAIL=Mighty Couple <alerts@your-domain.com>
+ALERT_REPLY_TO_EMAIL=supportmightycouple@gmail.com
 CJ_API_KEY=
 ALIEXPRESS_APP_KEY=
 SPOCKET_API_KEY=
+```
+
+### Chat email alert setup
+
+Chat email alerts use [Resend](https://resend.com/). The code is already wired up, but production sending only works after these backend values are configured:
+
+- `RESEND_API_KEY`
+- `ALERT_FROM_EMAIL`
+- `ALERT_REPLY_TO_EMAIL` optional
+
+Important:
+
+- `ALERT_FROM_EMAIL` must use a sender address from a verified domain in Resend.
+- `ALERT_REPLY_TO_EMAIL` can be your support inbox, including Gmail.
+- If these values are missing, chat still works, but email alerts are skipped safely.
+
+Example:
+
+```env
+RESEND_API_KEY=re_xxxxxxxxx
+ALERT_FROM_EMAIL=Mighty Couple <alerts@your-domain.com>
+ALERT_REPLY_TO_EMAIL=supportmightycouple@gmail.com
 ```
 
 If you want both local development and the live frontend to work with the same backend, `CLIENT_URL` can contain multiple comma-separated origins:

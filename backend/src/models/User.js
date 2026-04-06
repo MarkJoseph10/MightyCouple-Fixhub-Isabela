@@ -112,8 +112,84 @@ const sellerAppealSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const technicianApplicationSchema = new mongoose.Schema(
+  {
+    status: {
+      type: String,
+      enum: ["none", "pending", "approved", "rejected", "suspended"],
+      default: "none"
+    },
+    specialties: {
+      type: [String],
+      default: []
+    },
+    experienceSummary: {
+      type: String,
+      default: ""
+    },
+    yearsExperience: {
+      type: Number,
+      default: 0
+    },
+    contactNumber: {
+      type: String,
+      default: ""
+    },
+    servicePoints: {
+      type: [String],
+      default: []
+    },
+    pickupMethods: {
+      type: [String],
+      default: ["drop_off"]
+    },
+    submittedAt: Date,
+    reviewedAt: Date,
+    approvedAt: Date,
+    rejectionReason: {
+      type: String,
+      default: ""
+    },
+    adminNote: {
+      type: String,
+      default: ""
+    }
+  },
+  { _id: false }
+);
+
+const userPresenceSchema = new mongoose.Schema(
+  {
+    lastActiveAt: {
+      type: Date,
+      default: null
+    }
+  },
+  { _id: false }
+);
+
+const userChatPreferenceSchema = new mongoose.Schema(
+  {
+    emailAlertsEnabled: {
+      type: Boolean,
+      default: true
+    }
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
+    firstName: {
+      type: String,
+      default: "",
+      trim: true
+    },
+    lastName: {
+      type: String,
+      default: "",
+      trim: true
+    },
     name: {
       type: String,
       required: true,
@@ -121,8 +197,9 @@ const userSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      required: true,
+      required: false,
       unique: true,
+      sparse: true,
       lowercase: true,
       trim: true
     },
@@ -150,6 +227,12 @@ const userSchema = new mongoose.Schema(
     },
     avatar: String,
     phone: String,
+    birthDate: Date,
+    gender: {
+      type: String,
+      enum: ["", "male", "female", "prefer_not_to_say"],
+      default: ""
+    },
     lastLoginAt: Date,
     sellerProfile: {
       storeName: String,
@@ -157,6 +240,10 @@ const userSchema = new mongoose.Schema(
       description: String,
       avatar: String,
       banner: String,
+      servicePoints: {
+        type: [String],
+        default: []
+      },
       statusNote: String,
       commissionRate: {
         type: Number,
@@ -215,6 +302,18 @@ const userSchema = new mongoose.Schema(
     },
     sellerApplication: {
       type: sellerApplicationSchema,
+      default: () => ({})
+    },
+    technicianApplication: {
+      type: technicianApplicationSchema,
+      default: () => ({})
+    },
+    presence: {
+      type: userPresenceSchema,
+      default: () => ({})
+    },
+    chatPreferences: {
+      type: userChatPreferenceSchema,
       default: () => ({})
     },
     wishlist: [

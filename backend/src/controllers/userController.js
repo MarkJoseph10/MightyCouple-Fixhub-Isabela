@@ -1,12 +1,15 @@
 import { User } from "../models/User.js";
 import { Product } from "../models/Product.js";
 import { Order } from "../models/Order.js";
+import { isCloudinaryConfigured } from "../config/cloudinary.js";
+import { uploadBufferToCloudinary } from "./uploadController.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ensureSellerDisciplineShape, getNextSellerDisciplineStep, normalizeSellerSuspensionState } from "../utils/sellerDiscipline.js";
 import { createNotifications } from "../services/notificationService.js";
 import { getOrCreateStoreSettings } from "../services/storeSettingsService.js";
 import { recordActivity } from "../services/activityLogService.js";
+import { isValidEmail, isValidPhone, normalizePhilippinePhone } from "../utils/validators.js";
 
 function generatePayoutReference(prefix = "PO") {
   const now = new Date();
@@ -120,6 +123,219 @@ function buildSellerProfileSnapshot(user) {
   };
 }
 
+function formatAccountUser(user) {
+  const birthDate =
+    user.role === "admin" || !user.birthDate
+      ? ""
+      : new Date(user.birthDate).toISOString().slice(0, 10);
+
+  return {
+    id: user._id,
+    firstName: user.firstName || "",
+    lastName: user.lastName || "",
+    name: user.name || "",
+    email: user.email || "",
+    phone: user.phone || "",
+    birthDate,
+    gender: user.role === "admin" ? "" : user.gender || "",
+    avatar: user.avatar || "",
+    role: user.role || "customer",
+    authProvider: user.authProvider || "local",
+    hasPassword: Boolean(user.password),
+    chatPreferences: user.chatPreferences || null,
+    sellerProfile: user.sellerProfile || null,
+    sellerApplication: user.sellerApplication || null,
+    technicianApplication: user.technicianApplication || null
+  };
+}
+
+function validateAccountPassword(password) {
+  const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+  if (!strongPassword.test(String(password || ""))) {
+    throw new ApiError(400, "Password must be at least 8 characters and include uppercase, lowercase, and a number");
+  }
+}
+
+function normalizeStringArray(values = []) {
+  return [...new Set(
+    (Array.isArray(values) ? values : [])
+      .map((value) => String(value || "").trim())
+      .filter(Boolean)
+  )];
+}
+
+function normalizePickupMethods(values = []) {
+  const nextMethods = normalizeStringArray(values).filter((value) => ["drop_off", "pickup"].includes(value));
+  return nextMethods.length ? nextMethods : ["drop_off"];
+}
+
+function buildTechnicianApplicationSnapshot(user) {
+  return {
+    ...((typeof user.technicianApplication?.toObject === "function" ? user.technicianApplication.toObject() : user.technicianApplication) || {}),
+    specialties: normalizeStringArray(user.technicianApplication?.specialties || []),
+    servicePoints: normalizeStringArray(user.technicianApplication?.servicePoints || []),
+    pickupMethods: normalizePickupMethods(user.technicianApplication?.pickupMethods || []),
+    status: String(user.technicianApplication?.status || "none")
+  };
+}
+
+function isApprovedTechnician(user) {
+  return user?.role === "seller" && user?.sellerProfile?.isActive !== false && user?.technicianApplication?.status === "approved";
+}
+
+export const getMyAccountProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  res.json(formatAccountUser(user));
+});
+
+export const updateMyAccountProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const firstName = String(req.body.firstName || "").trim();
+  const lastName = String(req.body.lastName || "").trim();
+  const fallbackName = String(req.body.name || "").trim();
+  const name = [firstName, lastName].filter(Boolean).join(" ").trim() || fallbackName;
+  const email = String(req.body.email || "").trim().toLowerCase();
+  const phoneInput = String(req.body.phone || "").trim();
+  const birthDateInput = String(req.body.birthDate || "").trim();
+  const genderInput = String(req.body.gender || "").trim();
+  const removeAvatar = String(req.body.removeAvatar || "").trim() === "true";
+
+  if (!name) {
+    throw new ApiError(400, "Name is required");
+  }
+
+  if (!email && !phoneInput) {
+    throw new ApiError(400, "Please add at least an email or mobile number");
+  }
+
+  if (email && !isValidEmail(email)) {
+    throw new ApiError(400, "Please enter a valid email address");
+  }
+
+  const existingEmailUser = email
+    ? await User.findOne({
+        email,
+        _id: { $ne: user._id }
+      }).select("_id")
+    : null;
+
+  if (existingEmailUser) {
+    throw new ApiError(400, "Email is already in use");
+  }
+
+  if (phoneInput && !isValidPhone(phoneInput)) {
+    throw new ApiError(400, "Please enter a valid Philippine mobile number");
+  }
+
+  if (user.role !== "admin" && genderInput && !["male", "female", "prefer_not_to_say"].includes(genderInput)) {
+    throw new ApiError(400, "Please choose a valid gender");
+  }
+
+  if (user.role !== "admin" && birthDateInput) {
+    const parsedBirthDate = new Date(birthDateInput);
+
+    if (Number.isNaN(parsedBirthDate.getTime())) {
+      throw new ApiError(400, "Please enter a valid birth date");
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    parsedBirthDate.setHours(0, 0, 0, 0);
+
+    if (parsedBirthDate > today) {
+      throw new ApiError(400, "Birth date cannot be in the future");
+    }
+
+    if (parsedBirthDate.getFullYear() < 1900) {
+      throw new ApiError(400, "Please enter a realistic birth date");
+    }
+  }
+
+  user.name = name;
+  user.email = email || undefined;
+  user.firstName = firstName || user.firstName || name.split(" ")[0] || "";
+  user.lastName = lastName || user.lastName || name.split(" ").slice(1).join(" ");
+  user.phone = phoneInput ? normalizePhilippinePhone(phoneInput) : "";
+  if (user.role !== "admin") {
+    user.birthDate = birthDateInput ? new Date(birthDateInput) : null;
+    user.gender = genderInput || "";
+  }
+
+  if (removeAvatar) {
+    user.avatar = "";
+  }
+
+  if (req.file) {
+    if (!isCloudinaryConfigured) {
+      throw new ApiError(500, "Cloudinary is not configured on the server");
+    }
+
+    const result = await uploadBufferToCloudinary(req.file, "image", {
+      folder: "shopverse/profile-images"
+    });
+    user.avatar = result.secure_url || user.avatar;
+  }
+
+  await user.save();
+
+  res.json({
+    message: "Profile updated successfully.",
+    user: formatAccountUser(user)
+  });
+});
+
+export const updateMyPassword = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (!user.password) {
+    throw new ApiError(400, "This account uses social sign-in. Password changes are not available here yet.");
+  }
+
+  const currentPassword = String(req.body.currentPassword || "");
+  const newPassword = String(req.body.newPassword || "");
+  const confirmPassword = String(req.body.confirmPassword || "");
+
+  if (!currentPassword) {
+    throw new ApiError(400, "Current password is required");
+  }
+
+  if (!(await user.comparePassword(currentPassword))) {
+    throw new ApiError(400, "Current password is incorrect");
+  }
+
+  if (newPassword !== confirmPassword) {
+    throw new ApiError(400, "New password and confirmation do not match");
+  }
+
+  if (currentPassword === newPassword) {
+    throw new ApiError(400, "New password must be different from your current password");
+  }
+
+  validateAccountPassword(newPassword);
+
+  user.password = newPassword;
+  await user.save();
+
+  res.json({
+    message: "Password updated successfully."
+  });
+});
+
 export const getUsers = asyncHandler(async (_, res) => {
   const users = await User.find().select("-password").sort({ createdAt: -1 });
   await Promise.all(
@@ -217,6 +433,108 @@ export const applyAsSeller = asyncHandler(async (req, res) => {
   });
 });
 
+export const applyAsTechnician = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (user.role !== "seller" || user.sellerProfile?.isActive === false) {
+    throw new ApiError(403, "Only approved sellers can apply as repair technicians");
+  }
+
+  const currentStatus = String(user.technicianApplication?.status || "none");
+  if (["pending", "approved", "suspended"].includes(currentStatus)) {
+    throw new ApiError(
+      400,
+      currentStatus === "pending"
+        ? "Your technician application is already pending review"
+        : currentStatus === "approved"
+          ? "Your repair technician access is already active"
+          : "Your repair technician access is currently suspended"
+    );
+  }
+
+  const experienceSummary = String(req.body.experienceSummary || "").trim();
+  const yearsExperience = Math.max(0, Number(req.body.yearsExperience || 0));
+  const contactNumber = String(req.body.contactNumber || user.phone || "").trim();
+  const specialties = normalizeStringArray(req.body.specialties || []);
+  const servicePoints = normalizeStringArray(req.body.servicePoints || user.sellerProfile?.servicePoints || []);
+  const pickupMethods = normalizePickupMethods(req.body.pickupMethods || []);
+
+  if (experienceSummary.length < 20) {
+    throw new ApiError(400, "Please provide a technician experience summary with at least 20 characters");
+  }
+
+  if (!servicePoints.length) {
+    throw new ApiError(400, "Please add at least one service point or branch for repair bookings");
+  }
+
+  user.technicianApplication = {
+    status: "pending",
+    specialties,
+    experienceSummary,
+    yearsExperience,
+    contactNumber,
+    servicePoints,
+    pickupMethods,
+    submittedAt: new Date(),
+    reviewedAt: null,
+    approvedAt: null,
+    rejectionReason: "",
+    adminNote: ""
+  };
+
+  user.sellerProfile = {
+    ...(user.sellerProfile || {}),
+    servicePoints
+  };
+
+  await user.save();
+  const storeSettings = await getOrCreateStoreSettings();
+  await createNotifications({
+    settings: storeSettings,
+    type: "technician_application_submitted",
+    title: "Technician application submitted",
+    message: `${user.sellerProfile?.storeName || user.name} applied for repair technician access.`,
+    link: "/admin/technicians",
+    data: {
+      userId: user._id.toString(),
+      servicePoints,
+      specialties
+    },
+    recipients: [
+      {
+        role: "admin",
+        title: "Technician application submitted",
+        message: `${user.sellerProfile?.storeName || user.name} applied for repair technician access.`,
+        link: "/admin/technicians"
+      }
+    ]
+  });
+
+  await recordActivity({
+    actor: req.user,
+    category: "repair",
+    action: "technician_application_submitted",
+    title: "Technician application submitted",
+    message: `${user.sellerProfile?.storeName || user.name} applied for repair technician access.`,
+    link: "/admin/technicians",
+    subjectType: "technician_application",
+    subjectId: user._id.toString(),
+    metadata: {
+      servicePoints,
+      specialties
+    }
+  }).catch(() => {});
+
+  res.status(201).json({
+    message: "Technician application submitted successfully.",
+    technicianApplication: user.technicianApplication
+  });
+});
+
 export const getMySellerProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).select("-password");
 
@@ -231,12 +549,51 @@ export const getMySellerProfile = asyncHandler(async (req, res) => {
   res.json(user);
 });
 
+export const updateMyChatPreferences = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select("-password");
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  user.chatPreferences = {
+    ...(user.chatPreferences?.toObject ? user.chatPreferences.toObject() : user.chatPreferences || {}),
+    emailAlertsEnabled: req.body.emailAlertsEnabled !== false
+  };
+
+  await user.save();
+
+  res.json({
+    message: "Chat preferences updated successfully.",
+    chatPreferences: user.chatPreferences
+  });
+});
+
 export const getSellerApplications = asyncHandler(async (_, res) => {
   const users = await User.find({
     "sellerApplication.status": { $in: ["pending", "approved", "rejected", "suspended", "terminated"] }
   })
     .select("-password")
     .sort({ "sellerApplication.submittedAt": -1, createdAt: -1 });
+
+  await Promise.all(
+    users.map(async (user) => {
+      if (normalizeSellerSuspensionState(user)) {
+        await user.save();
+      }
+    })
+  );
+
+  res.json(users);
+});
+
+export const getTechnicianApplications = asyncHandler(async (_, res) => {
+  const users = await User.find({
+    role: "seller",
+    "technicianApplication.status": { $in: ["pending", "approved", "rejected", "suspended"] }
+  })
+    .select("-password")
+    .sort({ "technicianApplication.submittedAt": -1, createdAt: -1 });
 
   await Promise.all(
     users.map(async (user) => {
@@ -431,6 +788,111 @@ export const reviewSellerApplication = asyncHandler(async (req, res) => {
   }).catch(() => {});
   res.json({
     message: `Seller application ${decision}.`,
+    user
+  });
+});
+
+export const reviewTechnicianApplication = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user || user.role !== "seller") {
+    throw new ApiError(404, "Technician application not found");
+  }
+
+  const decision = String(req.body.status || "").trim().toLowerCase();
+  const adminNote = String(req.body.adminNote || "").trim();
+  const rejectionReason = String(req.body.rejectionReason || "").trim();
+
+  if (!["approved", "rejected", "suspended"].includes(decision)) {
+    throw new ApiError(400, "Invalid technician application decision");
+  }
+
+  const technicianApplication = buildTechnicianApplicationSnapshot(user);
+  if (technicianApplication.status === "none") {
+    throw new ApiError(400, "No technician application is available for review");
+  }
+
+  user.technicianApplication = {
+    ...technicianApplication,
+    status: decision,
+    reviewedAt: new Date(),
+    approvedAt: decision === "approved" ? new Date() : technicianApplication.approvedAt || null,
+    adminNote,
+    rejectionReason: decision === "rejected" ? rejectionReason || adminNote : ""
+  };
+
+  if (decision === "approved") {
+    user.sellerProfile = {
+      ...(user.sellerProfile || {}),
+      servicePoints: technicianApplication.servicePoints.length
+        ? technicianApplication.servicePoints
+        : (user.sellerProfile?.servicePoints || []),
+      statusNote: adminNote || "Repair technician access approved."
+    };
+  } else if (decision === "suspended") {
+    user.sellerProfile = {
+      ...(user.sellerProfile || {}),
+      statusNote: adminNote || "Repair technician access is currently suspended."
+    };
+  }
+
+  await user.save();
+
+  const title =
+    decision === "approved"
+      ? "Technician application approved"
+      : decision === "rejected"
+        ? "Technician application rejected"
+        : "Technician access suspended";
+  const message =
+    decision === "approved"
+      ? "Your repair technician application was approved."
+      : decision === "rejected"
+        ? "Your repair technician application was rejected."
+        : "Your repair technician access has been suspended.";
+
+  const storeSettings = await getOrCreateStoreSettings();
+  await createNotifications({
+    settings: storeSettings,
+    type: `technician_application_${decision}`,
+    title,
+    message,
+    link: "/seller/technician",
+    data: {
+      userId: user._id.toString(),
+      decision,
+      adminNote,
+      rejectionReason
+    },
+    recipients: [
+      {
+        userId: user._id,
+        title,
+        message,
+        link: "/seller/technician"
+      }
+    ]
+  });
+
+  await recordActivity({
+    actor: req.user,
+    category: "repair",
+    action: `technician_application_${decision}`,
+    title,
+    message: `${user.sellerProfile?.storeName || user.name} technician application was ${decision}.`,
+    link: "/admin/technicians",
+    subjectType: "technician_application",
+    subjectId: user._id.toString(),
+    severity: decision === "approved" ? "success" : decision === "rejected" ? "warning" : "danger",
+    metadata: {
+      decision,
+      adminNote,
+      rejectionReason
+    }
+  }).catch(() => {});
+
+  res.json({
+    message: `Technician application ${decision}.`,
     user
   });
 });

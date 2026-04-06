@@ -30,7 +30,16 @@ function formatRelativeTime(value) {
 }
 
 export default function NotificationBell() {
-  const { notifications, unreadCount, markNotificationRead, markAllNotificationsRead } = useNotifications();
+  const {
+    notifications,
+    unreadCount,
+    markNotificationRead,
+    markAllNotificationsRead,
+    browserAlertsEnabled,
+    browserAlertPermission,
+    enableBrowserAlerts,
+    disableBrowserAlerts
+  } = useNotifications();
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
   const navigate = useNavigate();
@@ -103,6 +112,37 @@ export default function NotificationBell() {
           </div>
 
           <div className="max-h-[24rem] overflow-y-auto p-2">
+            {browserAlertPermission !== "unsupported" ? (
+              <div className="mb-2 rounded-[22px] border border-white/10 bg-white/5 px-4 py-3 text-left text-xs text-slate-300">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-white">Browser alerts</p>
+                    <p className="mt-1 text-slate-400">
+                      {browserAlertsEnabled ? "Enabled for new messages and updates." : "Enable browser alerts for live updates while the site is open."}
+                    </p>
+                  </div>
+                  {browserAlertsEnabled ? (
+                    <button
+                      type="button"
+                      onClick={disableBrowserAlerts}
+                      className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[11px] text-white"
+                    >
+                      Disable
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        enableBrowserAlerts().catch(() => {});
+                      }}
+                      className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[11px] text-white"
+                    >
+                      Enable
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : null}
             {latestNotifications.length ? (
               latestNotifications.map((notification) => {
                 const unread = !notification.readAt;

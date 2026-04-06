@@ -1,16 +1,17 @@
-import { Boxes, ChartColumn, PackageSearch, ShoppingCart, Store } from "lucide-react";
+import { Boxes, ChartColumn, MessageSquare, PackageSearch, ShoppingCart, Store, Wrench } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-const links = [
-  { to: "/seller", label: "Overview", icon: ChartColumn },
-  { to: "/seller/products", label: "My Products", icon: Boxes },
-  { to: "/seller/orders", label: "My Orders", icon: ShoppingCart },
-  { to: "/", label: "Storefront", icon: PackageSearch }
-];
-
 export default function SellerSidebar({ onNavigate }) {
-  const { user } = useAuth();
+  const { user, isRepairTechnician } = useAuth();
+  const links = [
+    { to: "/seller", label: "Overview", icon: ChartColumn },
+    { to: "/seller/products", label: "My Products", icon: Boxes },
+    { to: "/seller/orders", label: "My Orders", icon: ShoppingCart },
+    { to: isRepairTechnician ? "/seller/repairs" : "/seller/technician", label: isRepairTechnician ? "Repairs" : "Apply as technician", icon: Wrench },
+    { to: "/seller/messages", label: "Messages", icon: MessageSquare },
+    { to: "/", label: "Storefront", icon: PackageSearch }
+  ];
 
   return (
     <aside className="glass-panel h-fit rounded-3xl p-4 shadow-ambient">

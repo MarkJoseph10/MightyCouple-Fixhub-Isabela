@@ -43,6 +43,10 @@ export function AuthProvider({ children }) {
       isAdmin: user?.role === "admin",
       isSellerAccount: user?.role === "seller",
       isSeller: user?.role === "seller" && user?.sellerProfile?.isActive !== false,
+      isRepairTechnician:
+        user?.role === "seller" &&
+        user?.sellerProfile?.isActive !== false &&
+        user?.technicianApplication?.status === "approved",
       async login(credentials) {
         const { data } = await api.post("/auth/login", credentials);
         localStorage.setItem("shopverse-token", data.token);

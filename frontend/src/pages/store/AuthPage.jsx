@@ -1,11 +1,64 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Facebook, Mail } from "lucide-react";
+import { ChevronDown, Facebook, HelpCircle, Mail } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
-const initialForm = { name: "", email: "", password: "" };
+const initialForm = {
+  firstName: "",
+  lastName: "",
+  birthMonth: "",
+  birthDay: "",
+  birthYear: "",
+  gender: "",
+  contact: "",
+  password: ""
+};
+
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 const facebookAppId = import.meta.env.VITE_FACEBOOK_APP_ID || "";
+const monthOptions = [
+  { value: "01", label: "January" },
+  { value: "02", label: "February" },
+  { value: "03", label: "March" },
+  { value: "04", label: "April" },
+  { value: "05", label: "May" },
+  { value: "06", label: "June" },
+  { value: "07", label: "July" },
+  { value: "08", label: "August" },
+  { value: "09", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" }
+];
+const genderOptions = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "prefer_not_to_say", label: "Prefer not to say" }
+];
+
+function buildBirthDate(month, day, year) {
+  if (!month || !day || !year) {
+    return "";
+  }
+
+  return `${year}-${month}-${String(day).padStart(2, "0")}`;
+}
+
+function SelectField({ value, onChange, children, placeholder }) {
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={onChange}
+        className="w-full appearance-none rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 pr-10 text-white outline-none transition focus:border-brand-400/50"
+      >
+        <option value="">{placeholder}</option>
+        {children}
+      </select>
+      <ChevronDown size={16} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
+    </div>
+  );
+}
 
 export default function AuthPage() {
   const location = useLocation();
@@ -20,11 +73,22 @@ export default function AuthPage() {
   const redirectTo = location.state?.from || new URLSearchParams(location.search).get("from") || "";
   const sessionExpired = new URLSearchParams(location.search).get("session") === "expired";
 
+  const dayOptions = useMemo(() => Array.from({ length: 31 }, (_, index) => String(index + 1)), []);
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 100 }, (_, index) => String(currentYear - index));
+  }, []);
+
   useEffect(() => {
     setError("");
     setFormLoading(false);
     setSocialLoading("");
+    setForm(initialForm);
   }, [mode]);
+
+  function updateField(field, value) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
 
   function handleGoogleLogin() {
     if (!googleClientId) {
@@ -33,11 +97,7 @@ export default function AuthPage() {
     }
 
     const callbackUrl = `${window.location.origin}/auth/google/callback`;
-    const statePayload = window.btoa(
-      JSON.stringify({
-        redirectTo
-      })
-    );
+    const statePayload = window.btoa(JSON.stringify({ redirectTo }));
     const googleUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
     googleUrl.searchParams.set("client_id", googleClientId);
     googleUrl.searchParams.set("redirect_uri", callbackUrl);
@@ -58,11 +118,7 @@ export default function AuthPage() {
     }
 
     const callbackUrl = `${window.location.origin}/auth/facebook/callback`;
-    const statePayload = window.btoa(
-      JSON.stringify({
-        redirectTo
-      })
-    );
+    const statePayload = window.btoa(JSON.stringify({ redirectTo }));
     const facebookUrl = new URL("https://www.facebook.com/v23.0/dialog/oauth");
     facebookUrl.searchParams.set("client_id", facebookAppId);
     facebookUrl.searchParams.set("redirect_uri", callbackUrl);
@@ -84,9 +140,16 @@ export default function AuthPage() {
       let response;
 
       if (mode === "login") {
-        response = await login({ email: form.email, password: form.password });
+        response = await login({ email: form.contact, password: form.password });
       } else {
-        response = await register(form);
+        response = await register({
+          firstName: form.firstName,
+          lastName: form.lastName,
+          contact: form.contact,
+          birthDate: buildBirthDate(form.birthMonth, form.birthDay, form.birthYear),
+          gender: form.gender,
+          password: form.password
+        });
       }
 
       const fallbackTarget = response?.user?.role === "admin" ? "/admin" : "/";
@@ -100,7 +163,7 @@ export default function AuthPage() {
 
   return (
     <div className="page-shell py-10">
-      <div className="mx-auto max-w-lg glass-panel rounded-[36px] p-8 shadow-ambient">
+      <div className="mx-auto max-w-xl glass-panel rounded-[36px] p-8 shadow-ambient">
         <div className="flex rounded-full bg-white/5 p-1">
           <button
             onClick={() => setMode("login")}
@@ -119,7 +182,12 @@ export default function AuthPage() {
         <h1 className="mt-6 text-3xl font-semibold text-white">
           {mode === "login" ? "Welcome back" : "Create your customer account"}
         </h1>
-        <p className="mt-2 text-sm text-slate-400">Sign in with your real account or create a new customer account.</p>
+        <p className="mt-2 text-sm text-slate-400">
+          {mode === "login"
+            ? "Sign in with your real account or create a new customer account."
+            : "Fill out your personal details now so they are already saved in your profile after sign-up."}
+        </p>
+
         {(redirectedMessage || sessionExpired) && (
           <div className="mt-6 rounded-2xl border border-brand-400/20 bg-brand-500/10 px-4 py-3 text-sm text-brand-50">
             {redirectedMessage || "Your session expired. Please sign in again to continue."}
@@ -129,36 +197,109 @@ export default function AuthPage() {
         {error && <div className="mt-6 rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{error}</div>}
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          {mode === "register" && (
+          {mode === "register" ? (
+            <>
+              <div>
+                <p className="mb-2 text-sm font-medium text-white">Name</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <input
+                    required
+                    placeholder="First name"
+                    value={form.firstName}
+                    onChange={(event) => updateField("firstName", event.target.value)}
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                  />
+                  <input
+                    required
+                    placeholder="Last name"
+                    value={form.lastName}
+                    onChange={(event) => updateField("lastName", event.target.value)}
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
+                  Birthday <HelpCircle size={14} className="text-slate-400" />
+                </p>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <SelectField value={form.birthMonth} onChange={(event) => updateField("birthMonth", event.target.value)} placeholder="Month">
+                    {monthOptions.map((month) => (
+                      <option key={month.value} value={month.value}>
+                        {month.label}
+                      </option>
+                    ))}
+                  </SelectField>
+                  <SelectField value={form.birthDay} onChange={(event) => updateField("birthDay", event.target.value)} placeholder="Day">
+                    {dayOptions.map((day) => (
+                      <option key={day} value={day}>
+                        {day}
+                      </option>
+                    ))}
+                  </SelectField>
+                  <SelectField value={form.birthYear} onChange={(event) => updateField("birthYear", event.target.value)} placeholder="Year">
+                    {yearOptions.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </SelectField>
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 flex items-center gap-2 text-sm font-medium text-white">
+                  Gender <HelpCircle size={14} className="text-slate-400" />
+                </p>
+                <SelectField value={form.gender} onChange={(event) => updateField("gender", event.target.value)} placeholder="Select your gender">
+                  {genderOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </SelectField>
+              </div>
+            </>
+          ) : null}
+
+          <div>
+            <p className="mb-2 text-sm font-medium text-white">{mode === "login" ? "Email or mobile number" : "Mobile number or email"}</p>
             <input
               required
-              placeholder="Full name"
-              value={form.name}
-              onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+              placeholder={mode === "login" ? "Email or mobile number" : "Mobile number or email"}
+              value={form.contact}
+              onChange={(event) => updateField("contact", event.target.value)}
               className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
             />
-          )}
-          <input
-            required
-            type="email"
-            placeholder="Email address"
-            value={form.email}
-            onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
-            className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
-          />
-          <input
-            required
-            type="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
-            className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
-          />
-          <button
-            disabled={formLoading}
-            className="w-full rounded-2xl bg-brand-500 px-5 py-3 font-semibold text-white disabled:opacity-60"
-          >
-            {formLoading ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}
+            {mode === "register" ? (
+              <p className="mt-2 text-xs leading-6 text-slate-400">
+                You may receive notifications from us. This contact detail is saved to your personal profile after sign-up.
+              </p>
+            ) : null}
+          </div>
+
+          <div>
+            <p className="mb-2 text-sm font-medium text-white">Password</p>
+            <input
+              required
+              type="password"
+              placeholder="Password"
+              value={form.password}
+              onChange={(event) => updateField("password", event.target.value)}
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+            />
+          </div>
+
+          {mode === "register" ? (
+            <div className="space-y-2 text-xs leading-6 text-slate-400">
+              <p>By tapping Submit, you agree to create an account and keep your profile details accurate for orders, repairs, and support.</p>
+              <p>Your personal details can still be edited later from your profile page.</p>
+            </div>
+          ) : null}
+
+          <button disabled={formLoading} className="w-full rounded-2xl bg-brand-500 px-5 py-3 font-semibold text-white disabled:opacity-60">
+            {formLoading ? "Please wait..." : mode === "login" ? "Sign in" : "Submit"}
           </button>
         </form>
 
@@ -184,11 +325,6 @@ export default function AuthPage() {
                 Google login is not configured yet. Add the Google client ID to enable it.
               </div>
             )}
-            {googleClientId ? (
-              <p className="mt-3 text-center text-xs text-slate-500">
-                Google login opens in a secure redirect flow and returns you to this page after approval.
-              </p>
-            ) : null}
             {facebookAppId ? (
               <button
                 type="button"
@@ -199,11 +335,6 @@ export default function AuthPage() {
                 <Facebook size={18} className="text-[#1877F2]" />
                 <span>{socialLoading === "facebook" ? "Redirecting to Facebook..." : "Continue with Facebook"}</span>
               </button>
-            ) : null}
-            {facebookAppId ? (
-              <p className="mt-3 text-center text-xs text-slate-500">
-                Facebook login opens in a secure redirect flow and returns you to this page after approval.
-              </p>
             ) : null}
           </div>
         ) : null}

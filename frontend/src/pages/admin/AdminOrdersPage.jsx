@@ -5,11 +5,13 @@ import {
   Copy,
   CreditCard,
   Filter,
+  MessageSquare,
   RotateCcw,
   Search,
   Truck
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "../../api/client";
 import OrderStatusBadge from "../../components/common/OrderStatusBadge";
 import { copyText, formatRefundReason, getOrderReference } from "../../utils/orders";
@@ -701,6 +703,15 @@ export default function AdminOrdersPage() {
                           <p className="mt-4 text-sm leading-6 text-slate-400">
                             Completed, refunded, and cancelled records automatically leave the active workflow after status changes.
                           </p>
+                          <div className="mt-4">
+                            <Link
+                              to={`/admin/messages?orderId=${order._id}`}
+                              className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition hover:bg-white/10"
+                            >
+                              <MessageSquare className="mr-2 h-4 w-4" />
+                              Open order chat
+                            </Link>
+                          </div>
                         </div>
                       ) : null}
 

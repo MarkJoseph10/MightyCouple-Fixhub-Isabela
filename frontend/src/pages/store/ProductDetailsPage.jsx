@@ -8,6 +8,7 @@ import ProductCard from "../../components/store/ProductCard";
 import CountdownTimer from "../../components/store/CountdownTimer";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
+import { useChat } from "../../context/ChatContext";
 import { useStoreSettings } from "../../context/StoreSettingsContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { peso } from "../../utils/commerce";
@@ -31,6 +32,7 @@ export default function ProductDetailsPage() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const { addToCart, setSelectedOnly } = useCart();
+  const { openChat } = useChat();
   const { settings } = useStoreSettings();
   const { isWishlisted, toggleWishlist } = useWishlist();
   const [product, setProduct] = useState(null);
@@ -510,6 +512,27 @@ export default function ProductDetailsPage() {
                 <Heart size={18} fill={wished ? "currentColor" : "none"} />
               </button>
             </div>
+
+            <button
+              type="button"
+              onClick={async () => {
+                if (!isAuthenticated) {
+                  setAccessPromptMessage("Please log in first so the seller can reply to your product chat.");
+                  return;
+                }
+
+                if (user?.role && user.role !== "customer") {
+                  setAccessPromptMessage("Product chat is for customer inquiries. Sellers and admins can continue replies from the Messages inbox.");
+                  return;
+                }
+
+                await openChat(product);
+              }}
+              className="mt-4 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/10"
+            >
+              <MessageSquare size={16} className="text-brand-200" />
+              Chat about this product
+            </button>
 
             {reviewStatus && (
               <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">

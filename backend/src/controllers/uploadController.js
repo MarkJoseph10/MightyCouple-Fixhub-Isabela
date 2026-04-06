@@ -17,9 +17,9 @@ function buildUploadResponse(file, type, cloudinaryResult = null) {
   };
 }
 
-export function uploadBufferToCloudinary(file, type) {
-  const folder = type === "video" ? "shopverse/videos" : "shopverse/images";
-  const resourceType = type === "video" ? "video" : "image";
+export function uploadBufferToCloudinary(file, type, options = {}) {
+  const resourceType = options.resourceType || (type === "video" ? "video" : "image");
+  const folder = options.folder || (type === "video" ? "shopverse/videos" : "shopverse/images");
 
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(

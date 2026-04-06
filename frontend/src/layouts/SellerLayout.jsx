@@ -9,7 +9,10 @@ import { useAuth } from "../context/AuthContext";
 const pageLabels = {
   "/seller": "Overview",
   "/seller/products": "My Products",
-  "/seller/orders": "My Orders"
+  "/seller/orders": "My Orders",
+  "/seller/repairs": "Repairs",
+  "/seller/technician": "Technician application",
+  "/seller/messages": "Messages"
 };
 
 export default function SellerLayout() {

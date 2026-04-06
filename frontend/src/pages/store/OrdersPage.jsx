@@ -1,4 +1,4 @@
-import { Copy, ReceiptText, RotateCcw, SearchCheck } from "lucide-react";
+import { Copy, MessageSquare, ReceiptText, RotateCcw, SearchCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../api/client";
@@ -8,6 +8,7 @@ import LoadingScreen from "../../components/common/LoadingScreen";
 import OrderStatusBadge from "../../components/common/OrderStatusBadge";
 import RefundRequestModal from "../../components/store/RefundRequestModal";
 import { useAuth } from "../../context/AuthContext";
+import { useChat } from "../../context/ChatContext";
 import { useStoreSettings } from "../../context/StoreSettingsContext";
 import { peso } from "../../utils/commerce";
 import { resolveMediaUrl } from "../../utils/media";
@@ -16,6 +17,7 @@ import { printOrderReceipt } from "../../utils/receipt";
 
 export default function OrdersPage() {
   const { isAdmin } = useAuth();
+  const { openOrderChat } = useChat();
   const { settings } = useStoreSettings();
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState("");
@@ -170,6 +172,16 @@ export default function OrdersPage() {
                     <SearchCheck size={15} className="mr-2" />
                     Track order
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      openOrderChat(order).catch(() => {});
+                    }}
+                    className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition duration-300 hover:bg-white/10"
+                  >
+                    <MessageSquare size={15} className="mr-2" />
+                    Chat about order
+                  </button>
                   <button
                     type="button"
                     onClick={() => printOrderReceipt(order, settings.storeName)}
