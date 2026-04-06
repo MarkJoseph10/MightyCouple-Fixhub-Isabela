@@ -26,6 +26,8 @@ import { optimizeImageUrl, resolveMediaUrl } from "../../utils/media";
 import { readRecentlyViewed } from "../../utils/recentlyViewed";
 import { getSiteUrl } from "../../utils/site";
 
+const HOME_PRODUCTS_CACHE_KEY = "shopverse-home-products-cache";
+
 export default function HomePage() {
   const location = useLocation();
 const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Accessories", "Wearables", "Gaming"];
@@ -44,10 +46,40 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
   const [showPromoBanner, setShowPromoBanner] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const heroVisualUrl = settings.heroImage?.url
+    ? optimizeImageUrl(settings.heroImage.url, { width: 1600, height: 960, fit: "fill" })
+    : settings.banner?.url
+      ? optimizeImageUrl(settings.banner.url, { width: 1600, height: 960, fit: "fill" })
+      : "";
 
   useEffect(() => {
     setRecentlyViewed(readRecentlyViewed());
   }, []);
+
+  useEffect(() => {
+    try {
+      const cachedValue = window.sessionStorage.getItem(HOME_PRODUCTS_CACHE_KEY);
+
+      if (!cachedValue) {
+        return;
+      }
+
+      const parsedValue = JSON.parse(cachedValue);
+
+      if (
+        parsedValue &&
+        parsedValue.search === search &&
+        parsedValue.category === category &&
+        parsedValue.sort === sort &&
+        Array.isArray(parsedValue.products)
+      ) {
+        setProducts(parsedValue.products);
+        setLoading(false);
+      }
+    } catch {
+      // Ignore invalid cache.
+    }
+  }, [category, search, sort]);
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -116,6 +148,19 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
           }
         });
         setProducts(data);
+        try {
+          window.sessionStorage.setItem(
+            HOME_PRODUCTS_CACHE_KEY,
+            JSON.stringify({
+              search,
+              category,
+              sort,
+              products: data
+            })
+          );
+        } catch {
+          // Ignore storage failures.
+        }
         setError("");
       } catch (requestError) {
         setError(requestError.response?.data?.message || "Unable to load products right now.");
@@ -262,17 +307,27 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
       <section className="page-shell">
         <div className="glass-panel overflow-hidden rounded-[30px] shadow-ambient">
           <div
-            className="grid gap-5 bg-mesh px-5 py-6 sm:px-6 sm:py-7 lg:grid-cols-[minmax(0,0.96fr)_280px] lg:px-7 lg:py-8 xl:grid-cols-[minmax(0,0.98fr)_300px]"
+            className="relative grid gap-5 bg-mesh px-5 py-6 sm:px-6 sm:py-7 lg:grid-cols-[minmax(0,0.96fr)_280px] lg:px-7 lg:py-8 xl:grid-cols-[minmax(0,0.98fr)_300px]"
             style={{
               backgroundImage: settings.heroImage?.url
-                ? `linear-gradient(180deg, rgba(2,6,23,0.45), rgba(2,6,23,0.82)), url('${optimizeImageUrl(settings.heroImage.url, { width: 1600, height: 960, fit: "fill" })}')`
+                ? `linear-gradient(180deg, rgba(2,6,23,0.45), rgba(2,6,23,0.82)), url('${heroVisualUrl}')`
                 : settings.banner?.url
-                  ? `linear-gradient(180deg, rgba(2,6,23,0.45), rgba(2,6,23,0.82)), url('${optimizeImageUrl(settings.banner.url, { width: 1600, height: 960, fit: "fill" })}')`
+                  ? `linear-gradient(180deg, rgba(2,6,23,0.45), rgba(2,6,23,0.82)), url('${heroVisualUrl}')`
                   : undefined,
               backgroundSize: settings.heroImage?.url || settings.banner?.url ? "cover" : undefined,
               backgroundPosition: settings.heroImage?.url || settings.banner?.url ? "center" : undefined
             }}
           >
+            {heroVisualUrl ? (
+              <img
+                src={heroVisualUrl}
+                alt=""
+                aria-hidden="true"
+                fetchpriority="high"
+                loading="eager"
+                className="pointer-events-none absolute h-0 w-0 opacity-0"
+              />
+            ) : null}
             <div className="min-w-0 space-y-4">
               <div className="inline-flex max-w-full items-center rounded-full bg-white/10 px-3.5 py-2 text-xs text-slate-200 sm:text-sm">
                 <Sparkles size={15} className="mr-2 text-orange-300" />
@@ -481,8 +536,14 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-            {paginatedProducts.map((product) => (
-              <ProductCard key={product._id} product={product} onAddToCart={addToCart} compact eagerImage={currentPage === 1} />
+            {paginatedProducts.map((product, index) => (
+              <ProductCard
+                key={product._id}
+                product={product}
+                onAddToCart={addToCart}
+                compact
+                eagerImage={currentPage === 1 && index < 6}
+              />
             ))}
           </div>
         )}

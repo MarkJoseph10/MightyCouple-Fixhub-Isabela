@@ -3,6 +3,7 @@ import api from "../api/client";
 import { resolveMediaUrl } from "../utils/media";
 
 const StoreSettingsContext = createContext(null);
+const STORE_SETTINGS_CACHE_KEY = "shopverse-store-settings-cache";
 
 const fallbackSettings = {
   storeName: "Mighty Couple",
@@ -152,6 +153,28 @@ export function StoreSettingsProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    try {
+      const cachedValue = window.localStorage.getItem(STORE_SETTINGS_CACHE_KEY);
+
+      if (!cachedValue) {
+        return;
+      }
+
+      const parsedValue = JSON.parse(cachedValue);
+
+      if (parsedValue && typeof parsedValue === "object") {
+        setSettings((current) => ({
+          ...current,
+          ...parsedValue
+        }));
+        setLoading(false);
+      }
+    } catch {
+      // Ignore bad cache values and continue with live fetch.
+    }
+  }, []);
+
+  useEffect(() => {
     const faviconHref = resolveMediaUrl(settings.favicon?.url || fallbackSettings.favicon.url);
     const faviconType = faviconHref.endsWith(".ico")
       ? "image/x-icon"
@@ -178,6 +201,11 @@ export function StoreSettingsProvider({ children }) {
     try {
       const { data } = await api.get("/settings/public");
       setSettings(data);
+      try {
+        window.localStorage.setItem(STORE_SETTINGS_CACHE_KEY, JSON.stringify(data));
+      } catch {
+        // Ignore storage failures.
+      }
       return data;
     } finally {
       setLoading(false);

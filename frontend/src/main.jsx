@@ -16,6 +16,30 @@ if (import.meta.env.PROD) {
   registerPwa();
 }
 
+if (typeof document !== "undefined") {
+  const apiBaseUrl = String(import.meta.env.VITE_API_URL || "").replace(/\/api\/?$/, "");
+  const hintOrigins = [window.location.origin, apiBaseUrl, "https://res.cloudinary.com"].filter(Boolean);
+
+  hintOrigins.forEach((origin) => {
+    if (!document.head.querySelector(`link[rel="preconnect"][href="${origin}"]`)) {
+      const link = document.createElement("link");
+      link.rel = "preconnect";
+      link.href = origin;
+      if (origin !== window.location.origin) {
+        link.crossOrigin = "anonymous";
+      }
+      document.head.appendChild(link);
+    }
+
+    if (!document.head.querySelector(`link[rel="dns-prefetch"][href="${origin}"]`)) {
+      const dnsPrefetch = document.createElement("link");
+      dnsPrefetch.rel = "dns-prefetch";
+      dnsPrefetch.href = origin;
+      document.head.appendChild(dnsPrefetch);
+    }
+  });
+}
+
 const Router = Capacitor.isNativePlatform() ? HashRouter : BrowserRouter;
 
 ReactDOM.createRoot(document.getElementById("root")).render(

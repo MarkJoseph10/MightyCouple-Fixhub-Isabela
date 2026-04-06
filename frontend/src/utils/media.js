@@ -1,7 +1,7 @@
 const mediaBaseUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace("/api", "");
 
 function buildCloudinaryTransformString(options = {}) {
-  const transforms = ["f_auto", "q_auto"];
+  const transforms = ["f_auto", "q_auto", "dpr_auto", "fl_progressive"];
 
   if (options.width) {
     transforms.push(`w_${Math.round(options.width)}`);
