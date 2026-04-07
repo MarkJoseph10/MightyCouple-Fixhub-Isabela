@@ -43,7 +43,7 @@ export default function ProductDetailsPage() {
   const [reviewForm, setReviewForm] = useState(initialReviewForm);
   const [reviewStatus, setReviewStatus] = useState("");
   const [error, setError] = useState("");
-  const [accessPromptMessage, setAccessPromptMessage] = useState("");
+  const [accessPrompt, setAccessPrompt] = useState({ title: "", message: "" });
 
   async function loadReviews(productId) {
     const { data } = await api.get(`/reviews/${productId}`);
@@ -137,6 +137,10 @@ export default function ProductDetailsPage() {
     () => product?.variants?.find((variant) => String(variant._id) === String(selectedVariantId)) || null,
     [product, selectedVariantId]
   );
+  const hasMeaningfulVariantStock = useMemo(
+    () => Boolean(product?.variants?.some((variant) => Number(variant.stock || 0) > 0)),
+    [product]
+  );
   const mediaItems = useMemo(() => {
     if (!product) {
       return [];
@@ -178,7 +182,9 @@ export default function ProductDetailsPage() {
   const activePrice = Number(selectedVariant?.price || product?.price || 0);
   const installmentPlan = useMemo(() => calculateInstallmentPlan(activePrice, settings), [activePrice, settings]);
   const canUseInstallment = installmentPlan.enabled && product?.vendorType !== "seller";
-  const activeStock = Number(selectedVariant?.stock ?? product?.stock ?? 0);
+  const activeStock = hasMeaningfulVariantStock
+    ? Number(selectedVariant?.stock || 0)
+    : Number(product?.stock || 0);
   const isLowStock = activeStock > 0 && activeStock <= 5;
   const wished = product ? isWishlisted(product._id) : false;
   const limitedOffer = settings.promotions?.limitedOffer;
@@ -189,7 +195,10 @@ export default function ProductDetailsPage() {
     }
 
     if (!isAuthenticated) {
-      setAccessPromptMessage("Please log in to add items to your cart.");
+      setAccessPrompt({
+        title: "Please log in to continue",
+        message: "Please log in to add items to your cart."
+      });
       return;
     }
 
@@ -203,14 +212,20 @@ export default function ProductDetailsPage() {
     }
 
     if (!isAuthenticated) {
-      setAccessPromptMessage("Please log in to continue with Buy now.");
+      setAccessPrompt({
+        title: "Please log in to continue",
+        message: "Please log in to continue with Buy now."
+      });
       return;
     }
 
     const result = await addToCart(product, quantity, { variant: selectedVariant });
 
     if (result?.requiresAuth) {
-      setAccessPromptMessage("Please log in to continue with Buy now.");
+      setAccessPrompt({
+        title: "Please log in to continue",
+        message: "Please log in to continue with Buy now."
+      });
       return;
     }
 
@@ -234,7 +249,10 @@ export default function ProductDetailsPage() {
     const result = await toggleWishlist(product._id);
 
     if (result?.requiresAuth) {
-      setAccessPromptMessage("Please log in to save items to your wishlist.");
+      setAccessPrompt({
+        title: "Please log in to continue",
+        message: "Please log in to save items to your wishlist."
+      });
     }
   }
 
@@ -515,16 +533,22 @@ export default function ProductDetailsPage() {
 
             <button
               type="button"
-              onClick={async () => {
-                if (!isAuthenticated) {
-                  setAccessPromptMessage("Please log in first so the seller can reply to your product chat.");
-                  return;
-                }
+                onClick={async () => {
+                  if (!isAuthenticated) {
+                    setAccessPrompt({
+                      title: "Please log in to continue",
+                      message: "Please log in first so the seller can reply to your product chat."
+                    });
+                    return;
+                  }
 
-                if (user?.role && user.role !== "customer") {
-                  setAccessPromptMessage("Product chat is for customer inquiries. Sellers and admins can continue replies from the Messages inbox.");
-                  return;
-                }
+                  if (user?.role && user.role !== "customer") {
+                    setAccessPrompt({
+                      title: "Customer account required",
+                      message: "Product chat is for customer inquiries. Sellers and admins can continue replies from the Messages inbox."
+                    });
+                    return;
+                  }
 
                 await openChat(product);
               }}
@@ -676,10 +700,11 @@ export default function ProductDetailsPage() {
         </section>
       )}
       <AccessPromptModal
-        open={Boolean(accessPromptMessage)}
-        onClose={() => setAccessPromptMessage("")}
+        open={Boolean(accessPrompt.message)}
+        title={accessPrompt.title || "Please log in to continue"}
+        onClose={() => setAccessPrompt({ title: "", message: "" })}
         returnTo={location.pathname}
-        message={accessPromptMessage}
+        message={accessPrompt.message}
       />
     </div>
   );

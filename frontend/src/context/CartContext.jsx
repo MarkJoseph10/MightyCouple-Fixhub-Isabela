@@ -5,6 +5,17 @@ import { useAuth } from "./AuthContext";
 
 const CartContext = createContext(null);
 
+function resolveProductStock(product, variant = null) {
+  const normalizedVariants = Array.isArray(product?.variants) ? product.variants : [];
+  const hasMeaningfulVariantStock = normalizedVariants.some((item) => Number(item?.stock || 0) > 0);
+
+  if (variant && hasMeaningfulVariantStock) {
+    return Number(variant.stock || 0);
+  }
+
+  return Number(product?.stock || 0);
+}
+
 export function CartProvider({ children }) {
   const storedSelectionRaw = localStorage.getItem("shopverse-cart-selected");
   const { isAuthenticated } = useAuth();
@@ -67,7 +78,7 @@ export function CartProvider({ children }) {
           return { ok: false, requiresAuth: true };
         }
 
-        if (Number(options.variant?.stock ?? product.stock ?? 0) <= 0) {
+        if (resolveProductStock(product, options.variant) <= 0) {
           return { ok: false, outOfStock: true };
         }
 
