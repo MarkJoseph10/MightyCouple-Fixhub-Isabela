@@ -5,7 +5,11 @@ export function registerPwa() {
     return;
   }
 
-  registerSW({
-    immediate: true
+  const updateSW = registerSW({
+    immediate: true,
+    onNeedRefresh() {
+      updateSW(true);
+    },
+    onOfflineReady() {}
   });
 }
