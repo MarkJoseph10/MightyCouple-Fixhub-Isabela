@@ -196,9 +196,10 @@ async function ensureUniqueSlug(name, excludeId) {
 
 function prepareProductPayload(body) {
   const variants = normalizeVariants(body.variants);
-  const stock = variants.length
-    ? variants.reduce((sum, variant) => sum + toNumber(variant.stock, 0), 0)
-    : toNumber(body.stock, 0);
+  const manualStock = toNumber(body.stock, 0);
+  const variantStockTotal = variants.reduce((sum, variant) => sum + toNumber(variant.stock, 0), 0);
+  const hasMeaningfulVariantStock = variants.some((variant) => toNumber(variant.stock, 0) > 0);
+  const stock = variants.length && hasMeaningfulVariantStock ? variantStockTotal : manualStock;
   const name = String(body.name || "").trim();
   const images = normalizeImages(body.images, name);
   const video = normalizeVideo(body.video, images[0]?.url || "");
