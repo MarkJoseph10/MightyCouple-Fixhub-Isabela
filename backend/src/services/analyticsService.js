@@ -82,7 +82,22 @@ export async function getDashboardAnalytics({ range = "all" } = {}) {
   await autoCancelStalePendingOrders(settings);
   const lowStockThreshold = Number(settings.metrics?.lowStockThreshold || 5);
   const rangeStart = getDateRangeStart(range);
-  const orderFilter = rangeStart ? { createdAt: { $gte: rangeStart } } : {};
+  const salesTrackingStartsAt = settings.metrics?.salesTrackingStartsAt
+    ? new Date(settings.metrics.salesTrackingStartsAt)
+    : null;
+  const createdAtFilter = {};
+
+  if (rangeStart) {
+    createdAtFilter.$gte = rangeStart;
+  }
+
+  if (salesTrackingStartsAt) {
+    createdAtFilter.$gte = createdAtFilter.$gte
+      ? new Date(Math.max(createdAtFilter.$gte.getTime(), salesTrackingStartsAt.getTime()))
+      : salesTrackingStartsAt;
+  }
+
+  const orderFilter = Object.keys(createdAtFilter).length ? { createdAt: createdAtFilter } : {};
 
   const [
     paidOrders,
@@ -164,5 +179,33 @@ export async function getDashboardAnalytics({ range = "all" } = {}) {
     },
     recentOrders,
     ordersByStatus
+  };
+}
+
+export async function resetSalesAnalytics() {
+  const resetAt = new Date();
+  const settings = await getOrCreateStoreSettings();
+
+  settings.metrics = {
+    ...settings.metrics,
+    cartAdds: 0,
+    salesTrackingStartsAt: resetAt
+  };
+
+  await settings.save();
+
+  await Product.updateMany(
+    {},
+    {
+      $set: {
+        soldCount: 0,
+        manualRecentSales24h: 0
+      }
+    }
+  );
+
+  return {
+    resetAt,
+    cartAdds: 0
   };
 }

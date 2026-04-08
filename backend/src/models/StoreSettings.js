@@ -244,7 +244,8 @@ const maintenanceSchema = new mongoose.Schema(
 const metricsSchema = new mongoose.Schema(
   {
     cartAdds: { type: Number, default: 0 },
-    lowStockThreshold: { type: Number, default: 5 }
+    lowStockThreshold: { type: Number, default: 5 },
+    salesTrackingStartsAt: { type: Date, default: null }
   },
   { _id: false }
 );

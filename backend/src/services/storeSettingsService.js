@@ -131,7 +131,8 @@ const defaultSettings = {
   },
   metrics: {
     cartAdds: 0,
-    lowStockThreshold: 5
+    lowStockThreshold: 5,
+    salesTrackingStartsAt: null
   },
   installment: {
     enabled: true,
@@ -291,7 +292,8 @@ export function serializeStoreSettings(settings) {
     },
     metrics: {
       cartAdds: Number(settings.metrics?.cartAdds ?? defaultSettings.metrics.cartAdds),
-      lowStockThreshold: Number(settings.metrics?.lowStockThreshold ?? defaultSettings.metrics.lowStockThreshold)
+      lowStockThreshold: Number(settings.metrics?.lowStockThreshold ?? defaultSettings.metrics.lowStockThreshold),
+      salesTrackingStartsAt: settings.metrics?.salesTrackingStartsAt || defaultSettings.metrics.salesTrackingStartsAt
     },
     installment: {
       enabled: settings.installment?.enabled ?? defaultSettings.installment.enabled,
