@@ -1480,46 +1480,61 @@ function DashboardPage() {
           </div>
 
           <div className={sectionClassName("social")}>
-            <SectionCard
-              eyebrow="Social"
-              title="Follow us links"
-              description="Set the footer social buttons from one place so the store always points to the right accounts."
-            >
-              <div className="grid gap-4 md:grid-cols-2">
-                <InputField label="Facebook URL">
-                  <input
-                    value={settingsForm.socialFacebook}
-                    onChange={(event) => updateFormField("socialFacebook", event.target.value)}
-                    placeholder="https://facebook.com/..."
-                    className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
-                  />
-                </InputField>
-                <InputField label="Instagram URL">
-                  <input
-                    value={settingsForm.socialInstagram}
-                    onChange={(event) => updateFormField("socialInstagram", event.target.value)}
-                    placeholder="https://instagram.com/..."
-                    className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
-                  />
-                </InputField>
-                <InputField label="Twitter / X URL">
-                  <input
-                    value={settingsForm.socialTwitter}
-                    onChange={(event) => updateFormField("socialTwitter", event.target.value)}
-                    placeholder="https://x.com/..."
-                    className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
-                  />
-                </InputField>
-                <InputField label="LinkedIn URL">
-                  <input
-                    value={settingsForm.socialLinkedin}
-                    onChange={(event) => updateFormField("socialLinkedin", event.target.value)}
-                    placeholder="https://linkedin.com/..."
-                    className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
-                  />
-                </InputField>
-              </div>
-            </SectionCard>
+            <form onSubmit={handleSaveDashboard}>
+              <SectionCard
+                eyebrow="Social"
+                title="Follow us links"
+                description="Set the footer social buttons from one place so the store always points to the right accounts."
+              >
+                <div className="grid gap-4 md:grid-cols-2">
+                  <InputField label="Facebook URL">
+                    <input
+                      value={settingsForm.socialFacebook}
+                      onChange={(event) => updateFormField("socialFacebook", event.target.value)}
+                      placeholder="https://facebook.com/..."
+                      className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                    />
+                  </InputField>
+                  <InputField label="Instagram URL">
+                    <input
+                      value={settingsForm.socialInstagram}
+                      onChange={(event) => updateFormField("socialInstagram", event.target.value)}
+                      placeholder="https://instagram.com/..."
+                      className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                    />
+                  </InputField>
+                  <InputField label="Twitter / X URL">
+                    <input
+                      value={settingsForm.socialTwitter}
+                      onChange={(event) => updateFormField("socialTwitter", event.target.value)}
+                      placeholder="https://x.com/..."
+                      className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                    />
+                  </InputField>
+                  <InputField label="LinkedIn URL">
+                    <input
+                      value={settingsForm.socialLinkedin}
+                      onChange={(event) => updateFormField("socialLinkedin", event.target.value)}
+                      placeholder="https://linkedin.com/..."
+                      className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                    />
+                  </InputField>
+                </div>
+
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <button className="rounded-2xl bg-brand-500 px-5 py-3 font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-brand-600">
+                    {savingDashboard ? "Saving social links..." : "Save social links"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSettingsForm(buildSettingsForm(settings))}
+                    className="rounded-2xl border border-white/10 px-5 py-3 text-slate-200 transition duration-300 hover:bg-white/5"
+                  >
+                    Reset social fields
+                  </button>
+                </div>
+              </SectionCard>
+            </form>
           </div>
 
           <div className={sectionClassName("seo")}>
