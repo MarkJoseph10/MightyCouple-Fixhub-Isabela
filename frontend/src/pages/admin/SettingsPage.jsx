@@ -376,6 +376,11 @@ function DashboardPage() {
   const [savingAdmin, setSavingAdmin] = useState(false);
   const [resettingSales, setResettingSales] = useState(false);
   const [resettingTransactions, setResettingTransactions] = useState(false);
+  const [resetToolsForm, setResetToolsForm] = useState({
+    currentPassword: "",
+    salesConfirmed: false,
+    transactionsConfirmed: false
+  });
   const [uploadingField, setUploadingField] = useState("");
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
@@ -741,8 +746,18 @@ function DashboardPage() {
       return;
     }
 
+    if (!resetToolsForm.salesConfirmed) {
+      setError("Please confirm that you understand the sales reset action first.");
+      return;
+    }
+
+    if (!String(resetToolsForm.currentPassword || "").trim()) {
+      setError("Enter your admin password before resetting sales data.");
+      return;
+    }
+
     const confirmed = window.confirm(
-      "Reset the current sales analytics so the dashboard starts fresh from now? Existing orders stay saved, but revenue, conversion, and best-seller metrics will restart."
+      "Are you sure you want to reset test sales data? Existing orders stay saved, but revenue, conversion, and best-seller metrics will restart from now."
     );
 
     if (!confirmed) {
@@ -751,8 +766,15 @@ function DashboardPage() {
 
     try {
       setResettingSales(true);
-      const { data } = await api.post("/stats/reset-sales");
+      const { data } = await api.post("/stats/reset-sales", {
+        currentPassword: resetToolsForm.currentPassword
+      });
       setStatus(data?.message || "Sales analytics reset.");
+      setResetToolsForm((current) => ({
+        ...current,
+        currentPassword: "",
+        salesConfirmed: false
+      }));
       const { data: statsData } = await api.get("/stats");
       setStats(statsData);
     } catch (requestError) {
@@ -767,8 +789,18 @@ function DashboardPage() {
       return;
     }
 
+    if (!resetToolsForm.transactionsConfirmed) {
+      setError("Please confirm that you understand the hard reset action first.");
+      return;
+    }
+
+    if (!String(resetToolsForm.currentPassword || "").trim()) {
+      setError("Enter your admin password before hard resetting transactions.");
+      return;
+    }
+
     const confirmed = window.confirm(
-      "Delete all test orders, installment transactions, refund/cancel history, and order-related activity logs? Users, products, settings, chats, and repairs will stay."
+      "Are you sure you want to delete all test orders, installment transactions, refund/cancel history, and order-related activity logs? Users, products, settings, chats, and repairs will stay."
     );
 
     if (!confirmed) {
@@ -785,8 +817,15 @@ function DashboardPage() {
 
     try {
       setResettingTransactions(true);
-      const { data } = await api.post("/stats/hard-reset-transactions");
+      const { data } = await api.post("/stats/hard-reset-transactions", {
+        currentPassword: resetToolsForm.currentPassword
+      });
       setStatus(data?.message || "Test transactions deleted.");
+      setResetToolsForm({
+        currentPassword: "",
+        salesConfirmed: false,
+        transactionsConfirmed: false
+      });
       const { data: statsData } = await api.get("/stats");
       setStats(statsData);
     } catch (requestError) {
@@ -1781,8 +1820,27 @@ function DashboardPage() {
               >
                 <div className="space-y-4">
                   <div className="rounded-[28px] border border-amber-400/15 bg-amber-500/10 p-4 text-sm text-amber-50">
-                    These actions are for cleanup only. Sales reset keeps orders but restarts reporting. Hard reset deletes test orders and order-related transaction history.
+                    Warning: these actions are for cleanup only. Sales reset keeps orders but restarts reporting. Hard reset permanently deletes test orders and order-related transaction history.
                   </div>
+
+                  <InputField label="Admin password confirmation" helper="Your current admin password is required before any reset action can continue.">
+                    <input
+                      type="password"
+                      value={resetToolsForm.currentPassword}
+                      onChange={(event) => setResetToolsForm((current) => ({ ...current, currentPassword: event.target.value }))}
+                      className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                    />
+                  </InputField>
+
+                  <label className="flex items-start gap-3 rounded-[24px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+                    <input
+                      type="checkbox"
+                      checked={resetToolsForm.salesConfirmed}
+                      onChange={(event) => setResetToolsForm((current) => ({ ...current, salesConfirmed: event.target.checked }))}
+                      className="mt-1"
+                    />
+                    <span>I understand that resetting test sales data restarts reporting, conversion metrics, and sold counters from this point onward.</span>
+                  </label>
 
                   <button
                     type="button"
@@ -1793,6 +1851,16 @@ function DashboardPage() {
                     <RefreshCcw size={16} className={resettingSales ? "animate-spin" : ""} />
                     {resettingSales ? "Resetting sales data..." : "Reset test sales data"}
                   </button>
+
+                  <label className="flex items-start gap-3 rounded-[24px] border border-rose-400/15 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+                    <input
+                      type="checkbox"
+                      checked={resetToolsForm.transactionsConfirmed}
+                      onChange={(event) => setResetToolsForm((current) => ({ ...current, transactionsConfirmed: event.target.checked }))}
+                      className="mt-1"
+                    />
+                    <span>I understand that hard reset permanently deletes all current test orders, installments, refunds, cancel history, and order activity logs.</span>
+                  </label>
 
                   <button
                     type="button"
