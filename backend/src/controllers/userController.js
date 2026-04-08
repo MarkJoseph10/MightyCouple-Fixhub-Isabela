@@ -462,6 +462,7 @@ export const applyAsTechnician = asyncHandler(async (req, res) => {
   const specialties = normalizeStringArray(req.body.specialties || []);
   const servicePoints = normalizeStringArray(req.body.servicePoints || user.sellerProfile?.servicePoints || []);
   const pickupMethods = normalizePickupMethods(req.body.pickupMethods || []);
+  const sellerProfile = buildSellerProfileSnapshot(user);
 
   if (experienceSummary.length < 20) {
     throw new ApiError(400, "Please provide a technician experience summary with at least 20 characters");
@@ -471,12 +472,16 @@ export const applyAsTechnician = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Please add at least one service point or branch for repair bookings");
   }
 
+  if (contactNumber && !isValidPhone(contactNumber)) {
+    throw new ApiError(400, "Please enter a valid Philippine mobile number for repair contact");
+  }
+
   user.technicianApplication = {
     status: "pending",
     specialties,
     experienceSummary,
     yearsExperience,
-    contactNumber,
+    contactNumber: contactNumber ? normalizePhilippinePhone(contactNumber) : "",
     servicePoints,
     pickupMethods,
     submittedAt: new Date(),
@@ -487,39 +492,44 @@ export const applyAsTechnician = asyncHandler(async (req, res) => {
   };
 
   user.sellerProfile = {
-    ...(user.sellerProfile || {}),
+    ...sellerProfile,
     servicePoints
   };
 
   await user.save();
-  const storeSettings = await getOrCreateStoreSettings();
-  await createNotifications({
-    settings: storeSettings,
-    type: "technician_application_submitted",
-    title: "Technician application submitted",
-    message: `${user.sellerProfile?.storeName || user.name} applied for repair technician access.`,
-    link: "/admin/technicians",
-    data: {
-      userId: user._id.toString(),
-      servicePoints,
-      specialties
-    },
-    recipients: [
-      {
-        role: "admin",
-        title: "Technician application submitted",
-        message: `${user.sellerProfile?.storeName || user.name} applied for repair technician access.`,
-        link: "/admin/technicians"
-      }
-    ]
-  });
+
+  const notificationMessage = `${user.sellerProfile?.storeName || user.name} applied for repair technician access.`;
+  const storeSettings = await getOrCreateStoreSettings().catch(() => null);
+
+  if (storeSettings) {
+    await createNotifications({
+      settings: storeSettings,
+      type: "technician_application_submitted",
+      title: "Technician application submitted",
+      message: notificationMessage,
+      link: "/admin/technicians",
+      data: {
+        userId: user._id.toString(),
+        servicePoints,
+        specialties
+      },
+      recipients: [
+        {
+          role: "admin",
+          title: "Technician application submitted",
+          message: notificationMessage,
+          link: "/admin/technicians"
+        }
+      ]
+    }).catch(() => {});
+  }
 
   await recordActivity({
     actor: req.user,
     category: "repair",
     action: "technician_application_submitted",
     title: "Technician application submitted",
-    message: `${user.sellerProfile?.storeName || user.name} applied for repair technician access.`,
+    message: notificationMessage,
     link: "/admin/technicians",
     subjectType: "technician_application",
     subjectId: user._id.toString(),
@@ -810,6 +820,14 @@ export const reviewTechnicianApplication = asyncHandler(async (req, res) => {
   const technicianApplication = buildTechnicianApplicationSnapshot(user);
   if (technicianApplication.status === "none") {
     throw new ApiError(400, "No technician application is available for review");
+  }
+
+  if (technicianApplication.status === "approved" && decision === "rejected") {
+    throw new ApiError(400, "Approved technician applications can no longer be rejected. Suspend access instead.");
+  }
+
+  if (technicianApplication.status === "rejected" && decision === "approved") {
+    throw new ApiError(400, "Rejected applications should be resubmitted by the seller before approval.");
   }
 
   user.technicianApplication = {

@@ -162,6 +162,11 @@ export default function AdminTechniciansPage() {
           {filteredApplications.length ? (
             filteredApplications.map((user) => {
               const application = user.technicianApplication || {};
+              const applicationStatus = application.status || "none";
+              const canApprove = applicationStatus === "pending";
+              const canReject = applicationStatus === "pending";
+              const canSuspend = applicationStatus === "approved";
+
               return (
                 <article key={user._id} className="rounded-[28px] border border-white/10 bg-white/5 p-5">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -195,15 +200,30 @@ export default function AdminTechniciansPage() {
                   />
 
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <button type="button" onClick={() => handleReview(user._id, "approved")} className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-white">
-                      Approve technician
-                    </button>
-                    <button type="button" onClick={() => handleReview(user._id, "rejected")} className="rounded-full bg-rose-500 px-4 py-2 text-sm font-medium text-white">
-                      Reject application
-                    </button>
-                    <button type="button" onClick={() => handleReview(user._id, "suspended")} className="rounded-full border border-white/10 px-4 py-2 text-sm text-slate-200">
-                      Suspend technician access
-                    </button>
+                    {canApprove ? (
+                      <button type="button" onClick={() => handleReview(user._id, "approved")} className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-medium text-white">
+                        Approve technician
+                      </button>
+                    ) : null}
+                    {canReject ? (
+                      <button type="button" onClick={() => handleReview(user._id, "rejected")} className="rounded-full bg-rose-500 px-4 py-2 text-sm font-medium text-white">
+                        Reject application
+                      </button>
+                    ) : null}
+                    {canSuspend ? (
+                      <button type="button" onClick={() => handleReview(user._id, "suspended")} className="rounded-full border border-white/10 px-4 py-2 text-sm text-slate-200">
+                        Suspend technician access
+                      </button>
+                    ) : null}
+                    {!canApprove && !canReject && !canSuspend ? (
+                      <p className="text-sm text-slate-400">
+                        {applicationStatus === "rejected"
+                          ? "Waiting for the seller to submit a new technician application."
+                          : applicationStatus === "suspended"
+                            ? "Technician access is suspended. No further review action is available here."
+                            : "No additional review actions are available for this application."}
+                      </p>
+                    ) : null}
                   </div>
                 </article>
               );
