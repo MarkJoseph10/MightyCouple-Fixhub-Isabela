@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, Facebook, HelpCircle, Mail } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 
 const initialForm = {
@@ -10,8 +10,7 @@ const initialForm = {
   birthDay: "",
   birthYear: "",
   gender: "",
-  contact: "",
-  password: ""
+  contact: ""
 };
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
@@ -99,6 +98,7 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const [formLoading, setFormLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState("");
+  const passwordInputRef = useRef(null);
   const redirectedMessage = location.state?.message || "";
   const redirectTo = location.state?.from || new URLSearchParams(location.search).get("from") || "";
   const sessionExpired = new URLSearchParams(location.search).get("session") === "expired";
@@ -114,6 +114,9 @@ export default function AuthPage() {
     setFormLoading(false);
     setSocialLoading("");
     setForm(initialForm);
+    if (passwordInputRef.current) {
+      passwordInputRef.current.value = "";
+    }
   }, [mode]);
 
   function updateField(field, value) {
@@ -168,9 +171,10 @@ export default function AuthPage() {
 
     try {
       let response;
+      const passwordValue = passwordInputRef.current?.value || "";
 
       if (mode === "login") {
-        response = await login({ email: form.contact, password: form.password });
+        response = await login({ email: form.contact, password: passwordValue });
       } else {
         response = await register({
           firstName: form.firstName,
@@ -178,7 +182,7 @@ export default function AuthPage() {
           contact: form.contact,
           birthDate: buildBirthDate(form.birthMonth, form.birthDay, form.birthYear),
           gender: form.gender,
-          password: form.password
+          password: passwordValue
         });
       }
 
@@ -187,6 +191,9 @@ export default function AuthPage() {
     } catch (requestError) {
       setError(resolveAuthError(requestError, mode));
     } finally {
+      if (passwordInputRef.current) {
+        passwordInputRef.current.value = "";
+      }
       setFormLoading(false);
     }
   }
@@ -311,14 +318,14 @@ export default function AuthPage() {
 
           <div>
             <p className="mb-2 text-sm font-medium text-white">Password</p>
-            <input
-              required
-              type="password"
-              placeholder="Password"
-              value={form.password}
-              onChange={(event) => updateField("password", event.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
-            />
+          <input
+            required
+            type="password"
+            ref={passwordInputRef}
+            placeholder="Password"
+            autoComplete={mode === "login" ? "current-password" : "new-password"}
+            className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+          />
           </div>
 
           {mode === "register" ? (

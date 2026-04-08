@@ -17,7 +17,7 @@ import {
   Sparkles,
   Users
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../api/client";
 import StatsCard from "../../components/admin/StatsCard";
@@ -377,13 +377,16 @@ function DashboardPage() {
   const [resettingSales, setResettingSales] = useState(false);
   const [resettingTransactions, setResettingTransactions] = useState(false);
   const [resetToolsForm, setResetToolsForm] = useState({
-    currentPassword: "",
     salesConfirmed: false,
     transactionsConfirmed: false
   });
   const [uploadingField, setUploadingField] = useState("");
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
+  const adminCurrentPasswordRef = useRef(null);
+  const adminNewPasswordRef = useRef(null);
+  const adminConfirmPasswordRef = useRef(null);
+  const resetPasswordRef = useRef(null);
 
   useEffect(() => {
     setSettingsForm(buildSettingsForm(settings));
@@ -713,7 +716,11 @@ function DashboardPage() {
     setError("");
     setStatus("");
 
-    if (adminForm.newPassword && adminForm.newPassword !== adminForm.confirmPassword) {
+    const currentPasswordValue = adminCurrentPasswordRef.current?.value || "";
+    const newPasswordValue = adminNewPasswordRef.current?.value || "";
+    const confirmPasswordValue = adminConfirmPasswordRef.current?.value || "";
+
+    if (newPasswordValue && newPasswordValue !== confirmPasswordValue) {
       setError("New password and confirmation do not match.");
       setSavingAdmin(false);
       return;
@@ -722,17 +729,14 @@ function DashboardPage() {
     try {
       const { data } = await api.put("/auth/admin-profile", {
         email: adminForm.email,
-        currentPassword: adminForm.currentPassword,
-        newPassword: adminForm.newPassword || undefined
+        currentPassword: currentPasswordValue,
+        newPassword: newPasswordValue || undefined
       });
 
       setUserData(data.user);
-      setAdminForm((current) => ({
-        ...current,
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: ""
-      }));
+      if (adminCurrentPasswordRef.current) adminCurrentPasswordRef.current.value = "";
+      if (adminNewPasswordRef.current) adminNewPasswordRef.current.value = "";
+      if (adminConfirmPasswordRef.current) adminConfirmPasswordRef.current.value = "";
       setStatus("Admin credentials updated successfully.");
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to update admin credentials.");
@@ -751,7 +755,9 @@ function DashboardPage() {
       return;
     }
 
-    if (!String(resetToolsForm.currentPassword || "").trim()) {
+    const resetPasswordValue = resetPasswordRef.current?.value || "";
+
+    if (!String(resetPasswordValue).trim()) {
       setError("Enter your admin password before resetting sales data.");
       return;
     }
@@ -767,14 +773,16 @@ function DashboardPage() {
     try {
       setResettingSales(true);
       const { data } = await api.post("/stats/reset-sales", {
-        currentPassword: resetToolsForm.currentPassword
+        currentPassword: resetPasswordValue
       });
       setStatus(data?.message || "Sales analytics reset.");
       setResetToolsForm((current) => ({
         ...current,
-        currentPassword: "",
         salesConfirmed: false
       }));
+      if (resetPasswordRef.current) {
+        resetPasswordRef.current.value = "";
+      }
       const { data: statsData } = await api.get("/stats");
       setStats(statsData);
     } catch (requestError) {
@@ -794,7 +802,9 @@ function DashboardPage() {
       return;
     }
 
-    if (!String(resetToolsForm.currentPassword || "").trim()) {
+    const resetPasswordValue = resetPasswordRef.current?.value || "";
+
+    if (!String(resetPasswordValue).trim()) {
       setError("Enter your admin password before hard resetting transactions.");
       return;
     }
@@ -818,14 +828,16 @@ function DashboardPage() {
     try {
       setResettingTransactions(true);
       const { data } = await api.post("/stats/hard-reset-transactions", {
-        currentPassword: resetToolsForm.currentPassword
+        currentPassword: resetPasswordValue
       });
       setStatus(data?.message || "Test transactions deleted.");
       setResetToolsForm({
-        currentPassword: "",
         salesConfirmed: false,
         transactionsConfirmed: false
       });
+      if (resetPasswordRef.current) {
+        resetPasswordRef.current.value = "";
+      }
       const { data: statsData } = await api.get("/stats");
       setStats(statsData);
     } catch (requestError) {
@@ -1803,13 +1815,13 @@ function DashboardPage() {
                       <input type="email" value={adminForm.email} onChange={(event) => setAdminForm((current) => ({ ...current, email: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
                     </InputField>
                     <InputField label="Current password" helper="Required before any credential change is saved.">
-                      <input type="password" value={adminForm.currentPassword} onChange={(event) => setAdminForm((current) => ({ ...current, currentPassword: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                      <input type="password" ref={adminCurrentPasswordRef} autoComplete="current-password" className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
                     </InputField>
                     <InputField label="New password">
-                      <input type="password" value={adminForm.newPassword} onChange={(event) => setAdminForm((current) => ({ ...current, newPassword: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                      <input type="password" ref={adminNewPasswordRef} autoComplete="new-password" className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
                     </InputField>
                     <InputField label="Confirm new password">
-                      <input type="password" value={adminForm.confirmPassword} onChange={(event) => setAdminForm((current) => ({ ...current, confirmPassword: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                      <input type="password" ref={adminConfirmPasswordRef} autoComplete="new-password" className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
                     </InputField>
 
                     <div className="rounded-[28px] border border-white/10 bg-white/5 p-4">
@@ -1841,8 +1853,8 @@ function DashboardPage() {
                   <InputField label="Admin password confirmation" helper="Your current admin password is required before any reset action can continue.">
                     <input
                       type="password"
-                      value={resetToolsForm.currentPassword}
-                      onChange={(event) => setResetToolsForm((current) => ({ ...current, currentPassword: event.target.value }))}
+                      ref={resetPasswordRef}
+                      autoComplete="current-password"
                       className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
                     />
                   </InputField>

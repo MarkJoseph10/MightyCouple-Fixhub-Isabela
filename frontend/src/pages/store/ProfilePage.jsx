@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
 import { Camera, CheckCircle2, LoaderCircle, LockKeyhole, Save, ShieldCheck, UserRound } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { getMyProfile, updateMyPassword, updateMyProfile } from "../../services/profileService";
 import { optimizeImageUrl } from "../../utils/media";
@@ -33,11 +33,9 @@ export default function ProfilePage() {
     birthDate: "",
     gender: ""
   });
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: ""
-  });
+  const currentPasswordRef = useRef(null);
+  const newPasswordRef = useRef(null);
+  const confirmPasswordRef = useRef(null);
 
   useEffect(() => {
     let mounted = true;
@@ -111,10 +109,6 @@ export default function ProfilePage() {
 
       return next;
     });
-  }
-
-  function handlePasswordField(field, value) {
-    setPasswordForm((current) => ({ ...current, [field]: value }));
   }
 
   function handleAvatarSelect(event) {
@@ -204,12 +198,14 @@ export default function ProfilePage() {
     setError("");
 
     try {
-      const data = await updateMyPassword(passwordForm);
-      setPasswordForm({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: ""
+      const data = await updateMyPassword({
+        currentPassword: currentPasswordRef.current?.value || "",
+        newPassword: newPasswordRef.current?.value || "",
+        confirmPassword: confirmPasswordRef.current?.value || ""
       });
+      if (currentPasswordRef.current) currentPasswordRef.current.value = "";
+      if (newPasswordRef.current) newPasswordRef.current.value = "";
+      if (confirmPasswordRef.current) confirmPasswordRef.current.value = "";
       setMessage(data.message || "Password updated successfully.");
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to update your password right now.");
@@ -408,8 +404,8 @@ export default function ProfilePage() {
                     <span className="text-xs uppercase tracking-[0.22em] text-slate-400">Current password</span>
                     <input
                       type="password"
-                      value={passwordForm.currentPassword}
-                      onChange={(event) => handlePasswordField("currentPassword", event.target.value)}
+                      ref={currentPasswordRef}
+                      autoComplete="current-password"
                       className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none transition focus:border-brand-400/50"
                       placeholder="Enter your current password"
                     />
@@ -419,8 +415,8 @@ export default function ProfilePage() {
                       <span className="text-xs uppercase tracking-[0.22em] text-slate-400">New password</span>
                       <input
                         type="password"
-                        value={passwordForm.newPassword}
-                        onChange={(event) => handlePasswordField("newPassword", event.target.value)}
+                        ref={newPasswordRef}
+                        autoComplete="new-password"
                         className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none transition focus:border-brand-400/50"
                         placeholder="At least 8 characters"
                       />
@@ -429,8 +425,8 @@ export default function ProfilePage() {
                       <span className="text-xs uppercase tracking-[0.22em] text-slate-400">Confirm new password</span>
                       <input
                         type="password"
-                        value={passwordForm.confirmPassword}
-                        onChange={(event) => handlePasswordField("confirmPassword", event.target.value)}
+                        ref={confirmPasswordRef}
+                        autoComplete="new-password"
                         className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none transition focus:border-brand-400/50"
                         placeholder="Type it again"
                       />
