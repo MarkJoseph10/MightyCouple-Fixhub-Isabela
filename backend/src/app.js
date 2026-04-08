@@ -5,6 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { env } from "./config/env.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
+import { isRuntimeReady } from "./services/runtimeState.js";
 import authRoutes from "./routes/authRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import conversationRoutes from "./routes/conversationRoutes.js";
@@ -57,7 +58,23 @@ export function createApp() {
   app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
   app.get("/api/health", (_, res) => {
-    res.json({ status: "ok" });
+    res.json({ status: isRuntimeReady() ? "ok" : "booting" });
+  });
+
+  app.use("/api", (req, res, next) => {
+    if (req.path === "/health") {
+      next();
+      return;
+    }
+
+    if (!isRuntimeReady()) {
+      res.status(503).json({
+        message: "Server is starting up. Please try again in a few moments."
+      });
+      return;
+    }
+
+    next();
   });
 
   app.use("/api/auth", authRoutes);
