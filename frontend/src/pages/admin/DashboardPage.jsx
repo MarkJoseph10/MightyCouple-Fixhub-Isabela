@@ -175,8 +175,6 @@ export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [resettingSales, setResettingSales] = useState(false);
-  const [resettingTransactions, setResettingTransactions] = useState(false);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -197,72 +195,6 @@ export default function DashboardPage() {
 
     loadDashboard();
   }, [setSettings]);
-
-  async function handleResetSalesData() {
-    if (resettingSales) {
-      return;
-    }
-
-    const confirmed = window.confirm(
-      "Reset the current sales analytics so the dashboard starts fresh from now? Existing orders stay saved, but revenue, conversion, and best-seller metrics will restart."
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      setResettingSales(true);
-      const [{ data: resetData }, { data: statsData }] = await Promise.all([
-        api.post("/stats/reset-sales"),
-        api.get("/stats")
-      ]);
-
-      setStats(statsData);
-      setError(resetData?.message || "");
-    } catch (requestError) {
-      setError(requestError.response?.data?.message || "Unable to reset sales analytics.");
-    } finally {
-      setResettingSales(false);
-    }
-  }
-
-  async function handleHardResetTransactions() {
-    if (resettingTransactions) {
-      return;
-    }
-
-    const confirmed = window.confirm(
-      "Delete all test orders, installment transactions, refund/cancel history, and order-related activity logs? Users, products, settings, chats, and repairs will stay."
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    const doubleConfirmed = window.confirm(
-      "This cannot be undone from the dashboard. Continue with the hard transaction reset?"
-    );
-
-    if (!doubleConfirmed) {
-      return;
-    }
-
-    try {
-      setResettingTransactions(true);
-      const [{ data: resetData }, { data: statsData }] = await Promise.all([
-        api.post("/stats/hard-reset-transactions"),
-        api.get("/stats")
-      ]);
-
-      setStats(statsData);
-      setError(resetData?.message || "");
-    } catch (requestError) {
-      setError(requestError.response?.data?.message || "Unable to hard reset transaction data.");
-    } finally {
-      setResettingTransactions(false);
-    }
-  }
 
   const overview = stats?.overview || {};
   const insights = stats?.insights || {};
@@ -285,26 +217,8 @@ export default function DashboardPage() {
           <h1 className="mt-2 text-4xl font-semibold text-white">Run {settings.storeName} without the clutter</h1>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <button
-            type="button"
-            onClick={handleResetSalesData}
-            disabled={resettingSales}
-            className="inline-flex items-center justify-center gap-2 rounded-[24px] border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <RefreshCcw size={16} className={resettingSales ? "animate-spin" : ""} />
-            {resettingSales ? "Resetting sales data..." : "Reset test sales data"}
-          </button>
-          <button
-            type="button"
-            onClick={handleHardResetTransactions}
-            disabled={resettingTransactions}
-            className="inline-flex items-center justify-center gap-2 rounded-[24px] border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-100 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <RefreshCcw size={16} className={resettingTransactions ? "animate-spin" : ""} />
-            {resettingTransactions ? "Deleting test transactions..." : "Hard reset test transactions"}
-          </button>
           <div className="rounded-[28px] border border-brand-400/20 bg-gradient-to-r from-brand-500/20 to-cyan-400/10 px-5 py-4 text-sm text-slate-100">
-            Settings now live in their own page so overview stays focused on decisions.
+            Admin-only controls like credentials, sales reset, and hard reset now live in Settings so overview stays focused on decisions.
           </div>
         </div>
       </div>
