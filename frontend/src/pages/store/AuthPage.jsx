@@ -60,6 +60,36 @@ function SelectField({ value, onChange, children, placeholder }) {
   );
 }
 
+function resolveAuthError(requestError, mode) {
+  const status = requestError?.response?.status;
+  const apiMessage = requestError?.response?.data?.message?.trim();
+  const networkCode = requestError?.code;
+
+  if (status === 401) {
+    return mode === "login"
+      ? "Incorrect email/mobile number or password."
+      : apiMessage || "Your session is no longer valid. Please try again.";
+  }
+
+  if (status === 429) {
+    return apiMessage || "Too many attempts. Please wait a few minutes before trying again.";
+  }
+
+  if (status === 503) {
+    return "Server is waking up. Please try again in a few moments.";
+  }
+
+  if (status >= 500) {
+    return "The server is temporarily unavailable. Please try again shortly.";
+  }
+
+  if (networkCode === "ERR_NETWORK" || networkCode === "ECONNABORTED") {
+    return "We couldn't reach the server right now. Please check your connection and try again.";
+  }
+
+  return apiMessage || "Something went wrong. Please try again.";
+}
+
 export default function AuthPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -155,7 +185,7 @@ export default function AuthPage() {
       const fallbackTarget = response?.user?.role === "admin" ? "/admin" : "/";
       navigate(redirectTo || fallbackTarget, { replace: true });
     } catch (requestError) {
-      setError(requestError.response?.data?.message || "Something went wrong.");
+      setError(resolveAuthError(requestError, mode));
     } finally {
       setFormLoading(false);
     }
