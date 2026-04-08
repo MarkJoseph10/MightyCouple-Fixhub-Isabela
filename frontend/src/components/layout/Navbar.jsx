@@ -357,7 +357,7 @@ export default function Navbar() {
             </div>
           </Link>
 
-          <nav className="order-3 flex w-full flex-wrap items-center gap-1.5 text-[13px] text-slate-300 lg:order-2 lg:min-w-0 lg:flex-nowrap lg:justify-center lg:gap-2 lg:overflow-x-auto lg:pb-1 xl:overflow-visible">
+          <nav className="order-3 hidden w-full flex-wrap items-center gap-1.5 text-[13px] text-slate-300 lg:order-2 lg:flex lg:min-w-0 lg:flex-nowrap lg:justify-center lg:gap-2 lg:overflow-x-auto lg:pb-1 xl:overflow-visible">
             <NavLink to="/" end className={navPillClass}>Store</NavLink>
             <NavLink to="/track-order" className={navPillClass}>Track Order</NavLink>
             {user && <NavLink to="/orders" className={navPillClass}>My Orders</NavLink>}
@@ -385,7 +385,7 @@ export default function Navbar() {
               <span>{itemCount}</span>
             </Link>
 
-            <div ref={menuRef} className="relative">
+            <div ref={menuRef} className="relative hidden md:block">
               <button
                 type="button"
                 onClick={() => setMenuOpen((current) => !current)}
@@ -476,7 +476,7 @@ export default function Navbar() {
             </div>
 
             {!user ? (
-              <Link to="/auth" className="inline-flex h-10 items-center rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white">
+              <Link to="/auth" className="hidden h-10 items-center rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white md:inline-flex">
                 Sign in
               </Link>
             ) : null}
