@@ -1,5 +1,5 @@
 ﻿import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Boxes, ImagePlus, PackageSearch, Sparkles, Tag, Trash2, Video } from "lucide-react";
+import { ArrowLeft, ArrowRight, Boxes, CheckCircle2, ImagePlus, PackageSearch, Plus, Sparkles, Tag, Trash2, Video } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import TagInput from "../../components/admin/TagInput";
 import api from "../../api/client";
@@ -9,6 +9,22 @@ import { resolveMediaUrl } from "../../utils/media";
 const mediaBaseUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace("/api", "");
 const maxVideoSizeBytes = 20 * 1024 * 1024;
 const maxVideoDurationSeconds = 30;
+
+const initialVariant = {
+  name: "",
+  color: "",
+  storage: "",
+  model: "",
+  price: 0,
+  stock: 0,
+  sku: "",
+  isDefault: false
+};
+
+const initialAttribute = {
+  label: "",
+  value: ""
+};
 
 const initialForm = {
   name: "",
@@ -31,8 +47,8 @@ const initialForm = {
   reviewCount: 0,
   soldCount: 0,
   manualRecentSales24h: 0,
-  variantsText: "",
-  attributesText: ""
+  variants: [],
+  attributes: [initialAttribute]
 };
 
 const mobileViews = [
@@ -55,57 +71,27 @@ function withAbsoluteUrl(url = "") {
   return resolveMediaUrl(url);
 }
 
-function parseVariants(text) {
-  return text
-    .split("\n")
-    .map((line) => line.trim())
+function slugifySkuPart(value = "") {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 12);
+}
+
+function createSkuToken() {
+  return Math.random().toString(36).slice(2, 7).toUpperCase();
+}
+
+function buildRandomSku({ prefix = "SKU", name = "", category = "", parts = [] } = {}) {
+  const normalizedPrefix = slugifySkuPart(prefix) || "SKU";
+  const normalizedParts = [name, category, ...parts]
+    .map(slugifySkuPart)
     .filter(Boolean)
-    .map((line) => {
-      const [name, color, storage, model, price, stock, sku, isDefault] = line.split("|").map((part) => part.trim());
-      return {
-        name,
-        color,
-        storage,
-        model,
-        price: Number(price || 0),
-        stock: Number(stock || 0),
-        sku,
-        isDefault: isDefault === "true"
-      };
-    });
-}
+    .slice(0, 3);
 
-function parseAttributes(text) {
-  return text
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [label, value] = line.split("|").map((part) => part.trim());
-      return { label, value };
-    })
-    .filter((item) => item.label && item.value);
-}
-
-function formatVariants(variants = []) {
-  return variants
-    .map((variant) =>
-      [
-        variant.name || "",
-        variant.color || "",
-        variant.storage || "",
-        variant.model || "",
-        variant.price || 0,
-        variant.stock || 0,
-        variant.sku || "",
-        variant.isDefault ? "true" : "false"
-      ].join("|")
-    )
-    .join("\n");
-}
-
-function formatAttributes(attributes = []) {
-  return attributes.map((attribute) => `${attribute.label}|${attribute.value}`).join("\n");
+  return [normalizedPrefix, ...normalizedParts, createSkuToken()].join("-");
 }
 
 function buildFallbackTagSuggestions(products = []) {
@@ -181,6 +167,10 @@ export default function ProductsPage() {
   const [activeView, setActiveView] = useState("editor");
 
   const isEditing = useMemo(() => Boolean(editingId), [editingId]);
+  const hasVariants = useMemo(
+    () => form.variants.some((variant) => variant.name || variant.sku || variant.color || variant.storage || variant.model),
+    [form.variants]
+  );
   const adminManagedProducts = useMemo(() => products.filter((product) => product.vendorType !== "seller"), [products]);
   const sellerReviewProducts = useMemo(
     () => products.filter((product) => product.vendorType === "seller" && ["pending", "rejected"].includes(product.approvalStatus || "pending")),
@@ -354,10 +344,198 @@ export default function ProductsPage() {
     setForm((current) => ({ ...current, video: null }));
   }
 
+  function generateMainSku() {
+    setForm((current) => ({
+      ...current,
+      sku: buildRandomSku({
+        prefix: "ADM",
+        name: current.name,
+        category: current.category
+      })
+    }));
+  }
+
+  function addVariant() {
+    setForm((current) => ({
+      ...current,
+      variants: [
+        ...current.variants,
+        {
+          ...initialVariant,
+          price: Number(current.price || 0),
+          stock: Number(current.stock || 0),
+          isDefault: current.variants.length === 0
+        }
+      ]
+    }));
+  }
+
+  function updateVariant(index, field, value) {
+    setForm((current) => ({
+      ...current,
+      variants: current.variants.map((variant, variantIndex) => (
+        variantIndex === index
+          ? {
+              ...variant,
+              [field]: value
+            }
+          : variant
+      ))
+    }));
+  }
+
+  function generateVariantSku(index) {
+    setForm((current) => {
+      const nextVariants = current.variants.map((variant, variantIndex) => {
+        if (variantIndex !== index) {
+          return variant;
+        }
+
+        return {
+          ...variant,
+          sku: buildRandomSku({
+            prefix: "VAR",
+            name: current.name || variant.name,
+            category: current.category,
+            parts: [variant.name, variant.color, variant.storage, variant.model]
+          })
+        };
+      });
+
+      return {
+        ...current,
+        variants: nextVariants
+      };
+    });
+  }
+
+  function removeVariant(index) {
+    setForm((current) => {
+      const nextVariants = current.variants.filter((_, variantIndex) => variantIndex !== index);
+      const defaultIndex = nextVariants.findIndex((variant) => variant.isDefault);
+
+      return {
+        ...current,
+        variants: nextVariants.map((variant, variantIndex) => ({
+          ...variant,
+          isDefault: defaultIndex === -1 ? variantIndex === 0 : variantIndex === defaultIndex
+        }))
+      };
+    });
+  }
+
+  function setDefaultVariant(index) {
+    setForm((current) => ({
+      ...current,
+      variants: current.variants.map((variant, variantIndex) => ({
+        ...variant,
+        isDefault: variantIndex === index
+      }))
+    }));
+  }
+
+  function applyBasePriceToVariants() {
+    setForm((current) => ({
+      ...current,
+      variants: current.variants.map((variant) => ({
+        ...variant,
+        price: Number(current.price || 0)
+      }))
+    }));
+  }
+
+  function applyBaseStockToVariants() {
+    setForm((current) => ({
+      ...current,
+      variants: current.variants.map((variant) => ({
+        ...variant,
+        stock: Number(current.stock || 0)
+      }))
+    }));
+  }
+
+  function fillMissingVariantSkus() {
+    setForm((current) => ({
+      ...current,
+      variants: current.variants.map((variant) => (
+        variant.sku
+          ? variant
+          : {
+              ...variant,
+              sku: buildRandomSku({
+                prefix: "VAR",
+                name: current.name || variant.name,
+                category: current.category,
+                parts: [variant.name, variant.color, variant.storage, variant.model]
+              })
+            }
+      ))
+    }));
+  }
+
+  function addAttribute() {
+    setForm((current) => ({
+      ...current,
+      attributes: [...current.attributes, initialAttribute]
+    }));
+  }
+
+  function updateAttribute(index, field, value) {
+    setForm((current) => ({
+      ...current,
+      attributes: current.attributes.map((attribute, attributeIndex) => (
+        attributeIndex === index ? { ...attribute, [field]: value } : attribute
+      ))
+    }));
+  }
+
+  function removeAttribute(index) {
+    setForm((current) => ({
+      ...current,
+      attributes: current.attributes.length === 1 ? [initialAttribute] : current.attributes.filter((_, attributeIndex) => attributeIndex !== index)
+    }));
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
     setStatus("");
+
+    const normalizedVariants = form.variants
+      .filter((variant) => variant.name || variant.color || variant.storage || variant.model || variant.sku)
+      .map((variant, index) => ({
+        name: String(variant.name || "").trim(),
+        color: String(variant.color || "").trim(),
+        storage: String(variant.storage || "").trim(),
+        model: String(variant.model || "").trim(),
+        price: Number(variant.price || 0),
+        stock: Number(variant.stock || 0),
+        sku: String(variant.sku || "").trim() || buildRandomSku({
+          prefix: "VAR",
+          name: form.name || variant.name,
+          category: form.category,
+          parts: [variant.name, variant.color, variant.storage, variant.model]
+        }),
+        isDefault: Boolean(variant.isDefault || index === 0)
+      }));
+
+    if (normalizedVariants.length && normalizedVariants.some((variant) => variant.price <= 0)) {
+      setError("Every variant needs its own manual price amount greater than zero.");
+      return;
+    }
+
+    const duplicateVariantSku = normalizedVariants.find((variant, index) => normalizedVariants.findIndex((entry) => entry.sku === variant.sku) !== index);
+
+    if (duplicateVariantSku) {
+      setError("Variant SKU must stay unique. Please regenerate or edit the duplicate SKU.");
+      return;
+    }
+
+    const defaultVariant = normalizedVariants.find((variant) => variant.isDefault) || normalizedVariants[0] || null;
+    const basePrice = defaultVariant ? Number(defaultVariant.price || 0) : Number(form.price);
+    const baseStock = normalizedVariants.length
+      ? normalizedVariants.reduce((sum, variant) => sum + Number(variant.stock || 0), 0)
+      : Number(form.stock);
 
     const payload = {
       name: form.name,
@@ -366,11 +544,15 @@ export default function ProductsPage() {
       category: form.category,
       condition: form.condition,
       popularityLabel: form.popularityLabel,
-      price: Number(form.price),
+      price: basePrice,
       costPrice: Number(form.costPrice),
       compareAtPrice: Number(form.compareAtPrice),
-      stock: Number(form.stock),
-      sku: form.sku,
+      stock: baseStock,
+      sku: String(form.sku || "").trim() || buildRandomSku({
+        prefix: "ADM",
+        name: form.name,
+        category: form.category
+      }),
       featured: form.featured,
       bundleEligible: form.bundleEligible,
       rating: Number(form.rating),
@@ -385,8 +567,8 @@ export default function ProductsPage() {
             poster: form.video.poster || form.images[0]?.url || ""
           }
         : null,
-      variants: parseVariants(form.variantsText),
-      attributes: parseAttributes(form.attributesText)
+      variants: normalizedVariants,
+      attributes: form.attributes.filter((attribute) => attribute.label && attribute.value)
     };
 
     try {
@@ -465,8 +647,16 @@ export default function ProductsPage() {
       reviewCount: product.reviewCount || 0,
       soldCount: product.soldCount || 0,
       manualRecentSales24h: product.manualRecentSales24h || 0,
-      variantsText: formatVariants(product.variants),
-      attributesText: formatAttributes(product.attributes)
+      variants: (product.variants || []).length
+        ? product.variants.map((variant, index) => ({
+            ...initialVariant,
+            ...variant,
+            price: Number(variant.price || 0),
+            stock: Number(variant.stock || 0),
+            isDefault: Boolean(variant.isDefault || index === 0)
+          }))
+        : [],
+      attributes: (product.attributes || []).length ? product.attributes : [initialAttribute]
     });
     setActiveView("editor");
   }
@@ -550,8 +740,13 @@ export default function ProductsPage() {
                       <option>Gaming</option>
                     </select>
                   </InputField>
-                  <InputField label="SKU">
-                    <input value={form.sku} onChange={(event) => setForm((current) => ({ ...current, sku: event.target.value }))} placeholder="SKU-2026-001" className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                  <InputField label="SKU" helper="You can type your own SKU or let the editor generate a unique one.">
+                    <div className="flex gap-2">
+                      <input value={form.sku} onChange={(event) => setForm((current) => ({ ...current, sku: event.target.value }))} placeholder="ADM-NOVA-PHONES-X7A2Q" className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                      <button type="button" onClick={generateMainSku} className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200 transition hover:bg-white/10">
+                        Random SKU
+                      </button>
+                    </div>
                   </InputField>
                   <InputField label="Condition">
                     <input value={form.condition} onChange={(event) => setForm((current) => ({ ...current, condition: event.target.value }))} placeholder="Affordable tech" className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
@@ -707,14 +902,210 @@ export default function ProductsPage() {
                 Variants and attributes
               </div>
               <div className="mt-5 grid gap-4">
-                <InputField label="Variants" helper="Format: Name|Color|Storage|Model|Price|Stock|SKU|true">
-                  <textarea rows={6} value={form.variantsText} onChange={(event) => setForm((current) => ({ ...current, variantsText: event.target.value }))} placeholder={"Base Model|Black|128GB|2025|9999|5|SKU-1|true\nPro Model|Blue|256GB|2025|12999|3|SKU-2|false"} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                </InputField>
-                <InputField label="Attributes" helper="Format: Label|Value">
-                  <textarea rows={5} value={form.attributesText} onChange={(event) => setForm((current) => ({ ...current, attributesText: event.target.value }))} placeholder={"Processor|Intel i5\nBattery|5000mAh\nDisplay|14-inch IPS"} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
-                </InputField>
-              </div>
-            </section>
+                <div className="space-y-4 rounded-[24px] border border-white/10 bg-slate-950/20 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-white">Variant builder</p>
+                      <p className="mt-1 text-xs text-slate-400">Set a manual amount, stock, and SKU for each product choice.</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {hasVariants ? (
+                          <>
+                            <button
+                              type="button"
+                            onClick={applyBasePriceToVariants}
+                            className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200"
+                          >
+                            Copy base price
+                          </button>
+                            <button
+                              type="button"
+                              onClick={applyBaseStockToVariants}
+                              className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200"
+                            >
+                              Copy base stock
+                            </button>
+                            <button
+                              type="button"
+                              onClick={fillMissingVariantSkus}
+                              className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200"
+                            >
+                              Fill missing SKUs
+                            </button>
+                          </>
+                        ) : null}
+                      <button
+                        type="button"
+                        onClick={addVariant}
+                        className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600"
+                      >
+                        <Plus size={16} />
+                        Add variant
+                      </button>
+                    </div>
+                  </div>
+
+                  <AnimatePresence initial={false}>
+                    {form.variants.map((variant, index) => (
+                      <motion.div
+                        key={`variant-${index}`}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        className="rounded-[24px] border border-white/10 bg-white/5 p-4"
+                      >
+                        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-white">Variant {index + 1}</p>
+                            <p className="text-xs uppercase tracking-[0.24em] text-slate-500">
+                              {variant.isDefault ? "Default storefront amount" : "Optional purchase choice"}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setDefaultVariant(index)}
+                              className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs ${
+                                variant.isDefault
+                                  ? "border border-emerald-400/20 bg-emerald-500/10 text-emerald-100"
+                                  : "border border-white/10 bg-white/5 text-slate-200"
+                              }`}
+                            >
+                              <CheckCircle2 size={14} />
+                              Default
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeVariant(index)}
+                              className="inline-flex items-center gap-2 rounded-full border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-xs text-rose-100"
+                            >
+                              <Trash2 size={14} />
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                          <InputField label="Variant name">
+                            <input
+                              value={variant.name}
+                              onChange={(event) => updateVariant(index, "name", event.target.value)}
+                              placeholder="256GB Black"
+                              className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-white outline-none"
+                            />
+                          </InputField>
+                          <InputField label="Color">
+                            <input
+                              value={variant.color}
+                              onChange={(event) => updateVariant(index, "color", event.target.value)}
+                              placeholder="Black"
+                              className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-white outline-none"
+                            />
+                          </InputField>
+                          <InputField label="Storage">
+                            <input
+                              value={variant.storage}
+                              onChange={(event) => updateVariant(index, "storage", event.target.value)}
+                              placeholder="256GB"
+                              className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-white outline-none"
+                            />
+                          </InputField>
+                          <InputField label="Model">
+                            <input
+                              value={variant.model}
+                              onChange={(event) => updateVariant(index, "model", event.target.value)}
+                              placeholder="2026"
+                              className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-white outline-none"
+                            />
+                          </InputField>
+                          <InputField label="Variant amount" helper="Manual price for this exact choice.">
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={variant.price}
+                              onChange={(event) => updateVariant(index, "price", event.target.value)}
+                              className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-white outline-none"
+                            />
+                          </InputField>
+                          <InputField label="Variant stock">
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={variant.stock}
+                              onChange={(event) => updateVariant(index, "stock", event.target.value)}
+                              className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-white outline-none"
+                            />
+                          </InputField>
+                            <InputField label="Variant SKU" helper="Leave blank if you want a random unique SKU generated on save.">
+                              <div className="flex gap-2">
+                                <input
+                                  value={variant.sku}
+                                  onChange={(event) => updateVariant(index, "sku", event.target.value)}
+                                  placeholder="VAR-NOVA-256-BLK-X7A2Q"
+                                  className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-white outline-none"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => generateVariantSku(index)}
+                                  className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200 transition hover:bg-white/10"
+                                >
+                                  Random
+                                </button>
+                              </div>
+                            </InputField>
+                          </div>
+                        </motion.div>
+                    ))}
+                  </AnimatePresence>
+
+                  {!form.variants.length ? (
+                    <div className="rounded-[20px] border border-white/10 bg-white/5 p-4 text-sm text-slate-400">
+                      No variants yet. Add choices like color, storage, bundle, or model and set a manual amount for each one.
+                    </div>
+                  ) : null}
+                </div>
+                  <div className="rounded-[24px] border border-white/10 bg-slate-950/20 p-4">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-white">Attributes</p>
+                        <p className="mt-1 text-xs text-slate-400">Add clean specs like processor, warranty, battery, or inclusions.</p>
+                      </div>
+                      <button type="button" onClick={addAttribute} className="inline-flex items-center gap-2 rounded-2xl bg-white/5 px-4 py-3 text-sm text-slate-200 transition hover:bg-white/10">
+                        <Plus size={16} />
+                        Add attribute
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {form.attributes.map((attribute, index) => (
+                        <div key={`attribute-${index}`} className="grid gap-3 rounded-[20px] border border-white/10 bg-white/5 p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+                          <input
+                            value={attribute.label}
+                            onChange={(event) => updateAttribute(index, "label", event.target.value)}
+                            placeholder="Processor"
+                            className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                          />
+                          <input
+                            value={attribute.value}
+                            onChange={(event) => updateAttribute(index, "value", event.target.value)}
+                            placeholder="Intel i5"
+                            className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeAttribute(index)}
+                            className="rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100 transition hover:bg-rose-500/20"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </section>
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">

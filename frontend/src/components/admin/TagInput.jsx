@@ -15,9 +15,10 @@ function normalizeTag(value) {
 export default function TagInput({ tags = [], onChange, suggestions = [] }) {
   const [inputValue, setInputValue] = useState("");
   const [isFocused, setIsFocused] = useState(false);
+  const normalizedInputTag = normalizeTag(inputValue);
 
   const filteredSuggestions = useMemo(() => {
-    const currentQuery = normalizeTag(inputValue).replace(/^#/, "");
+    const currentQuery = normalizedInputTag.replace(/^#/, "");
 
     return suggestions.filter((suggestion) => {
       if (tags.includes(suggestion.tag)) {
@@ -30,7 +31,9 @@ export default function TagInput({ tags = [], onChange, suggestions = [] }) {
 
       return suggestion.tag.toLowerCase().includes(currentQuery);
     });
-  }, [inputValue, suggestions, tags]);
+  }, [normalizedInputTag, suggestions, tags]);
+
+  const canQuickAddInput = Boolean(normalizedInputTag) && !tags.includes(normalizedInputTag);
 
   function pushTag(nextTag) {
     const normalized = normalizeTag(nextTag);
@@ -108,7 +111,10 @@ export default function TagInput({ tags = [], onChange, suggestions = [] }) {
             <input
               value={inputValue}
               onFocus={() => setIsFocused(true)}
-              onBlur={() => setTimeout(() => setIsFocused(false), 120)}
+              onBlur={() => {
+                pushTag(inputValue);
+                setTimeout(() => setIsFocused(false), 120);
+              }}
               onChange={(event) => {
                 const nextValue = event.target.value;
 
@@ -135,7 +141,7 @@ export default function TagInput({ tags = [], onChange, suggestions = [] }) {
       </div>
 
       <AnimatePresence>
-        {isFocused && filteredSuggestions.length > 0 && (
+        {isFocused && (filteredSuggestions.length > 0 || canQuickAddInput) && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -147,6 +153,17 @@ export default function TagInput({ tags = [], onChange, suggestions = [] }) {
               Suggested tags
             </div>
             <div className="flex flex-wrap gap-2">
+              {canQuickAddInput ? (
+                <button
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => pushTag(normalizedInputTag)}
+                  className="inline-flex items-center gap-2 rounded-full border border-brand-400/20 bg-brand-500/15 px-3 py-2 text-sm text-brand-50 transition duration-300 hover:bg-brand-500/25"
+                >
+                  <Plus size={14} />
+                  <span>Add {normalizedInputTag}</span>
+                </button>
+              ) : null}
               {filteredSuggestions.slice(0, 10).map((suggestion) => (
                 <button
                   key={suggestion.tag}

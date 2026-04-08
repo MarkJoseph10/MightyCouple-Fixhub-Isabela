@@ -77,6 +77,29 @@ const initialForm = {
   bundleEligible: true
 };
 
+function slugifySkuPart(value = "") {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 12);
+}
+
+function createSkuToken() {
+  return Math.random().toString(36).slice(2, 7).toUpperCase();
+}
+
+function buildRandomSku({ prefix = "SKU", name = "", category = "", parts = [] } = {}) {
+  const normalizedPrefix = slugifySkuPart(prefix) || "SKU";
+  const normalizedParts = [name, category, ...parts]
+    .map(slugifySkuPart)
+    .filter(Boolean)
+    .slice(0, 3);
+
+  return [normalizedPrefix, ...normalizedParts, createSkuToken()].join("-");
+}
+
 function withAbsoluteUrl(url = "") {
   return resolveMediaUrl(url);
 }
@@ -271,6 +294,17 @@ export default function SellerProductsPage() {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
+  function generateMainSku() {
+    setForm((current) => ({
+      ...current,
+      sku: buildRandomSku({
+        prefix: "SEL",
+        name: current.name,
+        category: current.category
+      })
+    }));
+  }
+
   function loadProductIntoForm(product) {
     setEditingId(product._id);
     setForm({
@@ -451,6 +485,27 @@ export default function SellerProductsPage() {
     }));
   }
 
+  function generateVariantSku(index) {
+    setForm((current) => ({
+      ...current,
+      variants: current.variants.map((variant, variantIndex) => {
+        if (variantIndex !== index) {
+          return variant;
+        }
+
+        return {
+          ...variant,
+          sku: buildRandomSku({
+            prefix: "VAR",
+            name: current.name || variant.name,
+            category: current.category,
+            parts: [variant.name, variant.color, variant.storage, variant.model]
+          })
+        };
+      })
+    }));
+  }
+
   function removeVariant(index) {
     setForm((current) => {
       const nextVariants = current.variants.filter((_, variantIndex) => variantIndex !== index);
@@ -473,6 +528,45 @@ export default function SellerProductsPage() {
         ...variant,
         isDefault: variantIndex === index
       }))
+    }));
+  }
+
+  function applyBasePriceToVariants() {
+    setForm((current) => ({
+      ...current,
+      variants: current.variants.map((variant) => ({
+        ...variant,
+        price: Number(current.price || 0)
+      }))
+    }));
+  }
+
+  function applyBaseStockToVariants() {
+    setForm((current) => ({
+      ...current,
+      variants: current.variants.map((variant) => ({
+        ...variant,
+        stock: Number(current.stock || 0)
+      }))
+    }));
+  }
+
+  function fillMissingVariantSkus() {
+    setForm((current) => ({
+      ...current,
+      variants: current.variants.map((variant) => (
+        variant.sku
+          ? variant
+          : {
+              ...variant,
+              sku: buildRandomSku({
+                prefix: "VAR",
+                name: current.name || variant.name,
+                category: current.category,
+                parts: [variant.name, variant.color, variant.storage, variant.model]
+              })
+            }
+      ))
     }));
   }
 
@@ -510,6 +604,40 @@ export default function SellerProductsPage() {
         throw new Error("Please upload at least one product image.");
       }
 
+      const normalizedVariants = form.variants
+        .filter((variant) => variant.name || variant.color || variant.storage || variant.model || variant.sku)
+        .map((variant, index) => ({
+          name: String(variant.name || "").trim(),
+          color: String(variant.color || "").trim(),
+          storage: String(variant.storage || "").trim(),
+          model: String(variant.model || "").trim(),
+          price: Number(variant.price || 0),
+          stock: Number(variant.stock || 0),
+          sku: String(variant.sku || "").trim() || buildRandomSku({
+            prefix: "VAR",
+            name: form.name || variant.name,
+            category: form.category,
+            parts: [variant.name, variant.color, variant.storage, variant.model]
+          }),
+          isDefault: Boolean(variant.isDefault || index === 0)
+        }));
+
+      if (normalizedVariants.length && normalizedVariants.some((variant) => variant.price <= 0)) {
+        throw new Error("Every variant needs its own manual price amount greater than zero.");
+      }
+
+      const duplicateVariantSku = normalizedVariants.find((variant, index) => normalizedVariants.findIndex((entry) => entry.sku === variant.sku) !== index);
+
+      if (duplicateVariantSku) {
+        throw new Error("Variant SKU must stay unique. Please regenerate or edit the duplicate SKU.");
+      }
+
+      const defaultVariant = normalizedVariants.find((variant) => variant.isDefault) || normalizedVariants[0] || null;
+      const basePrice = defaultVariant ? Number(defaultVariant.price || 0) : Number(form.price || 0);
+      const baseStock = normalizedVariants.length
+        ? normalizedVariants.reduce((sum, variant) => sum + Number(variant.stock || 0), 0)
+        : Number(form.stock || 0);
+
       const payload = {
         name: form.name,
         shortDescription: form.shortDescription,
@@ -517,11 +645,15 @@ export default function SellerProductsPage() {
         category: form.category,
         condition: form.condition,
         popularityLabel: form.popularityLabel,
-        price: Number(form.price || 0),
+        price: basePrice,
         compareAtPrice: Number(form.compareAtPrice || 0),
         costPrice: Number(form.costPrice || 0),
-        stock: Number(form.stock || 0),
-        sku: form.sku,
+        stock: baseStock,
+        sku: String(form.sku || "").trim() || buildRandomSku({
+          prefix: "SEL",
+          name: form.name,
+          category: form.category
+        }),
         tags: form.tags,
         images: form.images.map((image) => ({
           url: image.url.replace(mediaBaseUrl, ""),
@@ -536,18 +668,7 @@ export default function SellerProductsPage() {
               mimeType: form.video.mimeType
             }
           : null,
-        variants: form.variants
-          .filter((variant) => variant.name || variant.color || variant.storage || variant.model || variant.sku)
-          .map((variant) => ({
-            name: variant.name,
-            color: variant.color,
-            storage: variant.storage,
-            model: variant.model,
-            price: Number(variant.price || 0),
-            stock: Number(variant.stock || 0),
-            sku: variant.sku,
-            isDefault: Boolean(variant.isDefault)
-          })),
+        variants: normalizedVariants,
         attributes: form.attributes.filter((attribute) => attribute.label && attribute.value),
         featured: false,
         bundleEligible: false
@@ -694,14 +815,23 @@ export default function SellerProductsPage() {
                 />
               </InputField>
 
-              <InputField label="Seller SKU" helper="Use your own tracking code so you can match orders to your stock.">
-                <input
-                  value={form.sku}
-                  onChange={(event) => updateField("sku", event.target.value)}
-                  placeholder="SELLER-NOVA-256"
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none transition focus:border-cyan-400/40"
-                />
-              </InputField>
+                <InputField label="Seller SKU" helper="Type your own SKU or generate one automatically so every listing has a unique stock code.">
+                  <div className="flex gap-2">
+                    <input
+                      value={form.sku}
+                      onChange={(event) => updateField("sku", event.target.value)}
+                      placeholder="SEL-NOVA-PHONES-X7A2Q"
+                      className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none transition focus:border-cyan-400/40"
+                    />
+                    <button
+                      type="button"
+                      onClick={generateMainSku}
+                      className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200 transition hover:bg-white/10"
+                    >
+                      Random SKU
+                    </button>
+                  </div>
+                </InputField>
             </div>
           </SectionCard>
 
@@ -927,16 +1057,43 @@ export default function SellerProductsPage() {
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-white/10 bg-white/5 p-4">
                 <div>
                   <p className="text-sm font-semibold text-white">Variant builder</p>
-                  <p className="mt-1 text-sm text-slate-400">Examples: 128GB Blue, 256GB Black, With charger bundle.</p>
+                  <p className="mt-1 text-sm text-slate-400">Examples: 128GB Blue, 256GB Black, With charger bundle. Every variant should have its own manual amount.</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={addVariant}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-cyan-600"
-                >
-                  <Plus size={16} />
-                  Add variant
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  {hasVariants ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={applyBasePriceToVariants}
+                        className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200"
+                      >
+                        Copy base price
+                      </button>
+                      <button
+                        type="button"
+                        onClick={applyBaseStockToVariants}
+                        className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200"
+                      >
+                        Copy base stock
+                      </button>
+                      <button
+                        type="button"
+                        onClick={fillMissingVariantSkus}
+                        className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200"
+                      >
+                        Fill missing SKUs
+                      </button>
+                    </>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={addVariant}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-cyan-600"
+                  >
+                    <Plus size={16} />
+                    Add variant
+                  </button>
+                </div>
               </div>
 
               <AnimatePresence initial={false}>
@@ -1026,14 +1183,23 @@ export default function SellerProductsPage() {
                           className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-white outline-none"
                         />
                       </InputField>
-                      <InputField label="Variant SKU" helper="Optional, but recommended if this variant has separate stock tracking.">
-                        <input
-                          value={variant.sku}
-                          onChange={(event) => updateVariant(index, "sku", event.target.value)}
-                          placeholder="SELLER-NOVA-256-BLK"
-                          className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-white outline-none"
-                        />
-                      </InputField>
+                        <InputField label="Variant SKU" helper="Leave blank if you want a random unique SKU generated on save.">
+                          <div className="flex gap-2">
+                            <input
+                              value={variant.sku}
+                              onChange={(event) => updateVariant(index, "sku", event.target.value)}
+                              placeholder="VAR-NOVA-256-BLK-X7A2Q"
+                              className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-white outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => generateVariantSku(index)}
+                              className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200 transition hover:bg-white/10"
+                            >
+                              Random
+                            </button>
+                          </div>
+                        </InputField>
                     </div>
                   </motion.div>
                 ))}
