@@ -5,6 +5,7 @@ import {
   Boxes,
   ChevronDown,
   CreditCard,
+  RefreshCcw,
   Gift,
   ImagePlus,
   MapPinned,
@@ -373,6 +374,8 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [savingDashboard, setSavingDashboard] = useState(false);
   const [savingAdmin, setSavingAdmin] = useState(false);
+  const [resettingSales, setResettingSales] = useState(false);
+  const [resettingTransactions, setResettingTransactions] = useState(false);
   const [uploadingField, setUploadingField] = useState("");
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
@@ -730,6 +733,66 @@ function DashboardPage() {
       setError(requestError.response?.data?.message || "Unable to update admin credentials.");
     } finally {
       setSavingAdmin(false);
+    }
+  }
+
+  async function handleResetSalesData() {
+    if (resettingSales) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Reset the current sales analytics so the dashboard starts fresh from now? Existing orders stay saved, but revenue, conversion, and best-seller metrics will restart."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setResettingSales(true);
+      const { data } = await api.post("/stats/reset-sales");
+      setStatus(data?.message || "Sales analytics reset.");
+      const { data: statsData } = await api.get("/stats");
+      setStats(statsData);
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to reset sales analytics.");
+    } finally {
+      setResettingSales(false);
+    }
+  }
+
+  async function handleHardResetTransactions() {
+    if (resettingTransactions) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Delete all test orders, installment transactions, refund/cancel history, and order-related activity logs? Users, products, settings, chats, and repairs will stay."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const doubleConfirmed = window.confirm(
+      "This cannot be undone from the dashboard. Continue with the hard transaction reset?"
+    );
+
+    if (!doubleConfirmed) {
+      return;
+    }
+
+    try {
+      setResettingTransactions(true);
+      const { data } = await api.post("/stats/hard-reset-transactions");
+      setStatus(data?.message || "Test transactions deleted.");
+      const { data: statsData } = await api.get("/stats");
+      setStats(statsData);
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to hard reset transaction data.");
+    } finally {
+      setResettingTransactions(false);
     }
   }
 
@@ -1511,7 +1574,7 @@ function DashboardPage() {
           </div>
 
           <div className={sectionClassName("branding")}>
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+            <div className="grid gap-6">
               <form onSubmit={handleSaveDashboard}>
                 <SectionCard
                   eyebrow="Branding"
@@ -1666,12 +1729,16 @@ function DashboardPage() {
                   </div>
                 </SectionCard>
               </form>
+            </div>
+          </div>
 
+          <div className={sectionClassName("admin")}>
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
               <form onSubmit={handleSaveAdmin}>
                 <SectionCard
                   eyebrow="Admin settings"
                   title="Secure admin account updates"
-                  description="Change the admin email or password with validation, while keeping the current session updated."
+                  description="Keep admin-only access, email, and password controls separate from storefront branding."
                 >
                   <div className="space-y-4">
                     <div className="rounded-[28px] border border-cyan-400/15 bg-cyan-500/10 p-4 text-sm text-cyan-50">
@@ -1706,6 +1773,38 @@ function DashboardPage() {
                   </div>
                 </SectionCard>
               </form>
+
+              <SectionCard
+                eyebrow="Admin tools"
+                title="Reset test analytics and transactions"
+                description="Use these only while clearing test data before real operations begin."
+              >
+                <div className="space-y-4">
+                  <div className="rounded-[28px] border border-amber-400/15 bg-amber-500/10 p-4 text-sm text-amber-50">
+                    These actions are for cleanup only. Sales reset keeps orders but restarts reporting. Hard reset deletes test orders and order-related transaction history.
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleResetSalesData}
+                    disabled={resettingSales}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-semibold text-white transition duration-300 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <RefreshCcw size={16} className={resettingSales ? "animate-spin" : ""} />
+                    {resettingSales ? "Resetting sales data..." : "Reset test sales data"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleHardResetTransactions}
+                    disabled={resettingTransactions}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-5 py-3 font-semibold text-rose-100 transition duration-300 hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <RefreshCcw size={16} className={resettingTransactions ? "animate-spin" : ""} />
+                    {resettingTransactions ? "Deleting test transactions..." : "Hard reset test transactions"}
+                  </button>
+                </div>
+              </SectionCard>
             </div>
           </div>
         </motion.div>
