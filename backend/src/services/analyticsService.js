@@ -2,6 +2,7 @@ import { Order } from "../models/Order.js";
 import { Product } from "../models/Product.js";
 import { User } from "../models/User.js";
 import { NewsletterSubscriber } from "../models/NewsletterSubscriber.js";
+import { ActivityLog } from "../models/ActivityLog.js";
 import { getOrCreateStoreSettings } from "./storeSettingsService.js";
 import { autoCancelStalePendingOrders } from "./orderAutomationService.js";
 
@@ -207,5 +208,43 @@ export async function resetSalesAnalytics() {
   return {
     resetAt,
     cartAdds: 0
+  };
+}
+
+export async function hardResetTransactionData() {
+  const resetAt = new Date();
+  const settings = await getOrCreateStoreSettings();
+
+  const ordersDeleted = await Order.deleteMany({});
+  const activityLogsDeleted = await ActivityLog.deleteMany({
+    $or: [
+      { category: { $in: ["order", "refund", "installment"] } },
+      { subjectType: "order" },
+      { action: /order|refund|installment/i }
+    ]
+  });
+
+  settings.metrics = {
+    ...settings.metrics,
+    cartAdds: 0,
+    salesTrackingStartsAt: resetAt
+  };
+
+  await settings.save();
+
+  await Product.updateMany(
+    {},
+    {
+      $set: {
+        soldCount: 0,
+        manualRecentSales24h: 0
+      }
+    }
+  );
+
+  return {
+    resetAt,
+    ordersDeleted: Number(ordersDeleted.deletedCount || 0),
+    activityLogsDeleted: Number(activityLogsDeleted.deletedCount || 0)
   };
 }
