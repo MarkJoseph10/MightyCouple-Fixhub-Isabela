@@ -1,5 +1,6 @@
 import { Camera, CheckCircle2, LoaderCircle, LockKeyhole, Save, ShieldCheck, UserRound } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import PasswordInput from "../../components/common/PasswordInput";
 import { useAuth } from "../../context/AuthContext";
 import { getMyProfile, updateMyPassword, updateMyProfile } from "../../services/profileService";
 import { optimizeImageUrl } from "../../utils/media";
@@ -402,32 +403,29 @@ export default function ProfilePage() {
                 <form onSubmit={handlePasswordSubmit} className="mt-6 space-y-4">
                   <label className="space-y-2">
                     <span className="text-xs uppercase tracking-[0.22em] text-slate-400">Current password</span>
-                    <input
-                      type="password"
+                    <PasswordInput
                       ref={currentPasswordRef}
                       autoComplete="current-password"
-                      className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none transition focus:border-brand-400/50"
+                      className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 pr-14 text-white outline-none transition focus:border-brand-400/50"
                       placeholder="Enter your current password"
                     />
                   </label>
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="space-y-2">
                       <span className="text-xs uppercase tracking-[0.22em] text-slate-400">New password</span>
-                      <input
-                        type="password"
+                      <PasswordInput
                         ref={newPasswordRef}
                         autoComplete="new-password"
-                        className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none transition focus:border-brand-400/50"
+                        className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 pr-14 text-white outline-none transition focus:border-brand-400/50"
                         placeholder="At least 8 characters"
                       />
                     </label>
                     <label className="space-y-2">
                       <span className="text-xs uppercase tracking-[0.22em] text-slate-400">Confirm new password</span>
-                      <input
-                        type="password"
+                      <PasswordInput
                         ref={confirmPasswordRef}
                         autoComplete="new-password"
-                        className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none transition focus:border-brand-400/50"
+                        className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 pr-14 text-white outline-none transition focus:border-brand-400/50"
                         placeholder="Type it again"
                       />
                     </label>

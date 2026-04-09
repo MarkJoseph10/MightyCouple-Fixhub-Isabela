@@ -233,6 +233,14 @@ const userSchema = new mongoose.Schema(
       enum: ["", "male", "female", "prefer_not_to_say"],
       default: ""
     },
+    passwordResetToken: {
+      type: String,
+      default: ""
+    },
+    passwordResetExpiresAt: {
+      type: Date,
+      default: null
+    },
     lastLoginAt: Date,
     sellerProfile: {
       storeName: String,

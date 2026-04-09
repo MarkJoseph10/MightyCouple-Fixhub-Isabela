@@ -1,10 +1,12 @@
 import { Router } from "express";
 import {
+  requestPasswordReset,
   loginWithFacebook,
   getCurrentUser,
   loginWithGoogle,
   loginUser,
   registerUser,
+  resetPassword,
   updateAdminCredentials
 } from "../controllers/authController.js";
 import { authorize, protect } from "../middleware/auth.js";
@@ -21,6 +23,8 @@ router.post("/register", authBurstLimit, registerUser);
 router.post("/login", loginRateLimit, loginUser);
 router.post("/google", authBurstLimit, loginWithGoogle);
 router.post("/facebook", authBurstLimit, loginWithFacebook);
+router.post("/forgot-password", authBurstLimit, requestPasswordReset);
+router.post("/reset-password", authBurstLimit, resetPassword);
 router.get("/me", protect, getCurrentUser);
 router.put("/admin-profile", protect, authorize("admin"), updateAdminCredentials);
 

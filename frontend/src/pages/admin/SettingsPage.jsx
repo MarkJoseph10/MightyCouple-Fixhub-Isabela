@@ -23,6 +23,7 @@ import api from "../../api/client";
 import StatsCard from "../../components/admin/StatsCard";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import OrderStatusBadge from "../../components/common/OrderStatusBadge";
+import PasswordInput from "../../components/common/PasswordInput";
 import { useAuth } from "../../context/AuthContext";
 import { useStoreSettings } from "../../context/StoreSettingsContext";
 import { peso } from "../../utils/commerce";
@@ -1815,13 +1816,13 @@ function DashboardPage() {
                       <input type="email" value={adminForm.email} onChange={(event) => setAdminForm((current) => ({ ...current, email: event.target.value }))} className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
                     </InputField>
                     <InputField label="Current password" helper="Required before any credential change is saved.">
-                      <input type="password" ref={adminCurrentPasswordRef} autoComplete="current-password" className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                      <PasswordInput ref={adminCurrentPasswordRef} autoComplete="current-password" className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 pr-14 text-white outline-none" />
                     </InputField>
                     <InputField label="New password">
-                      <input type="password" ref={adminNewPasswordRef} autoComplete="new-password" className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                      <PasswordInput ref={adminNewPasswordRef} autoComplete="new-password" className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 pr-14 text-white outline-none" />
                     </InputField>
                     <InputField label="Confirm new password">
-                      <input type="password" ref={adminConfirmPasswordRef} autoComplete="new-password" className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                      <PasswordInput ref={adminConfirmPasswordRef} autoComplete="new-password" className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 pr-14 text-white outline-none" />
                     </InputField>
 
                     <div className="rounded-[28px] border border-white/10 bg-white/5 p-4">
@@ -1851,11 +1852,10 @@ function DashboardPage() {
                   </div>
 
                   <InputField label="Admin password confirmation" helper="Your current admin password is required before any reset action can continue.">
-                    <input
-                      type="password"
+                    <PasswordInput
                       ref={resetPasswordRef}
                       autoComplete="current-password"
-                      className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                      className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 pr-14 text-white outline-none"
                     />
                   </InputField>
 

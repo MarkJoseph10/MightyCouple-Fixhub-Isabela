@@ -4,10 +4,13 @@ import { createToken } from "../utils/createToken.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { clearRateLimitFailures, recordRateLimitFailure } from "../middleware/rateLimit.js";
-import { isValidEmail } from "../utils/validators.js";
+import { isValidEmail, isValidPhone, normalizePhilippinePhone } from "../utils/validators.js";
 import { OAuth2Client } from "google-auth-library";
+import crypto from "crypto";
+import { isEmailAlertConfigured, sendEmailAlert } from "../services/emailAlertService.js";
 
 const googleClient = new OAuth2Client();
+const PASSWORD_RESET_WINDOW_MS = 30 * 60 * 1000;
 
 function splitNameParts(value = "") {
   const parts = String(value || "")
@@ -53,6 +56,35 @@ function validatePassword(password) {
   if (!strongPassword.test(password)) {
     throw new ApiError(400, "Password must be at least 8 characters and include uppercase, lowercase, and a number");
   }
+}
+
+function resolveUserByContact(contact = "") {
+  const cleanContact = String(contact || "").trim();
+
+  if (!cleanContact) {
+    throw new ApiError(400, "Email or mobile number is required");
+  }
+
+  if (isValidEmail(cleanContact)) {
+    return {
+      query: { email: cleanContact.toLowerCase() },
+      kind: "email"
+    };
+  }
+
+  if (isValidPhone(cleanContact)) {
+    return {
+      query: { phone: normalizePhilippinePhone(cleanContact) },
+      kind: "phone"
+    };
+  }
+
+  throw new ApiError(400, "Please enter a valid email address or Philippine mobile number");
+}
+
+function isDeliverableResetEmail(value = "") {
+  const email = String(value || "").trim().toLowerCase();
+  return Boolean(email && isValidEmail(email) && !email.endsWith("@facebook.local"));
 }
 
 async function verifyGoogleCredential({ credential, accessToken }) {
@@ -377,6 +409,108 @@ export const loginUser = asyncHandler(async (req, res) => {
     message: "Login successful",
     token,
     user: formatUser(user)
+  });
+});
+
+export const requestPasswordReset = asyncHandler(async (req, res) => {
+  const { contact } = req.body || {};
+  const { query } = resolveUserByContact(contact);
+  const user = await User.findOne(query);
+  const genericMessage = "If we found a matching account, we sent a password reset link.";
+
+  if (!user) {
+    res.json({ message: genericMessage });
+    return;
+  }
+
+  const recipientEmail = isDeliverableResetEmail(user.email) ? String(user.email).trim().toLowerCase() : "";
+
+  if (!recipientEmail) {
+    res.json({ message: genericMessage });
+    return;
+  }
+
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+  const resetLink = `${env.clientUrl.replace(/\/$/, "")}/auth/reset-password?token=${rawToken}`;
+
+  user.passwordResetToken = hashedToken;
+  user.passwordResetExpiresAt = new Date(Date.now() + PASSWORD_RESET_WINDOW_MS);
+  await user.save();
+
+  if (!isEmailAlertConfigured()) {
+    if (env.nodeEnv === "production") {
+      throw new ApiError(503, "Password reset email is not configured yet.");
+    }
+
+    res.json({
+      message: "Email sending is not configured yet. Use the reset link below for local testing.",
+      resetLink
+    });
+    return;
+  }
+
+  await sendEmailAlert({
+    to: recipientEmail,
+    subject: "Reset your Mighty Couple password",
+    text: `Use this link to reset your password: ${resetLink}. This link expires in 30 minutes.`,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
+        <h2 style="margin-bottom: 12px;">Reset your Mighty Couple password</h2>
+        <p>You requested a password reset for your account.</p>
+        <p>
+          <a href="${resetLink}" style="display:inline-block;padding:12px 18px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:999px;font-weight:600;">
+            Reset password
+          </a>
+        </p>
+        <p>This link expires in 30 minutes.</p>
+        <p>If you did not request this, you can safely ignore this email.</p>
+      </div>
+    `
+  });
+
+  res.json({
+    message: genericMessage,
+    ...(env.nodeEnv !== "production" ? { resetLink } : {})
+  });
+});
+
+export const resetPassword = asyncHandler(async (req, res) => {
+  const token = String(req.body?.token || "").trim();
+  const password = String(req.body?.password || "");
+  const confirmPassword = String(req.body?.confirmPassword || "");
+
+  if (!token) {
+    throw new ApiError(400, "Reset token is required");
+  }
+
+  if (!password || !confirmPassword) {
+    throw new ApiError(400, "New password and confirmation are required");
+  }
+
+  if (password !== confirmPassword) {
+    throw new ApiError(400, "New password and confirmation do not match");
+  }
+
+  validatePassword(password);
+
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpiresAt: { $gt: new Date() }
+  });
+
+  if (!user) {
+    throw new ApiError(400, "This reset link is invalid or has already expired");
+  }
+
+  user.password = password;
+  user.passwordResetToken = "";
+  user.passwordResetExpiresAt = null;
+  await user.save();
+
+  res.json({
+    message: "Password updated successfully. You can sign in now."
   });
 });
 

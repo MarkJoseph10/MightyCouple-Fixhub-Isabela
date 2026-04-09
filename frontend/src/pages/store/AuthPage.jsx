@@ -2,6 +2,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, Facebook, HelpCircle, Mail } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import PasswordInput from "../../components/common/PasswordInput";
+import { requestPasswordReset } from "../../services/authService";
 
 const initialForm = {
   firstName: "",
@@ -98,6 +100,12 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const [formLoading, setFormLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState("");
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotContact, setForgotContact] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState("");
+  const [forgotMessage, setForgotMessage] = useState("");
+  const [forgotResetLink, setForgotResetLink] = useState("");
   const passwordInputRef = useRef(null);
   const redirectedMessage = location.state?.message || "";
   const redirectTo = location.state?.from || new URLSearchParams(location.search).get("from") || "";
@@ -114,6 +122,11 @@ export default function AuthPage() {
     setFormLoading(false);
     setSocialLoading("");
     setForm(initialForm);
+    setForgotOpen(false);
+    setForgotContact("");
+    setForgotError("");
+    setForgotMessage("");
+    setForgotResetLink("");
     if (passwordInputRef.current) {
       passwordInputRef.current.value = "";
     }
@@ -195,6 +208,24 @@ export default function AuthPage() {
         passwordInputRef.current.value = "";
       }
       setFormLoading(false);
+    }
+  }
+
+  async function handleForgotPassword(event) {
+    event.preventDefault();
+    setForgotLoading(true);
+    setForgotError("");
+    setForgotMessage("");
+    setForgotResetLink("");
+
+    try {
+      const data = await requestPasswordReset(forgotContact);
+      setForgotMessage(data?.message || "If we found a matching account, we sent a password reset link.");
+      setForgotResetLink(data?.resetLink || "");
+    } catch (requestError) {
+      setForgotError(requestError.response?.data?.message || "Unable to start password reset right now.");
+    } finally {
+      setForgotLoading(false);
     }
   }
 
@@ -317,15 +348,31 @@ export default function AuthPage() {
           </div>
 
           <div>
-            <p className="mb-2 text-sm font-medium text-white">Password</p>
-          <input
-            required
-            type="password"
-            ref={passwordInputRef}
-            placeholder="Password"
-            autoComplete={mode === "login" ? "current-password" : "new-password"}
-            className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
-          />
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-sm font-medium text-white">Password</p>
+              {mode === "login" ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotOpen((current) => !current);
+                    setForgotContact(form.contact || "");
+                    setForgotError("");
+                    setForgotMessage("");
+                    setForgotResetLink("");
+                  }}
+                  className="text-xs font-medium text-brand-200 transition hover:text-white"
+                >
+                  Forgot password?
+                </button>
+              ) : null}
+            </div>
+            <PasswordInput
+              required
+              ref={passwordInputRef}
+              placeholder="Password"
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 pr-14 text-white outline-none"
+            />
           </div>
 
           {mode === "register" ? (
@@ -342,6 +389,59 @@ export default function AuthPage() {
 
         {mode === "login" ? (
           <div className="mt-6">
+            {forgotOpen ? (
+              <form onSubmit={handleForgotPassword} className="mb-6 rounded-[28px] border border-white/10 bg-white/5 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Forgot password</p>
+                    <h2 className="mt-2 text-lg font-semibold text-white">Send a reset link</h2>
+                    <p className="mt-2 text-sm text-slate-400">
+                      Enter your email or mobile number. If your account has a real email address, we will send a reset link there.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setForgotOpen(false)}
+                    className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-300 transition hover:bg-white/10"
+                  >
+                    Close
+                  </button>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  <input
+                    required
+                    value={forgotContact}
+                    onChange={(event) => setForgotContact(event.target.value)}
+                    placeholder="Email or mobile number"
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={forgotLoading}
+                    className="w-full rounded-2xl bg-white/10 px-5 py-3 font-semibold text-white transition hover:bg-white/15 disabled:opacity-60"
+                  >
+                    {forgotLoading ? "Sending reset link..." : "Send reset link"}
+                  </button>
+                </div>
+
+                {forgotError ? (
+                  <div className="mt-4 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+                    {forgotError}
+                  </div>
+                ) : null}
+                {forgotMessage ? (
+                  <div className="mt-4 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-50">
+                    <p>{forgotMessage}</p>
+                    {forgotResetLink ? (
+                      <a href={forgotResetLink} className="mt-2 inline-block font-semibold text-white underline underline-offset-4">
+                        Open reset page
+                      </a>
+                    ) : null}
+                  </div>
+                ) : null}
+              </form>
+            ) : null}
             <div className="flex items-center gap-3 text-xs uppercase tracking-[0.24em] text-slate-500">
               <span className="h-px flex-1 bg-white/10" />
               <span>Or continue with</span>

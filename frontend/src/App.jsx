@@ -30,6 +30,7 @@ const OrdersPage = lazy(() => import("./pages/store/OrdersPage"));
 const OrderSuccessPage = lazy(() => import("./pages/store/OrderSuccessPage"));
 const NotificationsPage = lazy(() => import("./pages/store/NotificationsPage"));
 const ProfilePage = lazy(() => import("./pages/store/ProfilePage"));
+const ResetPasswordPage = lazy(() => import("./pages/store/ResetPasswordPage"));
 const MessagesPage = lazy(() => import("./pages/shared/MessagesPage"));
 const RepairsPage = lazy(() => import("./pages/store/RepairsPage"));
 const PrivacyPolicyPage = lazy(() => import("./pages/store/PrivacyPolicyPage"));
@@ -60,6 +61,7 @@ export default function App() {
           <Route element={<LazyBoundary label="Loading storefront..."><StoreLayout /></LazyBoundary>}>
             <Route path="/" element={<LazyBoundary label="Loading home..."><HomePage /></LazyBoundary>} />
             <Route path="/auth" element={<LazyBoundary label="Loading sign in..."><AuthPage /></LazyBoundary>} />
+            <Route path="/auth/reset-password" element={<LazyBoundary label="Loading reset password..."><ResetPasswordPage /></LazyBoundary>} />
             <Route path="/auth/facebook/callback" element={<LazyBoundary label="Completing Facebook sign in..."><FacebookAuthCallbackPage /></LazyBoundary>} />
             <Route path="/auth/google/callback" element={<LazyBoundary label="Completing Google sign in..."><GoogleAuthCallbackPage /></LazyBoundary>} />
             <Route path="/product/:slug" element={<LazyBoundary label="Loading product..."><ProductDetailsPage /></LazyBoundary>} />
