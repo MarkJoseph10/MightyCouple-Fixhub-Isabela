@@ -1,7 +1,8 @@
 import axios from "axios";
+import { resolveApiBaseUrl } from "./baseUrl";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+  baseURL: resolveApiBaseUrl()
 });
 
 let isHandlingUnauthorized = false;

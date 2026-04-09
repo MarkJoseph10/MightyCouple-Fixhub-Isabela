@@ -1,12 +1,13 @@
 import api from "../api/client";
+import { resolveApiBaseUrl } from "../api/baseUrl";
 
 const listeners = new Set();
 let eventSource = null;
 let activeToken = "";
 
 function buildRealtimeUrl(token) {
-  const configuredBase = String(api.defaults.baseURL || "").trim();
-  const fallbackBase = typeof window !== "undefined" ? `${window.location.origin}/api` : "http://localhost:5000/api";
+  const configuredBase = String(api.defaults.baseURL || resolveApiBaseUrl()).trim();
+  const fallbackBase = resolveApiBaseUrl();
   const apiBase = configuredBase || fallbackBase;
   const url = new URL(`${apiBase.replace(/\/+$/, "")}/realtime/stream`, typeof window !== "undefined" ? window.location.origin : undefined);
 
@@ -86,4 +87,3 @@ export function subscribeRealtime(listener) {
     listeners.delete(listener);
   };
 }
-

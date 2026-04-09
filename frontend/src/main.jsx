@@ -10,14 +10,15 @@ import { NotificationProvider } from "./context/NotificationContext.jsx";
 import { StoreSettingsProvider } from "./context/StoreSettingsContext.jsx";
 import { WishlistProvider } from "./context/WishlistContext.jsx";
 import { registerPwa } from "./pwa/registerPwa";
+import { resolveApiOrigin } from "./api/baseUrl";
 import "./index.css";
 
-if (import.meta.env.PROD) {
+if (import.meta.env.PROD && !Capacitor.isNativePlatform()) {
   registerPwa();
 }
 
 if (typeof document !== "undefined") {
-  const apiBaseUrl = String(import.meta.env.VITE_API_URL || "").replace(/\/api\/?$/, "");
+  const apiBaseUrl = resolveApiOrigin();
   const hintOrigins = [window.location.origin, apiBaseUrl, "https://res.cloudinary.com"].filter(Boolean);
 
   hintOrigins.forEach((origin) => {

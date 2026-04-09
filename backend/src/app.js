@@ -1,4 +1,3 @@
-import cors from "cors";
 import express from "express";
 import morgan from "morgan";
 import path from "path";
@@ -31,6 +30,10 @@ const __dirname = path.dirname(__filename);
 export function createApp() {
   const app = express();
   const allowedOrigins = new Set(env.clientUrls);
+  const isSafeLocalOrigin = (origin) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
+  const isSafeNativeOrigin = (origin) => origin === "capacitor://localhost" || origin === "ionic://localhost";
+  const isAllowedOrigin = (origin) =>
+    !origin || allowedOrigins.has(origin) || isSafeLocalOrigin(origin) || isSafeNativeOrigin(origin);
 
   app.disable("x-powered-by");
   app.use((_, res, next) => {
@@ -40,19 +43,38 @@ export function createApp() {
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
     next();
   });
-  app.use(
-    cors({
-      origin(origin, callback) {
-        if (!origin || allowedOrigins.has(origin)) {
-          callback(null, true);
-          return;
-        }
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
 
-        callback(new Error("Origin not allowed by CORS"));
-      },
-      credentials: true
-    })
-  );
+    if (!isAllowedOrigin(origin)) {
+      if (req.method === "OPTIONS") {
+        res.status(403).json({ message: "Origin not allowed by CORS" });
+        return;
+      }
+
+      next(new Error("Origin not allowed by CORS"));
+      return;
+    }
+
+    if (origin) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Vary", "Origin");
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+    }
+
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      req.headers["access-control-request-headers"] || "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    );
+
+    if (req.method === "OPTIONS") {
+      res.status(204).end();
+      return;
+    }
+
+    next();
+  });
   app.use(express.json({ limit: "1mb" }));
   app.use(morgan("dev"));
   app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
