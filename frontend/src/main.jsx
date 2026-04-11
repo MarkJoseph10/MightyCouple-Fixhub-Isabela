@@ -18,6 +18,18 @@ if (typeof document !== "undefined") {
   document.documentElement.classList.toggle("native-app", isNativeApp);
   document.body.classList.toggle("native-app", isNativeApp);
 
+  if (!isNativeApp && typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+    navigator.serviceWorker.getRegistrations()
+      .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+      .catch(() => {});
+
+    if ("caches" in window) {
+      window.caches.keys()
+        .then((cacheKeys) => Promise.all(cacheKeys.map((key) => window.caches.delete(key))))
+        .catch(() => {});
+    }
+  }
+
   if (isNativeApp) {
     const viewportMeta = document.querySelector('meta[name="viewport"]');
 
