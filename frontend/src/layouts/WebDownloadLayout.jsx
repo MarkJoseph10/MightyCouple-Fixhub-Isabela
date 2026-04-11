@@ -1,4 +1,4 @@
-import { Download, ExternalLink } from "lucide-react";
+import { Download, ExternalLink, LogIn } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useStoreSettings } from "../context/StoreSettingsContext";
 import { resolveMediaUrl } from "../utils/media";
@@ -6,6 +6,7 @@ import { resolveAndroidDownloadUrl } from "../utils/androidDownload";
 
 const portalLinks = [
   { to: "/", label: "Download" },
+  { to: "/auth", label: "Login" },
   { to: "/privacy-policy", label: "Privacy" },
   { to: "/shipping-policy", label: "Shipping" },
   { to: "/return-policy", label: "Returns" },
@@ -68,6 +69,13 @@ export default function WebDownloadLayout() {
                 <Download size={16} />
                 Download APK
               </a>
+              <NavLink
+                to="/auth"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+              >
+                <LogIn size={16} />
+                Login / Sign up
+              </NavLink>
             </div>
           </div>
         </div>

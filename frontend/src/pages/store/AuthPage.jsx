@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, Facebook, HelpCircle, Mail } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { useAuth } from "../../context/AuthContext";
 import PasswordInput from "../../components/common/PasswordInput";
 import { requestPasswordReset } from "../../services/authService";
@@ -95,6 +96,7 @@ export default function AuthPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { login, register } = useAuth();
+  const isNativeApp = Capacitor.isNativePlatform();
   const [mode, setMode] = useState("login");
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
@@ -199,7 +201,9 @@ export default function AuthPage() {
         });
       }
 
-      const fallbackTarget = response?.user?.role === "admin" ? "/admin" : "/";
+      const fallbackTarget = isNativeApp
+        ? (response?.user?.role === "admin" ? "/admin" : "/")
+        : "/download";
       navigate(redirectTo || fallbackTarget, { replace: true });
     } catch (requestError) {
       setError(resolveAuthError(requestError, mode));
@@ -255,6 +259,11 @@ export default function AuthPage() {
             ? "Sign in with your real account or create a new customer account."
             : "Fill out your personal details now so they are already saved in your profile after sign-up."}
         </p>
+        {!isNativeApp ? (
+          <div className="mt-4 rounded-2xl border border-cyan-300/15 bg-cyan-400/10 px-4 py-3 text-sm text-cyan-50">
+            Desktop access is for account sign-in and sign-up. Shopping, checkout, and notifications continue inside the Android app.
+          </div>
+        ) : null}
 
         {(redirectedMessage || sessionExpired) && (
           <div className="mt-6 rounded-2xl border border-brand-400/20 bg-brand-500/10 px-4 py-3 text-sm text-brand-50">

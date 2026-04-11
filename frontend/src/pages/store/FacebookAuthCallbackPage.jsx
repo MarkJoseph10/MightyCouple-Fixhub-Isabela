@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import { useAuth } from "../../context/AuthContext";
 
 function parseFacebookHash() {
@@ -22,6 +23,7 @@ function parseFacebookState(value) {
 export default function FacebookAuthCallbackPage() {
   const navigate = useNavigate();
   const { loginWithFacebook } = useAuth();
+  const isNativeApp = Capacitor.isNativePlatform();
   const [error, setError] = useState("");
   const [status, setStatus] = useState("Finishing Facebook sign-in...");
   const params = useMemo(() => parseFacebookHash(), []);
@@ -55,7 +57,9 @@ export default function FacebookAuthCallbackPage() {
 
       try {
         const result = await loginWithFacebook({ accessToken });
-        const fallbackTarget = result?.user?.role === "admin" ? "/admin" : "/";
+        const fallbackTarget = isNativeApp
+          ? (result?.user?.role === "admin" ? "/admin" : "/")
+          : "/download";
         navigate(state.redirectTo || fallbackTarget, { replace: true });
       } catch (requestError) {
         if (!active) {
@@ -73,7 +77,7 @@ export default function FacebookAuthCallbackPage() {
     return () => {
       active = false;
     };
-  }, [loginWithFacebook, navigate, params]);
+  }, [isNativeApp, loginWithFacebook, navigate, params]);
 
   return (
     <div className="page-shell py-10">

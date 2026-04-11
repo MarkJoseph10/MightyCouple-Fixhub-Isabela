@@ -75,6 +75,10 @@ export default function App() {
             <Route element={<LazyBoundary label="Loading download portal..."><WebDownloadLayout /></LazyBoundary>}>
               <Route path="/" element={<LazyBoundary label="Loading Android download..."><AndroidDownloadPage /></LazyBoundary>} />
               <Route path="/download" element={<LazyBoundary label="Loading Android download..."><AndroidDownloadPage /></LazyBoundary>} />
+              <Route path="/auth" element={<LazyBoundary label="Loading sign in..."><AuthPage /></LazyBoundary>} />
+              <Route path="/auth/reset-password" element={<LazyBoundary label="Loading reset password..."><ResetPasswordPage /></LazyBoundary>} />
+              <Route path="/auth/facebook/callback" element={<LazyBoundary label="Completing Facebook sign in..."><FacebookAuthCallbackPage /></LazyBoundary>} />
+              <Route path="/auth/google/callback" element={<LazyBoundary label="Completing Google sign in..."><GoogleAuthCallbackPage /></LazyBoundary>} />
               <Route path="/contact" element={<LazyBoundary label="Loading contact page..."><ContactPage /></LazyBoundary>} />
               <Route path="/shipping-policy" element={<LazyBoundary label="Loading shipping policy..."><ShippingPolicyPage /></LazyBoundary>} />
               <Route path="/return-policy" element={<LazyBoundary label="Loading return policy..."><ReturnPolicyPage /></LazyBoundary>} />

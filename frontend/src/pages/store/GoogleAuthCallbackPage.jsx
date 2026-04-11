@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import { useAuth } from "../../context/AuthContext";
 
 function parseGoogleHash() {
@@ -22,6 +23,7 @@ function parseGoogleState(value) {
 export default function GoogleAuthCallbackPage() {
   const navigate = useNavigate();
   const { loginWithGoogle } = useAuth();
+  const isNativeApp = Capacitor.isNativePlatform();
   const [error, setError] = useState("");
   const [status, setStatus] = useState("Finishing Google sign-in...");
   const params = useMemo(() => parseGoogleHash(), []);
@@ -54,7 +56,9 @@ export default function GoogleAuthCallbackPage() {
 
       try {
         const result = await loginWithGoogle({ accessToken });
-        const fallbackTarget = result?.user?.role === "admin" ? "/admin" : "/";
+        const fallbackTarget = isNativeApp
+          ? (result?.user?.role === "admin" ? "/admin" : "/")
+          : "/download";
         navigate(state.redirectTo || fallbackTarget, { replace: true });
       } catch (requestError) {
         if (!active) {
@@ -72,7 +76,7 @@ export default function GoogleAuthCallbackPage() {
     return () => {
       active = false;
     };
-  }, [loginWithGoogle, navigate, params]);
+  }, [isNativeApp, loginWithGoogle, navigate, params]);
 
   return (
     <div className="page-shell py-10">
