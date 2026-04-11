@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import {
   Bell,
   CircleHelp,
@@ -24,7 +25,7 @@ import { useWishlist } from "../../context/WishlistContext";
 import { optimizeImageUrl } from "../../utils/media";
 
 function tabClass(isActive) {
-  return `flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[20px] px-2 py-2 text-[11px] font-medium transition ${
+  return `flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[18px] px-1.5 py-2 text-[10px] font-medium transition ${
     isActive ? "bg-brand-500 text-white shadow-ambient" : "text-slate-300 hover:bg-white/8 hover:text-white"
   }`;
 }
@@ -75,6 +76,7 @@ export default function MobileBottomNav() {
   const { wishlistIds } = useWishlist();
   const location = useLocation();
   const [profileOpen, setProfileOpen] = useState(false);
+  const isNativeApp = Capacitor.isNativePlatform();
 
   const userLabel = user?.sellerProfile?.displayName || user?.name || settings.storeName;
   const userInitials = (user?.name || settings.storeName || "MC")
@@ -127,9 +129,12 @@ export default function MobileBottomNav() {
         title: "Admin tools",
         items: [
           { label: "Dashboard", description: "Open store operations and insights", to: "/admin", icon: LayoutDashboard },
+          { label: "Reports", description: "Review sales and performance", to: "/admin/reports", icon: LayoutDashboard },
+          { label: "Products", description: "Manage store products and stock", to: "/admin/products", icon: ShoppingBag },
           { label: "Messages", description: "Handle escalations and support threads", to: "/admin/messages", icon: MessageSquare },
           { label: "Repairs", description: "Oversee repair bookings and disputes", to: "/admin/repairs", icon: Wrench },
           { label: "Technicians", description: "Approve repair technicians before they handle jobs", to: "/admin/technicians", icon: Users },
+          { label: "Settings", description: "Branding, operations, and admin tools", to: "/admin/settings", icon: LayoutDashboard },
           { label: "Notifications", description: "Review latest store alerts", to: "/notifications", icon: Bell, badge: unreadCount }
         ]
       });
@@ -138,6 +143,7 @@ export default function MobileBottomNav() {
         title: "Seller tools",
         items: [
           { label: "Seller hub", description: "Open your sales dashboard", to: "/seller", icon: LayoutDashboard },
+          { label: "My products", description: "Manage your product catalog", to: "/seller/products", icon: ShoppingBag },
           { label: "Messages", description: "Reply to customers quickly", to: "/seller/messages", icon: MessageSquare },
           {
             label: isRepairTechnician ? "Seller repairs" : "Apply as technician",
@@ -177,22 +183,48 @@ export default function MobileBottomNav() {
     setProfileOpen(false);
   }
 
-  function handleLogout() {
+  async function handleLogout() {
     closeProfile();
-    logout();
+    await logout();
   }
 
-  const tabs = [
-    { label: "Home", to: "/", icon: Home, badge: null, active: location.pathname === "/" || location.pathname.startsWith("/product/") || location.pathname === "/cart" || location.pathname === "/wishlist" },
-    { label: "Alerts", to: user ? "/notifications" : "/auth", icon: Bell, badge: unreadCount || null, active: location.pathname === "/notifications" },
-    { label: "Repair", to: user ? "/repairs" : "/auth", icon: Wrench, badge: null, active: location.pathname === "/repairs" },
-    { label: "Profile", action: () => setProfileOpen(true), icon: UserRound, badge: null, active: profileOpen || location.pathname === "/profile" }
-  ];
+  const tabs = useMemo(() => {
+    if (isNativeApp && isAdmin) {
+      return [
+        { label: "Home", to: "/admin", icon: LayoutDashboard, badge: null, active: location.pathname === "/admin" },
+        { label: "Chats", to: "/admin/messages", icon: MessageSquare, badge: null, active: location.pathname === "/admin/messages" },
+        { label: "Repair", to: "/admin/repairs", icon: Wrench, badge: null, active: location.pathname === "/admin/repairs" || location.pathname === "/admin/technicians" },
+        { label: "Profile", action: () => setProfileOpen(true), icon: UserRound, badge: null, active: profileOpen || location.pathname === "/profile" || location.pathname === "/admin/settings" }
+      ];
+    }
+
+    if (isNativeApp && isSeller) {
+      return [
+        { label: "Home", to: "/seller", icon: LayoutDashboard, badge: null, active: location.pathname === "/seller" },
+        { label: "Orders", to: "/seller/orders", icon: ShoppingBag, badge: null, active: location.pathname === "/seller/orders" },
+        {
+          label: "Repair",
+          to: isRepairTechnician ? "/seller/repairs" : "/seller/technician",
+          icon: Wrench,
+          badge: null,
+          active: location.pathname === "/seller/repairs" || location.pathname === "/seller/technician"
+        },
+        { label: "Profile", action: () => setProfileOpen(true), icon: UserRound, badge: null, active: profileOpen || location.pathname === "/profile" }
+      ];
+    }
+
+    return [
+      { label: "Home", to: "/", icon: Home, badge: null, active: location.pathname === "/" || location.pathname.startsWith("/product/") || location.pathname === "/cart" || location.pathname === "/wishlist" },
+      { label: "Alerts", to: user ? "/notifications" : "/auth", icon: Bell, badge: unreadCount || null, active: location.pathname === "/notifications" },
+      { label: "Repair", to: user ? "/repairs" : "/auth", icon: Wrench, badge: null, active: location.pathname === "/repairs" },
+      { label: "Profile", action: () => setProfileOpen(true), icon: UserRound, badge: null, active: profileOpen || location.pathname === "/profile" }
+    ];
+  }, [isAdmin, isNativeApp, isRepairTechnician, isSeller, location.pathname, profileOpen, unreadCount, user]);
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden">
-        <div className="pointer-events-auto mx-auto flex max-w-lg items-center gap-2 rounded-[28px] border border-white/10 bg-slate-950/92 p-2 shadow-2xl backdrop-blur-xl">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.55rem,env(safe-area-inset-bottom))] md:hidden">
+        <div className="pointer-events-auto mx-auto flex max-w-lg items-center gap-1.5 rounded-[24px] border border-white/10 bg-slate-950/92 p-1.5 shadow-2xl backdrop-blur-xl">
           {tabs.map((tab) => {
             const Icon = tab.icon;
 
@@ -200,7 +232,7 @@ export default function MobileBottomNav() {
               return (
                 <Link key={tab.label} to={tab.to} className={tabClass(tab.active)}>
                   <span className="relative inline-flex">
-                    <Icon size={18} />
+                    <Icon size={16} />
                     {tab.badge ? (
                       <span className="absolute -right-2 -top-2 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-semibold text-white">
                         {tab.badge > 9 ? "9+" : tab.badge}
@@ -215,7 +247,7 @@ export default function MobileBottomNav() {
             return (
               <button key={tab.label} type="button" onClick={tab.action} className={tabClass(tab.active)}>
                 <span className="relative inline-flex">
-                  <Icon size={18} />
+                  <Icon size={16} />
                 </span>
                 <span className="truncate">{tab.label}</span>
               </button>

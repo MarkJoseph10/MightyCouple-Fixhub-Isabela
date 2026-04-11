@@ -1,4 +1,5 @@
 import { Notification } from "../models/Notification.js";
+import { User } from "../models/User.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { notificationAccessFilter } from "../services/notificationService.js";
@@ -106,5 +107,107 @@ export const markAllNotificationsRead = asyncHandler(async (req, res) => {
   res.json({
     message: "All notifications marked as read",
     modifiedCount: result.modifiedCount ?? result.nModified ?? 0
+  });
+});
+
+export const registerDeviceToken = asyncHandler(async (req, res) => {
+  const token = String(req.body?.token || "").trim();
+  const platform = String(req.body?.platform || "android").trim().toLowerCase();
+  const deviceId = String(req.body?.deviceId || "").trim();
+
+  if (!token) {
+    throw new ApiError(400, "Push token is required");
+  }
+
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (token) {
+    await User.updateMany(
+      { _id: { $ne: user._id } },
+      {
+        $pull: {
+          pushTokens: {
+            token
+          }
+        }
+      }
+    );
+  }
+
+  if (deviceId) {
+    await User.updateMany(
+      { _id: { $ne: user._id } },
+      {
+        $pull: {
+          pushTokens: {
+            deviceId
+          }
+        }
+      }
+    );
+  }
+
+  const nextTokens = (user.pushTokens || []).filter((entry) => {
+    if (!entry?.token) {
+      return false;
+    }
+
+    if (String(entry.token) === token) {
+      return false;
+    }
+
+    if (deviceId && String(entry.deviceId || "") === deviceId) {
+      return false;
+    }
+
+    return true;
+  });
+
+  nextTokens.push({
+    token,
+    platform: platform || "android",
+    deviceId,
+    updatedAt: new Date()
+  });
+
+  user.pushTokens = nextTokens.slice(-8);
+  await user.save();
+
+  res.json({
+    message: "Device registered for native notifications",
+    registeredCount: user.pushTokens.length
+  });
+});
+
+export const unregisterDeviceToken = asyncHandler(async (req, res) => {
+  const token = String(req.body?.token || "").trim();
+  const deviceId = String(req.body?.deviceId || "").trim();
+
+  if (!token && !deviceId) {
+    throw new ApiError(400, "Push token or device ID is required");
+  }
+
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  user.pushTokens = (user.pushTokens || []).filter((entry) => {
+    const tokenMatch = token && String(entry?.token || "") === token;
+    const deviceMatch = deviceId && String(entry?.deviceId || "") === deviceId;
+
+    return !(tokenMatch || deviceMatch);
+  });
+
+  await user.save();
+
+  res.json({
+    message: "Device removed from native notifications",
+    registeredCount: user.pushTokens.length
   });
 });

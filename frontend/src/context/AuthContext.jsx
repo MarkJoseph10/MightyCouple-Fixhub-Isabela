@@ -1,5 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import api from "../api/client";
+import { getStoredPushDeviceIdSync } from "../utils/pushDeviceStorage";
+import { clearStoredAuthToken, hydrateStoredAuthToken, persistAuthToken } from "../utils/authStorage";
+import { getStoredPushTokenSync } from "../utils/pushTokenStorage";
 
 const AuthContext = createContext(null);
 
@@ -9,7 +12,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     async function loadCurrentUser() {
-      const token = localStorage.getItem("shopverse-token");
+      const token = await hydrateStoredAuthToken();
 
       if (!token) {
         setLoading(false);
@@ -20,7 +23,7 @@ export function AuthProvider({ children }) {
         const { data } = await api.get("/auth/me");
         setUser(data);
       } catch {
-        localStorage.removeItem("shopverse-token");
+        await clearStoredAuthToken();
       } finally {
         setLoading(false);
       }
@@ -49,25 +52,25 @@ export function AuthProvider({ children }) {
         user?.technicianApplication?.status === "approved",
       async login(credentials) {
         const { data } = await api.post("/auth/login", credentials);
-        localStorage.setItem("shopverse-token", data.token);
+        await persistAuthToken(data.token);
         setUser(data.user);
         return data;
       },
       async register(payload) {
         const { data } = await api.post("/auth/register", payload);
-        localStorage.setItem("shopverse-token", data.token);
+        await persistAuthToken(data.token);
         setUser(data.user);
         return data;
       },
       async loginWithGoogle(payload) {
         const { data } = await api.post("/auth/google", payload);
-        localStorage.setItem("shopverse-token", data.token);
+        await persistAuthToken(data.token);
         setUser(data.user);
         return data;
       },
       async loginWithFacebook(payload) {
         const { data } = await api.post("/auth/facebook", payload);
-        localStorage.setItem("shopverse-token", data.token);
+        await persistAuthToken(data.token);
         setUser(data.user);
         return data;
       },
@@ -75,8 +78,20 @@ export function AuthProvider({ children }) {
       setUserData(nextUser) {
         setUser(nextUser);
       },
-      logout() {
-        localStorage.removeItem("shopverse-token");
+      async logout() {
+        const pushToken = getStoredPushTokenSync();
+        const deviceId = getStoredPushDeviceIdSync();
+
+        if (pushToken || deviceId) {
+          await api.delete("/notifications/device", {
+            data: {
+              token: pushToken,
+              deviceId
+            }
+          }).catch(() => {});
+        }
+
+        await clearStoredAuthToken();
         setUser(null);
       }
     }),

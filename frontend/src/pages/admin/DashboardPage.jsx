@@ -2,6 +2,7 @@ import { BarChart3, Boxes, Palette, RefreshCcw, Settings2, ShoppingBag, Sparkles
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import api from "../../api/client";
 import StatsCard from "../../components/admin/StatsCard";
 import LoadingScreen from "../../components/common/LoadingScreen";
@@ -59,21 +60,24 @@ function formatSeriesLabel(label) {
 }
 
 function SectionCard({ eyebrow, title, description, children }) {
+  const isNativeApp = Capacitor.isNativePlatform();
+
   return (
-    <section className="glass-panel rounded-[32px] p-5 shadow-ambient sm:p-6">
+    <section className={`glass-panel shadow-ambient ${isNativeApp ? "rounded-[22px] p-4" : "rounded-[32px] p-5 sm:p-6"}`}>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-slate-400">{eyebrow}</p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">{title}</h2>
+          <h2 className={`font-semibold text-white ${isNativeApp ? "mt-1.5 text-xl" : "mt-2 text-2xl"}`}>{title}</h2>
         </div>
-        {description ? <p className="max-w-xl text-sm text-slate-400">{description}</p> : null}
+        {description ? <p className={`max-w-xl text-slate-400 ${isNativeApp ? "text-[12px] leading-5" : "text-sm"}`}>{description}</p> : null}
       </div>
-      <div className="mt-6">{children}</div>
+      <div className={isNativeApp ? "mt-4" : "mt-6"}>{children}</div>
     </section>
   );
 }
 
 function QuickLink({ to, icon: Icon, title, caption, tone = "brand" }) {
+  const isNativeApp = Capacitor.isNativePlatform();
   const toneClass =
     tone === "cyan"
       ? "from-cyan-500/20 to-brand-500/10"
@@ -84,13 +88,15 @@ function QuickLink({ to, icon: Icon, title, caption, tone = "brand" }) {
   return (
     <Link
       to={to}
-      className="rounded-[28px] border border-white/10 bg-white/5 p-4 transition duration-300 hover:-translate-y-1 hover:bg-white/10"
+      className={`border border-white/10 bg-white/5 transition duration-300 hover:-translate-y-1 hover:bg-white/10 ${
+        isNativeApp ? "rounded-[20px] p-3" : "rounded-[28px] p-4"
+      }`}
     >
-      <div className={`flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br ${toneClass} text-brand-50`}>
-        <Icon size={18} />
+      <div className={`flex items-center justify-center bg-gradient-to-br ${toneClass} text-brand-50 ${isNativeApp ? "h-9 w-9 rounded-[16px]" : "h-11 w-11 rounded-2xl"}`}>
+        <Icon size={isNativeApp ? 16 : 18} />
       </div>
-      <p className="mt-4 font-semibold text-white">{title}</p>
-      <p className="mt-1 text-sm text-slate-400">{caption}</p>
+      <p className={`font-semibold text-white ${isNativeApp ? "mt-3 text-sm" : "mt-4"}`}>{title}</p>
+      <p className={`text-slate-400 ${isNativeApp ? "mt-1 text-[12px] leading-5" : "mt-1 text-sm"}`}>{caption}</p>
     </Link>
   );
 }
@@ -171,6 +177,7 @@ function StatusMixCard({ ordersByStatus = [], totalOrders = 0 }) {
 }
 
 export default function DashboardPage() {
+  const isNativeApp = Capacitor.isNativePlatform();
   const { settings, setSettings } = useStoreSettings();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -210,14 +217,16 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6 pb-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className={`pb-8 ${isNativeApp ? "native-screen-stack space-y-4" : "space-y-6"}`}>
+      <div className={`flex flex-col lg:flex-row lg:items-end lg:justify-between ${isNativeApp ? "gap-3" : "gap-4"}`}>
         <div>
           <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Admin overview</p>
-          <h1 className="mt-2 text-4xl font-semibold text-white">Run {settings.storeName} without the clutter</h1>
+          <h1 className={`font-semibold text-white ${isNativeApp ? "native-tight-heading mt-1.5" : "mt-2 text-4xl"}`}>
+            Run {settings.storeName} without the clutter
+          </h1>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="rounded-[28px] border border-brand-400/20 bg-gradient-to-r from-brand-500/20 to-cyan-400/10 px-5 py-4 text-sm text-slate-100">
+          <div className={`rounded-[28px] border border-brand-400/20 bg-gradient-to-r from-brand-500/20 to-cyan-400/10 text-slate-100 ${isNativeApp ? "px-4 py-3 text-[12px] leading-5" : "px-5 py-4 text-sm"}`}>
             Admin-only controls like credentials, sales reset, and hard reset now live in Settings so overview stays focused on decisions.
           </div>
         </div>
@@ -239,8 +248,8 @@ export default function DashboardPage() {
           <StatsCard label="Audience" value={{ numericValue: overview.totalUsers || 0, type: "number" }} helper={`${overview.newsletterSubscribers || 0} newsletter subscribers on file.`} tone="cyan" />
         </div>
 
-        <div className="mt-6 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="grid gap-4 sm:grid-cols-2">
+        <div className={`mt-6 grid ${isNativeApp ? "gap-3" : "gap-4 xl:grid-cols-[1.1fr_0.9fr]"}`}>
+          <div className={`grid ${isNativeApp ? "native-list-grid grid-cols-2" : "gap-4 sm:grid-cols-2"}`}>
             <QuickLink to="/admin/settings" icon={Palette} title="Settings" caption="Branding, admin account, operations, and checkout rules." />
             <QuickLink to="/admin/reports" icon={BarChart3} title="Reports" caption="Revenue trends, recent actions, and operational health." tone="amber" />
             <QuickLink to="/admin/products" icon={Boxes} title="Products" caption="Catalog, variants, trending tags, and inventory polish." tone="cyan" />
@@ -248,16 +257,16 @@ export default function DashboardPage() {
             <QuickLink to="/admin/customers" icon={Users} title="Customers" caption="Seller workflow, payout review, and discipline actions." tone="cyan" />
           </div>
 
-          <div className="grid gap-4">
-            <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
+          <div className={`grid ${isNativeApp ? "gap-3" : "gap-4"}`}>
+            <div className={`rounded-[28px] border border-white/10 bg-white/5 ${isNativeApp ? "p-4" : "p-5"}`}>
               <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Store pulse</p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-3xl border border-white/10 bg-slate-950/30 p-4">
+              <div className={`mt-4 grid ${isNativeApp ? "native-summary-grid grid-cols-2" : "gap-3 sm:grid-cols-2"}`}>
+                <div className={`rounded-3xl border border-white/10 bg-slate-950/30 ${isNativeApp ? "native-summary-card" : "p-4"}`}>
                   <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Orders</p>
-                  <p className="mt-2 text-3xl font-semibold text-white">{overview.totalOrders || 0}</p>
-                  <p className="mt-2 text-sm text-slate-400">All-time order volume in the current database.</p>
+                  <p className={`font-semibold text-white ${isNativeApp ? "mt-1.5 text-xl" : "mt-2 text-3xl"}`}>{overview.totalOrders || 0}</p>
+                  <p className={`text-slate-400 ${isNativeApp ? "mt-1.5 text-[11px] leading-4" : "mt-2 text-sm"}`}>All-time order volume in the current database.</p>
                 </div>
-                <div className="rounded-3xl border border-white/10 bg-slate-950/30 p-4">
+                <div className={`rounded-3xl border border-white/10 bg-slate-950/30 ${isNativeApp ? "native-summary-card" : "p-4"}`}>
                   <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Products</p>
                   <p className="mt-2 text-3xl font-semibold text-white">{overview.totalProducts || 0}</p>
                   <p className="mt-2 text-sm text-slate-400">Products currently available across the catalog.</p>

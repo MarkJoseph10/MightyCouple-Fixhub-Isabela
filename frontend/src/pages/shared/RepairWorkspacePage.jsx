@@ -3,6 +3,7 @@ import {
   ArrowUpRight,
   Boxes,
   CalendarRange,
+  Camera,
   CheckCircle2,
   ClipboardList,
   Clock3,
@@ -10,6 +11,7 @@ import {
   CreditCard,
   FileText,
   Filter,
+  ImagePlus,
   LoaderCircle,
   MapPin,
   MessageSquare,
@@ -33,6 +35,8 @@ import api from "../../api/client";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import { useAuth } from "../../context/AuthContext";
 import { useChat } from "../../context/ChatContext";
+import { Capacitor } from "@capacitor/core";
+import { captureImageFile, isNativeMediaAvailable, pickImageFile } from "../../utils/nativeMedia";
 import {
   addRepairSlot,
   assignRepairRequest,
@@ -488,60 +492,68 @@ function inputClassName(extra = "") {
 }
 
 function SectionCard({ eyebrow, title, description, actions, children, sectionId, className = "" }) {
+  const isNativeApp = Capacitor.isNativePlatform();
   return (
-    <section id={sectionId} className={classNames("glass-panel rounded-[30px] p-5 shadow-ambient sm:p-6", className)}>
+    <section
+      id={sectionId}
+      className={classNames(
+        "glass-panel shadow-ambient",
+        isNativeApp ? "rounded-[24px] p-4" : "rounded-[30px] p-5 sm:p-6",
+        className
+      )}
+    >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           {eyebrow ? <p className="text-xs uppercase tracking-[0.28em] text-slate-400">{eyebrow}</p> : null}
-          <h2 className="mt-2 text-xl font-semibold text-white">{title}</h2>
-          {description ? <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">{description}</p> : null}
+          <h2 className={classNames("mt-2 font-semibold text-white", isNativeApp ? "text-lg" : "text-xl")}>{title}</h2>
+          {description ? (
+            <p className={classNames("mt-3 max-w-3xl text-slate-300", isNativeApp ? "text-[13px] leading-6" : "text-sm leading-7")}>
+              {description}
+            </p>
+          ) : null}
         </div>
         {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
       </div>
-      <div className="mt-5">{children}</div>
+      <div className={classNames(isNativeApp ? "mt-4" : "mt-5")}>{children}</div>
     </section>
   );
 }
 
 function MetricCard({ label, value, hint, icon: Icon, active = false, onClick }) {
-  if (onClick) {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
+  const isNativeApp = Capacitor.isNativePlatform();
+  const cardClassName = classNames(
+    "glass-panel shadow-ambient",
+    isNativeApp ? "rounded-[20px] p-3" : "rounded-[26px] p-4",
+    onClick ? "text-left transition hover:bg-white/10" : "",
+    active ? "border border-brand-400/40 bg-brand-500/10" : ""
+  );
+  const content = (
+    <div className="flex items-center justify-between gap-3">
+      <div>
+        <p className="text-xs uppercase tracking-[0.28em] text-slate-400">{label}</p>
+        <p className={classNames("mt-3 font-semibold text-white", isNativeApp ? "text-2xl" : "text-3xl")}>{value}</p>
+        <p className={classNames("mt-2 text-slate-400", isNativeApp ? "text-xs" : "text-sm")}>{hint}</p>
+      </div>
+      <div
         className={classNames(
-          "glass-panel rounded-[26px] p-4 text-left shadow-ambient transition hover:bg-white/10",
-          active ? "border border-brand-400/40 bg-brand-500/10" : ""
+          "inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-200",
+          isNativeApp ? "h-10 w-10" : "h-12 w-12"
         )}
       >
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-slate-400">{label}</p>
-            <p className="mt-3 text-3xl font-semibold text-white">{value}</p>
-            <p className="mt-2 text-sm text-slate-400">{hint}</p>
-          </div>
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-200">
-            <Icon size={18} />
-          </div>
-        </div>
+        <Icon size={isNativeApp ? 16 : 18} />
+      </div>
+    </div>
+  );
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={cardClassName}>
+        {content}
       </button>
     );
   }
 
-  return (
-    <div className="glass-panel rounded-[26px] p-4 shadow-ambient">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.28em] text-slate-400">{label}</p>
-          <p className="mt-3 text-3xl font-semibold text-white">{value}</p>
-          <p className="mt-2 text-sm text-slate-400">{hint}</p>
-        </div>
-        <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-200">
-          <Icon size={18} />
-        </div>
-      </div>
-    </div>
-  );
+  return <div className={cardClassName}>{content}</div>;
 }
 
 const CUSTOMER_REPAIR_STEPS = [
@@ -743,10 +755,12 @@ function getCustomerActionCopy(action = {}) {
 }
 
 function CustomerOverviewCard({ label, title, description, tone = "default" }) {
+  const isNativeApp = Capacitor.isNativePlatform();
   return (
     <div
       className={classNames(
-        "rounded-[24px] border p-4",
+        "border",
+        isNativeApp ? "rounded-[20px] p-3" : "rounded-[24px] p-4",
         tone === "brand"
           ? "border-brand-400/20 bg-brand-500/10"
           : tone === "emerald"
@@ -757,38 +771,40 @@ function CustomerOverviewCard({ label, title, description, tone = "default" }) {
       )}
     >
       <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{label}</p>
-      <p className="mt-3 text-base font-semibold text-white">{title}</p>
-      {description ? <p className="mt-2 text-sm leading-6 text-slate-300">{description}</p> : null}
+      <p className={classNames("mt-3 font-semibold text-white", isNativeApp ? "text-sm" : "text-base")}>{title}</p>
+      {description ? <p className={classNames("mt-2 text-slate-300", isNativeApp ? "text-xs leading-5" : "text-sm leading-6")}>{description}</p> : null}
     </div>
   );
 }
 
 function CustomerProgressStepper({ repairRequest }) {
+  const isNativeApp = Capacitor.isNativePlatform();
   const currentIndex = getCustomerStepIndex(repairRequest);
   const status = String(repairRequest?.status || "").toLowerCase();
 
   return (
-    <div className="rounded-[26px] border border-white/10 bg-slate-950/30 p-4">
+    <div className={classNames("border border-white/10 bg-slate-950/30", isNativeApp ? "rounded-[22px] p-3" : "rounded-[26px] p-4")}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Progress tracker</p>
-          <p className="mt-2 text-sm text-slate-300">Follow your repair from booking to pickup in one simple view.</p>
+          <p className={classNames("mt-2 text-slate-300", isNativeApp ? "text-xs" : "text-sm")}>Follow your repair from booking to pickup in one simple view.</p>
         </div>
         <StatusBadge status={repairRequest?.status} label={getCustomerFriendlyStatusLabel(repairRequest?.status)} />
       </div>
-      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-7">
+      <div className={classNames("mt-4 grid", isNativeApp ? "grid-cols-2 gap-2" : "gap-3 md:grid-cols-2 xl:grid-cols-7")}>
         {CUSTOMER_REPAIR_STEPS.map((step, index) => {
           const done = status === "completed" ? index <= currentIndex : index < currentIndex;
           const current = index === currentIndex && !["cancelled"].includes(status);
 
           return (
             <div
-              key={step.key}
-              className={classNames(
-                "rounded-[22px] border p-3",
-                current
-                  ? "border-brand-400/30 bg-brand-500/10"
-                  : done
+                key={step.key}
+                className={classNames(
+                  "border",
+                  isNativeApp ? "rounded-[18px] p-2.5" : "rounded-[22px] p-3",
+                  current
+                    ? "border-brand-400/30 bg-brand-500/10"
+                    : done
                     ? "border-emerald-400/20 bg-emerald-500/10"
                     : "border-white/10 bg-white/5"
               )}
@@ -796,7 +812,8 @@ function CustomerProgressStepper({ repairRequest }) {
               <div className="flex items-center gap-3">
                 <span
                   className={classNames(
-                    "inline-flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold",
+                    "inline-flex items-center justify-center rounded-full border text-xs font-semibold",
+                    isNativeApp ? "h-7 w-7" : "h-8 w-8",
                     current
                       ? "border-brand-400/30 bg-brand-500/20 text-white"
                       : done
@@ -807,8 +824,8 @@ function CustomerProgressStepper({ repairRequest }) {
                   {index + 1}
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-white">{step.label}</p>
-                  <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                  <p className={classNames("font-semibold text-white", isNativeApp ? "text-xs" : "text-sm")}>{step.label}</p>
+                  <p className={classNames("mt-1 uppercase tracking-[0.18em] text-slate-500", isNativeApp ? "text-[10px]" : "text-[11px]")}>
                     {current ? "Current" : done ? "Done" : "Coming up"}
                   </p>
                 </div>
@@ -837,18 +854,19 @@ function CustomerProgressStepper({ repairRequest }) {
 }
 
 function CollapsiblePanel({ title, description, children, defaultOpen = false }) {
+  const isNativeApp = Capacitor.isNativePlatform();
   return (
-    <details open={defaultOpen} className="rounded-[24px] border border-white/10 bg-white/5 p-4">
+    <details open={defaultOpen} className={classNames("border border-white/10 bg-white/5", isNativeApp ? "rounded-[20px] p-3" : "rounded-[24px] p-4")}>
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-white">{title}</p>
-          {description ? <p className="mt-2 text-sm leading-6 text-slate-400">{description}</p> : null}
+          <p className={classNames("font-semibold text-white", isNativeApp ? "text-xs" : "text-sm")}>{title}</p>
+          {description ? <p className={classNames("mt-2 text-slate-400", isNativeApp ? "text-xs leading-5" : "text-sm leading-6")}>{description}</p> : null}
         </div>
-        <span className="rounded-full border border-white/10 bg-slate-950/30 px-3 py-1.5 text-xs font-semibold text-slate-200">
+        <span className={classNames("rounded-full border border-white/10 bg-slate-950/30 font-semibold text-slate-200", isNativeApp ? "px-2.5 py-1 text-[11px]" : "px-3 py-1.5 text-xs")}>
           See more
         </span>
       </summary>
-      <div className="mt-4">{children}</div>
+      <div className={classNames(isNativeApp ? "mt-3" : "mt-4")}>{children}</div>
     </details>
   );
 }
@@ -862,6 +880,7 @@ function StatusBadge({ status, label }) {
 }
 
 function QueueCard({ repairRequest, isActive, onClick, isCustomerMode = false }) {
+  const isNativeApp = Capacitor.isNativePlatform();
   const flags = [
     repairRequest.queueFlags?.isUnassigned ? "Unassigned" : "",
     repairRequest.queueFlags?.isOverdue ? "Overdue" : "",
@@ -876,7 +895,8 @@ function QueueCard({ repairRequest, isActive, onClick, isCustomerMode = false })
       type="button"
       onClick={onClick}
       className={classNames(
-        "w-full rounded-[26px] border p-4 text-left transition",
+        "w-full border text-left transition",
+        isNativeApp ? "rounded-[20px] p-3" : "rounded-[26px] p-4",
         isActive ? "border-brand-400/40 bg-brand-500/15" : "border-white/10 bg-white/5 hover:bg-white/10"
       )}
       >
@@ -888,20 +908,20 @@ function QueueCard({ repairRequest, isActive, onClick, isCustomerMode = false })
             </div>
             <p className="mt-1 text-xs uppercase tracking-[0.2em] text-slate-400">{repairRequest.requestNumber}</p>
           </div>
-          <p className="text-[11px] text-slate-500">{formatRepairDateTime(repairRequest.updatedAt)}</p>
+          <p className={classNames("text-slate-500", isNativeApp ? "text-[10px]" : "text-[11px]")}>{formatRepairDateTime(repairRequest.updatedAt)}</p>
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className={classNames("mt-4 grid", isNativeApp ? "gap-2" : "gap-3 sm:grid-cols-2")}>
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Issue</p>
-            <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-300">{repairRequest.issueDescription || "No issue description yet."}</p>
+            <p className={classNames("mt-1 line-clamp-2 text-slate-300", isNativeApp ? "text-xs leading-5" : "text-sm leading-6")}>{repairRequest.issueDescription || "No issue description yet."}</p>
           </div>
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Schedule</p>
-            <p className="mt-1 text-sm leading-6 text-slate-300">{getRepairScheduleLabel(repairRequest)}</p>
-            <p className="mt-1 text-xs text-slate-500">{isCustomerMode ? getCustomerFriendlyWaitingText(repairRequest) : getRepairWaitingBadge(repairRequest)}</p>
+            <p className={classNames("mt-1 text-slate-300", isNativeApp ? "text-xs leading-5" : "text-sm leading-6")}>{getRepairScheduleLabel(repairRequest)}</p>
+            <p className={classNames("mt-1 text-slate-500", isNativeApp ? "text-[11px]" : "text-xs")}>{isCustomerMode ? getCustomerFriendlyWaitingText(repairRequest) : getRepairWaitingBadge(repairRequest)}</p>
           </div>
         </div>
-        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+        <div className={classNames("mt-4 flex flex-wrap items-center gap-2 text-slate-400", isNativeApp ? "text-[11px]" : "text-xs")}>
           {isCustomerMode ? (
             <>
               <span>{repairRequest.seller?.storeName || repairRequest.seller?.name || "Waiting for repair desk"}</span>
@@ -931,24 +951,25 @@ function QueueCard({ repairRequest, isActive, onClick, isCustomerMode = false })
 }
 
 function AttachmentGallery({ title, attachments = [] }) {
+  const isNativeApp = Capacitor.isNativePlatform();
   return (
-    <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
+    <div className={classNames("border border-white/10 bg-white/5", isNativeApp ? "rounded-[20px] p-3" : "rounded-[24px] p-4")}>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-semibold text-white">{title}</p>
-        <span className="text-xs uppercase tracking-[0.2em] text-slate-500">{attachments.length} file{attachments.length === 1 ? "" : "s"}</span>
+        <p className={classNames("font-semibold text-white", isNativeApp ? "text-xs" : "text-sm")}>{title}</p>
+        <span className={classNames("uppercase tracking-[0.2em] text-slate-500", isNativeApp ? "text-[10px]" : "text-xs")}>{attachments.length} file{attachments.length === 1 ? "" : "s"}</span>
       </div>
       {attachments.length ? (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className={classNames("mt-4 grid", isNativeApp ? "gap-2" : "gap-3 sm:grid-cols-2")}>
           {attachments.map((attachment) => (
-            <div key={attachment._id} className="overflow-hidden rounded-[22px] border border-white/10 bg-slate-950/30">
+            <div key={attachment._id} className={classNames("overflow-hidden border border-white/10 bg-slate-950/30", isNativeApp ? "rounded-[18px]" : "rounded-[22px]")}>
               {attachment.type === "video" ? (
-                <video controls preload="metadata" className="h-48 w-full bg-slate-950 object-cover" src={resolveMediaUrl(attachment.url)} />
+                <video controls preload="metadata" className={classNames("w-full bg-slate-950 object-cover", isNativeApp ? "h-32" : "h-48")} src={resolveMediaUrl(attachment.url)} />
               ) : (
-                <img src={resolveMediaUrl(attachment.url)} alt={attachment.originalName || title} className="h-48 w-full object-cover" loading="lazy" />
+                <img src={resolveMediaUrl(attachment.url)} alt={attachment.originalName || title} className={classNames("w-full object-cover", isNativeApp ? "h-32" : "h-48")} loading="lazy" />
               )}
-              <div className="space-y-1 p-3">
-                <p className="truncate text-sm font-medium text-white">{attachment.originalName || "Attachment"}</p>
-                <a href={resolveMediaUrl(attachment.url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-cyan-200 transition hover:text-white">
+              <div className={classNames("space-y-1", isNativeApp ? "p-2.5" : "p-3")}>
+                <p className={classNames("truncate font-medium text-white", isNativeApp ? "text-xs" : "text-sm")}>{attachment.originalName || "Attachment"}</p>
+                <a href={resolveMediaUrl(attachment.url)} target="_blank" rel="noreferrer" className={classNames("inline-flex items-center gap-1 text-cyan-200 transition hover:text-white", isNativeApp ? "text-[11px]" : "text-xs")}>
                   Open file
                   <ArrowUpRight size={12} />
                 </a>
@@ -983,16 +1004,32 @@ function PendingFiles({ files, onRemove }) {
 
 function AttachmentUploadCard({ title, category, disabled, busy, onUpload, helper }) {
   const [files, setFiles] = useState([]);
+  const nativeMediaEnabled = Capacitor.isNativePlatform() && isNativeMediaAvailable();
 
   useEffect(() => {
     setFiles([]);
   }, [category]);
+
+  function appendFiles(incomingFiles = []) {
+    if (!incomingFiles.length) return;
+    setFiles((current) => [...current, ...incomingFiles].slice(0, 4));
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
     if (!files.length) return;
     const success = await onUpload(files);
     if (success) setFiles([]);
+  }
+
+  async function handleCaptureImage() {
+    const file = await captureImageFile(`repair-${category}-camera`);
+    appendFiles(file ? [file] : []);
+  }
+
+  async function handlePickImage() {
+    const file = await pickImageFile(`repair-${category}-gallery`);
+    appendFiles(file ? [file] : []);
   }
 
   return (
@@ -1003,20 +1040,42 @@ function AttachmentUploadCard({ title, category, disabled, busy, onUpload, helpe
           <p className="mt-2 text-sm leading-6 text-slate-400">{helper}</p>
         </div>
         <Upload size={16} className="text-slate-400" />
-      </div>
-      <div className="mt-4">
-        <PendingFiles files={files} onRemove={(index) => setFiles((current) => current.filter((_, currentIndex) => currentIndex !== index))} />
-        <input
-          type="file"
-          accept="image/*,video/*"
-          multiple
-          disabled={disabled || busy}
-          onChange={(event) => {
-            const picked = Array.from(event.target.files || []).slice(0, 4);
-            setFiles(picked);
-            event.target.value = "";
-          }}
-          className="block w-full rounded-2xl border border-dashed border-white/10 bg-slate-950/30 px-4 py-4 text-sm text-slate-300 file:mr-4 file:rounded-full file:border-0 file:bg-brand-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white"
+        </div>
+        <div className="mt-4">
+          <PendingFiles files={files} onRemove={(index) => setFiles((current) => current.filter((_, currentIndex) => currentIndex !== index))} />
+          {nativeMediaEnabled ? (
+            <div className="mb-3 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => handleCaptureImage().catch(() => {})}
+                disabled={disabled || busy}
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Camera size={15} />
+                Take photo
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePickImage().catch(() => {})}
+                disabled={disabled || busy}
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <ImagePlus size={15} />
+                Choose from gallery
+              </button>
+            </div>
+          ) : null}
+          <input
+            type="file"
+            accept="image/*,video/*"
+            multiple
+            disabled={disabled || busy}
+            onChange={(event) => {
+              const picked = Array.from(event.target.files || []);
+              appendFiles(picked);
+              event.target.value = "";
+            }}
+            className="block w-full rounded-2xl border border-dashed border-white/10 bg-slate-950/30 px-4 py-4 text-sm text-slate-300 file:mr-4 file:rounded-full file:border-0 file:bg-brand-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white"
         />
       </div>
       <div className="mt-4 flex justify-end">
@@ -1030,15 +1089,16 @@ function AttachmentUploadCard({ title, category, disabled, busy, onUpload, helpe
 }
 
 function DetailMeta({ label, value, icon: Icon }) {
+  const isNativeApp = Capacitor.isNativePlatform();
   return (
-    <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
+    <div className={classNames("border border-white/10 bg-white/5", isNativeApp ? "rounded-[18px] p-3" : "rounded-[22px] p-4")}>
       <div className="flex items-center gap-3">
-        <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-300">
-          <Icon size={16} />
+        <div className={classNames("inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-300", isNativeApp ? "h-8 w-8" : "h-10 w-10")}>
+          <Icon size={isNativeApp ? 14 : 16} />
         </div>
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{label}</p>
-          <p className="mt-1 text-sm leading-6 text-white">{value}</p>
+          <p className={classNames("mt-1 text-white", isNativeApp ? "text-xs leading-5" : "text-sm leading-6")}>{value}</p>
         </div>
       </div>
     </div>
@@ -1215,6 +1275,7 @@ function HistoryList({ title, items = [], emptyLabel = "No history yet.", tone =
 export default function RepairWorkspacePage({ mode = "customer" }) {
   const { user } = useAuth();
   const { openRepairChat } = useChat();
+  const isNativeApp = Capacitor.isNativePlatform();
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -1250,6 +1311,7 @@ export default function RepairWorkspacePage({ mode = "customer" }) {
   const [disputeForm, setDisputeForm] = useState({ reason: "", message: "", resolutionNote: "" });
   const [claimCode, setClaimCode] = useState("");
   const [ratingForm, setRatingForm] = useState({ rating: "5", comment: "" });
+  const nativeMediaEnabled = Capacitor.isNativePlatform() && isNativeMediaAvailable();
 
   const isCustomerMode = mode === "customer";
   const isAdminMode = mode === "admin";
@@ -1532,6 +1594,21 @@ export default function RepairWorkspacePage({ mode = "customer" }) {
   const availableSlots = (selectedRepair?.availableSlots || []).filter((slot) => slot.status === "available");
   const canCustomerRespondQuote = Boolean(isCustomerMode && selectedRepair?.permissions?.canApproveQuote);
   const canCustomerRate = Boolean(isCustomerMode && selectedRepair?.permissions?.canRate);
+
+  function appendBookingFiles(incomingFiles = []) {
+    if (!incomingFiles.length) return;
+    setBookingFiles((current) => [...current, ...incomingFiles].slice(0, 4));
+  }
+
+  async function handleCaptureBookingFile() {
+    const file = await captureImageFile("repair-booking-camera");
+    appendBookingFiles(file ? [file] : []);
+  }
+
+  async function handlePickBookingFile() {
+    const file = await pickImageFile("repair-booking-gallery");
+    appendBookingFiles(file ? [file] : []);
+  }
   const canCustomerDispute = Boolean(isCustomerMode && selectedRepair?.permissions?.canSubmitDispute);
   const canSellerDispute = Boolean(isSellerMode && selectedRepair?.permissions?.canSubmitDispute);
   const canOperatorManage = Boolean(isAdminMode || isSellerMode);
@@ -1652,21 +1729,21 @@ export default function RepairWorkspacePage({ mode = "customer" }) {
   }
 
   return (
-    <div className="space-y-6 pb-10">
-      <section className="glass-panel rounded-[32px] p-6 shadow-ambient">
+    <div className={classNames("space-y-6 pb-10", isNativeApp ? "space-y-4 pb-28" : "")}>
+      <section className={classNames("glass-panel rounded-[32px] p-6 shadow-ambient", isNativeApp ? "rounded-[28px] p-4" : "")}>
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-slate-400">{pageCopy.eyebrow}</p>
-            <h1 className="mt-2 text-3xl font-semibold text-white">{pageCopy.title}</h1>
-            <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-300">{pageCopy.description}</p>
+            <h1 className={classNames("mt-2 font-semibold text-white", isNativeApp ? "text-[1.9rem] leading-tight" : "text-3xl")}>{pageCopy.title}</h1>
+            <p className={classNames("mt-3 max-w-4xl text-sm leading-7 text-slate-300", isNativeApp ? "leading-6" : "")}>{pageCopy.description}</p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => loadWorkspaceData({ silent: true }).catch(() => {})} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition hover:bg-white/10">
+          <div className={classNames("flex flex-wrap gap-2", isNativeApp ? "w-full" : "")}>
+            <button type="button" onClick={() => loadWorkspaceData({ silent: true }).catch(() => {})} className={classNames("inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition hover:bg-white/10", isNativeApp ? "flex-1 justify-center" : "")}>
               {refreshing ? <LoaderCircle size={15} className="animate-spin" /> : <RefreshCcw size={15} />}
               Refresh
             </button>
             {isCustomerMode ? (
-              <button type="button" onClick={() => setBookingOpen((current) => !current)} className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600">
+              <button type="button" onClick={() => setBookingOpen((current) => !current)} className={classNames("inline-flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600", isNativeApp ? "flex-1 justify-center" : "")}>
                 <Plus size={15} />
                 {bookingOpen ? "Hide booking form" : "New repair booking"}
               </button>
@@ -1675,7 +1752,7 @@ export default function RepairWorkspacePage({ mode = "customer" }) {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+      <section className={classNames("grid gap-4 md:grid-cols-2 xl:grid-cols-6", isNativeApp ? "grid-cols-2 gap-3" : "")}>
         {statCards.map((card) => (
           <MetricCard
             key={card.key}
@@ -1693,7 +1770,12 @@ export default function RepairWorkspacePage({ mode = "customer" }) {
       {message ? <div className="rounded-2xl bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">{message}</div> : null}
 
       {isCustomerMode && bookingOpen ? (
-        <SectionCard eyebrow="New booking" title="Create a repair request" description="Choose the repair desk, describe the issue clearly, and attach photos or videos so the seller or admin can diagnose the problem faster.">
+        <SectionCard
+          eyebrow="New booking"
+          title="Create a repair request"
+          description="Choose the repair desk, describe the issue clearly, and attach photos or videos so the seller or admin can diagnose the problem faster."
+          className={isNativeApp ? "rounded-[28px] p-4" : ""}
+        >
           <form onSubmit={handleCreateRepairRequest} className="space-y-4">
             <div className="grid gap-4 xl:grid-cols-3">
               <Field label="Repair seller">
@@ -1762,7 +1844,27 @@ export default function RepairWorkspacePage({ mode = "customer" }) {
 
             <Field label="Damage photos or videos" helper="Up to 4 files. Images and short videos help the seller estimate parts and labor faster.">
               <PendingFiles files={bookingFiles} onRemove={(index) => setBookingFiles((current) => current.filter((_, currentIndex) => currentIndex !== index))} />
-              <input type="file" accept="image/*,video/*" multiple onChange={(event) => { const picked = Array.from(event.target.files || []).slice(0, 4); setBookingFiles(picked); event.target.value = ""; }} className="block w-full rounded-2xl border border-dashed border-white/10 bg-slate-950/30 px-4 py-4 text-sm text-slate-300 file:mr-4 file:rounded-full file:border-0 file:bg-brand-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white" />
+              {nativeMediaEnabled ? (
+                <div className="mb-3 grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => handleCaptureBookingFile().catch(() => {})}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                  >
+                    <Camera size={15} />
+                    Take photo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handlePickBookingFile().catch(() => {})}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
+                  >
+                    <ImagePlus size={15} />
+                    Choose from gallery
+                  </button>
+                </div>
+              ) : null}
+              <input type="file" accept="image/*,video/*" multiple onChange={(event) => { const picked = Array.from(event.target.files || []); appendBookingFiles(picked); event.target.value = ""; }} className="block w-full rounded-2xl border border-dashed border-white/10 bg-slate-950/30 px-4 py-4 text-sm text-slate-300 file:mr-4 file:rounded-full file:border-0 file:bg-brand-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white" />
             </Field>
 
             <div className="flex flex-wrap justify-end gap-3">
@@ -1778,19 +1880,19 @@ export default function RepairWorkspacePage({ mode = "customer" }) {
         </SectionCard>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
+      <div className={classNames("grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]", isNativeApp ? "gap-4" : "")}>
         <aside className="space-y-4">
           <SectionCard
             eyebrow={isCustomerMode ? "Your repairs" : "Repair queue"}
             title={isCustomerMode ? "Your repair bookings" : "Repair requests"}
             description={isCustomerMode ? "Open a booking to see your next step, latest update, and repair desk details." : "Filter and open the exact job you want to work on."}
           >
-            <div className="space-y-4">
-              <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+            <div className={classNames("space-y-4", isNativeApp ? "space-y-3" : "")}>
+              <label className={classNames("flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5", isNativeApp ? "px-3 py-2.5" : "px-4 py-3")}>
                 <Search size={15} className="text-slate-400" />
-                <input value={searchValue} onChange={(event) => setSearchValue(event.target.value)} placeholder="Search request number, issue, device, customer" className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500" />
+                <input value={searchValue} onChange={(event) => setSearchValue(event.target.value)} placeholder="Search request number, issue, device, customer" className={classNames("w-full bg-transparent text-white outline-none placeholder:text-slate-500", isNativeApp ? "text-xs" : "text-sm")} />
               </label>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+              <div className={classNames("grid gap-3 sm:grid-cols-2 xl:grid-cols-1", isNativeApp ? "gap-2" : "")}>
                 <Field label="Status filter">
                   <div className="relative">
                     <Filter size={14} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -1810,14 +1912,15 @@ export default function RepairWorkspacePage({ mode = "customer" }) {
               </div>
               <div>
                 <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Quick queue filters</p>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className={classNames("mt-3 flex flex-wrap gap-2", isNativeApp ? "gap-1.5" : "")}>
                   {queueQuickFilters.map((filterOption) => (
                     <button
                       key={filterOption.key}
                       type="button"
                       onClick={() => setQueueView(filterOption.filter || "all")}
                       className={classNames(
-                        "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs transition",
+                        "inline-flex items-center gap-2 rounded-full border transition",
+                        isNativeApp ? "px-2.5 py-1.5 text-[11px]" : "px-3 py-2 text-xs",
                         queueView === filterOption.filter
                           ? "border-brand-400/40 bg-brand-500/15 text-white"
                           : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
@@ -1843,21 +1946,21 @@ export default function RepairWorkspacePage({ mode = "customer" }) {
                 />
               ))}
             {repairListEmptyState ? (
-              <div className="glass-panel rounded-[28px] border border-dashed border-white/10 p-5 text-sm text-slate-400 shadow-ambient">
+              <div className={classNames("glass-panel border border-dashed border-white/10 text-slate-400 shadow-ambient", isNativeApp ? "rounded-[22px] p-4 text-xs" : "rounded-[28px] p-5 text-sm")}>
                 {repairListEmptyState}
               </div>
             ) : null}
           </div>
         </aside>
 
-        <main className="space-y-6">
+        <main className={classNames("space-y-6", isNativeApp ? "space-y-4" : "")}>
           {selectedRepair ? (
             <>
               <SectionCard
                 sectionId="repair-detail"
                 eyebrow={isCustomerMode ? "Your repair at a glance" : "Repair detail"}
                 title={getRepairTitle(selectedRepair)}
-                description={isCustomerMode ? "See your current status, next action, repair desk, and latest update without digging through internal repair controls." : "Everything about this repair booking stays in one place: diagnosis, quote, schedule, uploads, timeline, warranty, and chat."}
+                description={isCustomerMode ? "See your current status, next action, repair desk, and latest update in one place." : "Everything about this repair booking stays in one place: diagnosis, quote, schedule, uploads, timeline, warranty, and chat."}
                 actions={
                   !isCustomerMode ? (
                     <>
@@ -1881,8 +1984,8 @@ export default function RepairWorkspacePage({ mode = "customer" }) {
                 }
               >
                 {isCustomerMode ? (
-                  <div className="space-y-5">
-                    <div className="grid gap-4 xl:grid-cols-4">
+                  <div className={classNames("space-y-5", isNativeApp ? "space-y-4" : "")}>
+                    <div className={classNames("grid gap-4 xl:grid-cols-4", isNativeApp ? "grid-cols-2 gap-2" : "")}>
                       <CustomerOverviewCard
                         label="Current status"
                         title={getCustomerFriendlyStatusLabel(selectedRepair.status)}
@@ -1909,6 +2012,7 @@ export default function RepairWorkspacePage({ mode = "customer" }) {
 
                     <CustomerProgressStepper repairRequest={selectedRepair} />
 
+                    {!isNativeApp ? (
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_240px_200px]">
                       <button
                         type="button"
@@ -1921,10 +2025,13 @@ export default function RepairWorkspacePage({ mode = "customer" }) {
                       <button
                         type="button"
                         onClick={() => openRepairChat(selectedRepair)}
-                        className="inline-flex min-h-[72px] items-center justify-center gap-3 rounded-[24px] border border-white/10 bg-white/5 px-6 py-4 text-base font-semibold text-white transition hover:bg-white/10"
+                        className={classNames(
+                          "inline-flex items-center justify-center gap-3 rounded-[24px] border border-white/10 bg-white/5 font-semibold text-white transition hover:bg-white/10",
+                          isNativeApp ? "min-h-[54px] px-4 py-3 text-sm" : "min-h-[72px] px-6 py-4 text-base"
+                        )}
                       >
                         <MessageSquare size={18} />
-                        Open chat
+                        {isNativeApp ? "Chat" : "Open chat"}
                       </button>
                       <button
                         type="button"
@@ -1932,18 +2039,45 @@ export default function RepairWorkspacePage({ mode = "customer" }) {
                           await navigator.clipboard.writeText(selectedRepair.requestNumber || "");
                           setMessage(`Copied ${selectedRepair.requestNumber}`);
                         }}
-                        className="inline-flex min-h-[72px] items-center justify-center gap-3 rounded-[24px] border border-white/10 bg-white/5 px-6 py-4 text-base font-semibold text-white transition hover:bg-white/10"
+                        className={classNames(
+                          "inline-flex items-center justify-center gap-3 rounded-[24px] border border-white/10 bg-white/5 font-semibold text-white transition hover:bg-white/10",
+                          isNativeApp ? "min-h-[54px] px-4 py-3 text-sm" : "min-h-[72px] px-6 py-4 text-base"
+                        )}
                       >
                         <Copy size={18} />
                         Copy ID
                       </button>
                     </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await navigator.clipboard.writeText(selectedRepair.requestNumber || "");
+                            setMessage(`Copied ${selectedRepair.requestNumber}`);
+                          }}
+                          className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-[18px] border border-white/10 bg-white/5 px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-white/10"
+                        >
+                          <Copy size={16} />
+                          Copy ID
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => printRepairReceipt(selectedRepair)}
+                          className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-[18px] border border-white/10 bg-white/5 px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-white/10"
+                        >
+                          <Printer size={16} />
+                          Receipt
+                        </button>
+                      </div>
+                    )}
 
                     <CollapsiblePanel
                       title="More about this repair"
-                      description="See the request number, device details, payment summary, warranty coverage, and contact details only when you need them."
+                      description="Open this only when you need device details, payment info, warranty, or contacts."
+                      defaultOpen={!isNativeApp}
                     >
-                      <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-4">
+                      <div className={classNames("grid gap-4 xl:grid-cols-2 2xl:grid-cols-4", isNativeApp ? "gap-2" : "")}>
                         <DetailMeta label="Request number" value={selectedRepair.requestNumber} icon={ClipboardList} />
                         <DetailMeta label="Repair desk" value={selectedRepair.seller?.storeName || selectedRepair.seller?.name || "Waiting for assignment"} icon={UserRound} />
                         <DetailMeta label="Branch / service point" value={selectedRepair.branchLabel || humanizePickupMethod(selectedRepair.pickupMethod)} icon={MapPin} />
@@ -1955,29 +2089,29 @@ export default function RepairWorkspacePage({ mode = "customer" }) {
                         {selectedRepair.dispute?.status === "open" ? <span className="rounded-full border border-rose-400/20 bg-rose-500/10 px-3 py-1.5 text-xs text-rose-100">Dispute open</span> : null}
                         {selectedRepair.claim?.otp ? <span className="rounded-full border border-cyan-400/20 bg-cyan-500/10 px-3 py-1.5 text-xs text-cyan-100">Claim code ready</span> : null}
                       </div>
-                      <div className="mt-5 grid gap-4 xl:grid-cols-3">
-                        <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
+                      <div className={classNames("mt-5 grid gap-4 xl:grid-cols-3", isNativeApp ? "gap-2" : "")}>
+                        <div className={classNames("border border-white/10 bg-white/5", isNativeApp ? "rounded-[20px] p-3" : "rounded-[24px] p-4")}>
                           <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Device and issue</p>
-                          <p className="mt-3 text-lg font-semibold text-white">{getRepairTitle(selectedRepair)}</p>
-                          <p className="mt-3 text-sm leading-7 text-slate-300">{selectedRepair.issueDescription}</p>
-                          <div className="mt-4 space-y-2 text-sm text-slate-400">
+                          <p className={classNames("mt-3 font-semibold text-white", isNativeApp ? "text-sm" : "text-lg")}>{getRepairTitle(selectedRepair)}</p>
+                          <p className={classNames("mt-3 text-slate-300", isNativeApp ? "text-xs leading-5" : "text-sm leading-7")}>{selectedRepair.issueDescription}</p>
+                          <div className={classNames("mt-4 space-y-2 text-slate-400", isNativeApp ? "text-xs" : "text-sm")}>
                             <p>Type: {selectedRepair.device?.type || "Not set"}</p>
                             <p>Serial: {selectedRepair.device?.serialNumber || "Not set"}</p>
                             <p>Accessories: {selectedRepair.device?.accessories || "Not listed"}</p>
                           </div>
                         </div>
-                        <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
+                        <div className={classNames("border border-white/10 bg-white/5", isNativeApp ? "rounded-[20px] p-3" : "rounded-[24px] p-4")}>
                           <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Contact details</p>
-                          <div className="mt-3 space-y-3 text-sm text-slate-300">
+                          <div className={classNames("mt-3 space-y-3 text-slate-300", isNativeApp ? "text-xs" : "text-sm")}>
                             <p>Customer: {selectedRepair.customer?.name || selectedRepair.customer?.email || "Customer"}</p>
                             <p>Primary contact: {selectedRepair.contactNumber || "Not set"}</p>
                             <p>Alternate: {selectedRepair.alternateContact || "Not provided"}</p>
                             <p>Assigned by: {selectedRepair.assignedBy?.name || selectedRepair.assignedBy?.email || "System"}</p>
                           </div>
                         </div>
-                        <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
+                        <div className={classNames("border border-white/10 bg-white/5", isNativeApp ? "rounded-[20px] p-3" : "rounded-[24px] p-4")}>
                           <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Payment and warranty</p>
-                          <div className="mt-3 space-y-3 text-sm text-slate-300">
+                          <div className={classNames("mt-3 space-y-3 text-slate-300", isNativeApp ? "text-xs" : "text-sm")}>
                             <p>Approved amount: {getRepairPaymentLabel(selectedRepair)}</p>
                             <p>Payment status: {selectedRepair.quote?.paymentStatus || "unpaid"}</p>
                             <p>Due by: {selectedRepair.dueAt ? formatRepairDateTime(selectedRepair.dueAt) : "To be confirmed"}</p>
@@ -1995,7 +2129,7 @@ export default function RepairWorkspacePage({ mode = "customer" }) {
                   </div>
                 ) : (
                   <>
-                    <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-4">
+                    <div className={classNames("grid gap-4 xl:grid-cols-2 2xl:grid-cols-4", isNativeApp ? "gap-2" : "")}>
                       <DetailMeta label="Request number" value={selectedRepair.requestNumber} icon={ClipboardList} />
                       <DetailMeta label="Repair desk" value={selectedRepair.seller?.storeName || selectedRepair.seller?.name || "Waiting for assignment"} icon={UserRound} />
                       <DetailMeta label="Branch / service point" value={selectedRepair.branchLabel || humanizePickupMethod(selectedRepair.pickupMethod)} icon={MapPin} />
@@ -2083,6 +2217,7 @@ export default function RepairWorkspacePage({ mode = "customer" }) {
                       eyebrow="What you can do now"
                       title="Follow the next step without guessing"
                       description="Tap the action you need now, from estimate approval to booking your schedule, messaging the repair desk, claiming your device, or rating the service."
+                      className={isNativeApp ? "rounded-[28px] p-4" : ""}
                     >
                       <div className="grid gap-3 md:grid-cols-2">
                         {selectedRepairSuggestedActions.length ? selectedRepairSuggestedActions.map((action) => {
@@ -3083,16 +3218,17 @@ export default function RepairWorkspacePage({ mode = "customer" }) {
                     sectionId="repair-chat"
                     eyebrow="Repair chat"
                     title={isCustomerMode ? "Message your repair desk" : "Chat without losing the repair context"}
-                    description={isCustomerMode ? "Send a message without leaving this repair booking. The repair desk will already see the device and request details." : "Open the repair chat with the device details and request number already attached so customer, seller, and admin all stay on the same page."}
+                    description={isCustomerMode ? "Send a message here without leaving this repair booking." : "Open the repair chat with the device and request details already attached."}
+                    className={isNativeApp ? "rounded-[28px] p-4" : ""}
                     actions={
                       <>
-                        <button type="button" onClick={() => openRepairChat(selectedRepair)} className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600">
+                        <button type="button" onClick={() => openRepairChat(selectedRepair)} className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600">
                           <MessageSquare size={15} />
-                          {isCustomerMode ? "Open chat" : "Open repair chat"}
+                          {isCustomerMode ? "Open chat" : "Repair chat"}
                         </button>
                         <Link to={selectedRepair.links?.chat || "/messages"} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition hover:bg-white/10">
                           <ArrowUpRight size={15} />
-                          {isCustomerMode ? "Open full messages page" : "Full inbox page"}
+                          {isNativeApp ? "Inbox" : isCustomerMode ? "Open full messages page" : "Full inbox page"}
                         </Link>
                       </>
                     }
@@ -3107,9 +3243,9 @@ export default function RepairWorkspacePage({ mode = "customer" }) {
                   </SectionCard>
 
                   {attachmentGalleryGroups.length ? (
-                    <SectionCard sectionId="repair-media" eyebrow="Media record" title={isCustomerMode ? "Photos, videos, and repair proof" : "Repair attachments and visual proof"} description={isCustomerMode ? "Open this only when you want to review the images and videos attached to your repair booking." : "All uploads remain grouped by purpose so the repair stays easy to audit and verify later."}>
+                    <SectionCard sectionId="repair-media" eyebrow="Media record" title={isCustomerMode ? "Photos, videos, and repair proof" : "Repair attachments and visual proof"} description={isCustomerMode ? "Open this only when you want to review the images and videos attached to your repair booking." : "All uploads remain grouped by purpose so the repair stays easy to audit and verify later."} className={isNativeApp ? "rounded-[28px] p-4" : ""}>
                       {isCustomerMode ? (
-                        <CollapsiblePanel title="View photos and videos" description="See the media uploaded for your repair only when you need to review it.">
+                        <CollapsiblePanel title="View photos and videos" description="See the media uploaded for your repair only when you need to review it." defaultOpen={!isNativeApp}>
                           <div className="space-y-4">
                             {attachmentGalleryGroups.map((group) => (
                               <AttachmentGallery key={group.key} title={group.label} attachments={group.attachments} />
@@ -3126,9 +3262,9 @@ export default function RepairWorkspacePage({ mode = "customer" }) {
                     </SectionCard>
                   ) : null}
 
-                  <SectionCard sectionId="repair-history" eyebrow="History" title={isCustomerMode ? "Timeline and repair record" : "Timeline, archive, and service record"} description={isCustomerMode ? "Open this when you want to review older updates, the archived summary, and your repair record." : "Review how the repair moved from intake to release, including branch handoff, approvals, and recent updates."}>
+                  <SectionCard sectionId="repair-history" eyebrow="History" title={isCustomerMode ? "Timeline and repair record" : "Timeline, archive, and service record"} description={isCustomerMode ? "Open this when you want to review older updates, the archived summary, and your repair record." : "Review how the repair moved from intake to release, including branch handoff, approvals, and recent updates."} className={isNativeApp ? "rounded-[28px] p-4" : ""}>
                     {isCustomerMode ? (
-                      <CollapsiblePanel title="Older updates and service record" description="This keeps the page lighter by hiding older timeline entries and archive details until you need them.">
+                      <CollapsiblePanel title="Older updates and service record" description="This keeps the page lighter by hiding older timeline entries and archive details until you need them." defaultOpen={!isNativeApp}>
                         {["completed", "cancelled"].includes(selectedRepair.status) ? (
                       <div className="mb-4 rounded-[24px] border border-emerald-400/20 bg-emerald-500/10 p-4 text-sm leading-7 text-emerald-100">
                         <p className="font-semibold text-white">Archived repair snapshot</p>

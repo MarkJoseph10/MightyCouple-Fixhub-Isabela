@@ -156,6 +156,10 @@ function buildSettingsForm(settings) {
     notificationSellerSuspended: settings.notifications?.sellerSuspended !== false,
     notificationAppealSubmitted: settings.notifications?.appealSubmitted !== false,
     notificationAppealResolved: settings.notifications?.appealResolved !== false,
+    androidLatestVersion: settings.mobileApp?.androidLatestVersion || "",
+    androidMinimumVersion: settings.mobileApp?.androidMinimumVersion || "",
+    androidUpdateUrl: settings.mobileApp?.androidUpdateUrl || "",
+    androidUpdateMessage: settings.mobileApp?.androidUpdateMessage || "",
     promoCodes: settings.promotions?.promoCodes?.length
       ? settings.promotions.promoCodes.map((promo) => ({
           code: promo.code || "",
@@ -673,6 +677,12 @@ function DashboardPage() {
           sellerSuspended: settingsForm.notificationSellerSuspended,
           appealSubmitted: settingsForm.notificationAppealSubmitted,
           appealResolved: settingsForm.notificationAppealResolved
+        },
+        mobileApp: {
+          androidLatestVersion: settingsForm.androidLatestVersion,
+          androidMinimumVersion: settingsForm.androidMinimumVersion,
+          androidUpdateUrl: settingsForm.androidUpdateUrl,
+          androidUpdateMessage: settingsForm.androidUpdateMessage
         },
         policyLinks: {
           privacyPolicyUrl: settingsForm.policyPrivacyUrl,
@@ -1617,27 +1627,72 @@ function DashboardPage() {
           </div>
 
           <div className={sectionClassName("notifications")}>
-            <SectionCard
-              eyebrow="Notifications"
-              title="Operational alerts"
-              description="These toggles control which store events should generate attention inside the system later."
-            >
-              <div className="grid gap-4 md:grid-cols-2">
-                {[
-                  ["notificationOrderPlaced", "Order placed"],
-                  ["notificationPaymentReceived", "Payment received"],
-                  ["notificationInstallmentDue", "Installment due"],
-                  ["notificationSellerSuspended", "Seller suspended"],
-                  ["notificationAppealSubmitted", "Appeal submitted"],
-                  ["notificationAppealResolved", "Appeal resolved"]
-                ].map(([field, label]) => (
-                  <label key={field} className="flex items-center justify-between gap-3 rounded-[24px] border border-white/10 bg-slate-950/25 px-4 py-3 text-sm text-slate-200">
-                    <span>{label}</span>
-                    <input type="checkbox" checked={settingsForm[field]} onChange={(event) => updateFormField(field, event.target.checked)} />
-                  </label>
-                ))}
-              </div>
-            </SectionCard>
+            <form onSubmit={handleSaveDashboard} className="space-y-6">
+              <SectionCard
+                eyebrow="Notifications"
+                title="Operational alerts and app updates"
+                description="Control which store events create alerts and publish Android update guidance from one place."
+              >
+                <div className="space-y-6">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {[
+                      ["notificationOrderPlaced", "Order placed"],
+                      ["notificationPaymentReceived", "Payment received"],
+                      ["notificationInstallmentDue", "Installment due"],
+                      ["notificationSellerSuspended", "Seller suspended"],
+                      ["notificationAppealSubmitted", "Appeal submitted"],
+                      ["notificationAppealResolved", "Appeal resolved"]
+                    ].map(([field, label]) => (
+                      <label key={field} className="flex items-center justify-between gap-3 rounded-[24px] border border-white/10 bg-slate-950/25 px-4 py-3 text-sm text-slate-200">
+                        <span>{label}</span>
+                        <input type="checkbox" checked={settingsForm[field]} onChange={(event) => updateFormField(field, event.target.checked)} />
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className="rounded-[28px] border border-white/10 bg-white/5 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-3 text-brand-100">
+                        <Sparkles size={18} />
+                      </div>
+                      <div>
+                        <p className="text-base font-semibold text-white">Android app download and update link</p>
+                        <p className="mt-1 text-sm text-slate-400">
+                          These values drive the website download button and the in-app Android update prompt. If the URL is blank, the app falls back to the backend-hosted default APK file.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-5 grid gap-4 md:grid-cols-2">
+                      <InputField label="Latest Android version">
+                        <input value={settingsForm.androidLatestVersion} onChange={(event) => updateFormField("androidLatestVersion", event.target.value)} placeholder="1.2.0" className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                      </InputField>
+                      <InputField label="Minimum supported version">
+                        <input value={settingsForm.androidMinimumVersion} onChange={(event) => updateFormField("androidMinimumVersion", event.target.value)} placeholder="1.0.0" className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                      </InputField>
+                    </div>
+                    <div className="mt-4 grid gap-4">
+                      <InputField label="Public APK download URL" helper="Point this to your hosted APK or release page. Leave blank to use the backend default download path.">
+                        <input value={settingsForm.androidUpdateUrl} onChange={(event) => updateFormField("androidUpdateUrl", event.target.value)} placeholder="https://..." className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                      </InputField>
+                      <InputField label="Update message">
+                        <textarea value={settingsForm.androidUpdateMessage} onChange={(event) => updateFormField("androidUpdateMessage", event.target.value)} rows={3} placeholder="Install the latest Android build to keep login, uploads, and notifications working smoothly." className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-white outline-none" />
+                      </InputField>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={savingDashboard}
+                      className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {savingDashboard ? <LoaderCircle size={15} className="animate-spin" /> : <Gift size={15} />}
+                      Save notification and app settings
+                    </button>
+                  </div>
+                </div>
+              </SectionCard>
+            </form>
           </div>
 
           <div className={sectionClassName("branding")}>

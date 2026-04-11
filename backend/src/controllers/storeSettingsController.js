@@ -35,6 +35,7 @@ export const updateStoreSettings = asyncHandler(async (req, res) => {
     seo,
     socialLinks,
     notifications,
+    mobileApp,
     policyLinks,
     maintenance,
     metrics,
@@ -252,6 +253,19 @@ export const updateStoreSettings = asyncHandler(async (req, res) => {
     };
   }
 
+  if (mobileApp) {
+    settings.mobileApp = {
+      ...settings.mobileApp,
+      androidLatestVersion:
+        mobileApp.androidLatestVersion ?? settings.mobileApp.androidLatestVersion,
+      androidMinimumVersion:
+        mobileApp.androidMinimumVersion ?? settings.mobileApp.androidMinimumVersion,
+      androidUpdateUrl: mobileApp.androidUpdateUrl ?? settings.mobileApp.androidUpdateUrl,
+      androidUpdateMessage:
+        mobileApp.androidUpdateMessage ?? settings.mobileApp.androidUpdateMessage
+    };
+  }
+
   if (policyLinks) {
     settings.policyLinks = {
       ...settings.policyLinks,
@@ -336,6 +350,7 @@ export const updateStoreSettings = asyncHandler(async (req, res) => {
         seo ? "seo" : null,
         socialLinks ? "socialLinks" : null,
         notifications ? "notifications" : null,
+        mobileApp ? "mobileApp" : null,
         policyLinks ? "policyLinks" : null,
         maintenance ? "maintenance" : null,
         metrics ? "metrics" : null,

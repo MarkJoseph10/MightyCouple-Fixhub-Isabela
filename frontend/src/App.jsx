@@ -1,12 +1,18 @@
 import { lazy, Suspense } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import LoadingScreen from "./components/common/LoadingScreen";
+import NativeAppUpdatePrompt from "./components/layout/NativeAppUpdatePrompt";
+import NativeBackButtonHandler from "./components/layout/NativeBackButtonHandler";
+import NativeNetworkBanner from "./components/layout/NativeNetworkBanner";
+import NativePushManager from "./components/layout/NativePushManager";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import BrandingBackground from "./components/layout/BrandingBackground";
 
 const AdminLayout = lazy(() => import("./layouts/AdminLayout"));
 const StoreLayout = lazy(() => import("./layouts/StoreLayout"));
 const SellerLayout = lazy(() => import("./layouts/SellerLayout"));
+const WebDownloadLayout = lazy(() => import("./layouts/WebDownloadLayout"));
 const DashboardPage = lazy(() => import("./pages/admin/DashboardPage"));
 const AdminInstallmentsPage = lazy(() => import("./pages/admin/AdminInstallmentsPage"));
 const AdminOrdersPage = lazy(() => import("./pages/admin/AdminOrdersPage"));
@@ -26,6 +32,7 @@ const CheckoutPage = lazy(() => import("./pages/store/CheckoutPage"));
 const ContactPage = lazy(() => import("./pages/store/ContactPage"));
 const HomePage = lazy(() => import("./pages/store/HomePage"));
 const InstallmentsPage = lazy(() => import("./pages/store/InstallmentsPage"));
+const AndroidDownloadPage = lazy(() => import("./pages/web/AndroidDownloadPage"));
 const OrdersPage = lazy(() => import("./pages/store/OrdersPage"));
 const OrderSuccessPage = lazy(() => import("./pages/store/OrderSuccessPage"));
 const NotificationsPage = lazy(() => import("./pages/store/NotificationsPage"));
@@ -53,11 +60,31 @@ function LazyBoundary({ label, children }) {
 }
 
 export default function App() {
+  const isNativeApp = Capacitor.isNativePlatform();
+
   return (
-    <div className="relative isolate min-h-screen">
+    <div className={`relative isolate ${isNativeApp ? "min-h-[100dvh]" : "min-h-screen"}`}>
       <BrandingBackground />
       <div className="relative z-10">
+        <NativeBackButtonHandler />
+        <NativePushManager />
+        <NativeAppUpdatePrompt />
+        <NativeNetworkBanner />
         <Routes>
+          {!isNativeApp ? (
+            <Route element={<LazyBoundary label="Loading download portal..."><WebDownloadLayout /></LazyBoundary>}>
+              <Route path="/" element={<LazyBoundary label="Loading Android download..."><AndroidDownloadPage /></LazyBoundary>} />
+              <Route path="/download" element={<LazyBoundary label="Loading Android download..."><AndroidDownloadPage /></LazyBoundary>} />
+              <Route path="/contact" element={<LazyBoundary label="Loading contact page..."><ContactPage /></LazyBoundary>} />
+              <Route path="/shipping-policy" element={<LazyBoundary label="Loading shipping policy..."><ShippingPolicyPage /></LazyBoundary>} />
+              <Route path="/return-policy" element={<LazyBoundary label="Loading return policy..."><ReturnPolicyPage /></LazyBoundary>} />
+              <Route path="/privacy-policy" element={<LazyBoundary label="Loading privacy policy..."><PrivacyPolicyPage /></LazyBoundary>} />
+              <Route path="/terms" element={<LazyBoundary label="Loading terms..."><TermsPage /></LazyBoundary>} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          ) : null}
+
+          {isNativeApp ? (
           <Route element={<LazyBoundary label="Loading storefront..."><StoreLayout /></LazyBoundary>}>
             <Route path="/" element={<LazyBoundary label="Loading home..."><HomePage /></LazyBoundary>} />
             <Route path="/auth" element={<LazyBoundary label="Loading sign in..."><AuthPage /></LazyBoundary>} />
@@ -161,7 +188,9 @@ export default function App() {
               }
             />
           </Route>
+          ) : null}
 
+          {isNativeApp ? (
           <Route
             element={
               <ProtectedRoute adminOnly>
@@ -182,7 +211,9 @@ export default function App() {
             <Route path="/admin/settings" element={<LazyBoundary label="Loading settings..."><SettingsPage /></LazyBoundary>} />
             <Route path="/admin/messages" element={<LazyBoundary label="Loading admin messages..."><MessagesPage /></LazyBoundary>} />
           </Route>
+          ) : null}
 
+          {isNativeApp ? (
           <Route
             element={
               <ProtectedRoute sellerOnly>
@@ -197,6 +228,7 @@ export default function App() {
             <Route path="/seller/technician" element={<LazyBoundary label="Loading technician application..."><TechnicianApplyPage /></LazyBoundary>} />
             <Route path="/seller/messages" element={<LazyBoundary label="Loading seller messages..."><MessagesPage /></LazyBoundary>} />
           </Route>
+          ) : null}
         </Routes>
       </div>
     </div>

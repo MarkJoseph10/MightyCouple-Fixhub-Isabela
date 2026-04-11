@@ -6,18 +6,29 @@ import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
 import { ChatProvider } from "./context/ChatContext.jsx";
+import { NetworkProvider } from "./context/NetworkContext.jsx";
 import { NotificationProvider } from "./context/NotificationContext.jsx";
 import { StoreSettingsProvider } from "./context/StoreSettingsContext.jsx";
 import { WishlistProvider } from "./context/WishlistContext.jsx";
-import { registerPwa } from "./pwa/registerPwa";
 import { resolveApiOrigin } from "./api/baseUrl";
 import "./index.css";
 
-if (import.meta.env.PROD && !Capacitor.isNativePlatform()) {
-  registerPwa();
-}
-
 if (typeof document !== "undefined") {
+  const isNativeApp = Capacitor.isNativePlatform();
+  document.documentElement.classList.toggle("native-app", isNativeApp);
+  document.body.classList.toggle("native-app", isNativeApp);
+
+  if (isNativeApp) {
+    const viewportMeta = document.querySelector('meta[name="viewport"]');
+
+    if (viewportMeta) {
+      viewportMeta.setAttribute(
+        "content",
+        "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+      );
+    }
+  }
+
   const apiBaseUrl = resolveApiOrigin();
   const hintOrigins = [window.location.origin, apiBaseUrl, "https://res.cloudinary.com"].filter(Boolean);
 
@@ -47,18 +58,20 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <Router>
       <AuthProvider>
-        <StoreSettingsProvider>
-          <NotificationProvider>
-            <ChatProvider>
-              <WishlistProvider>
-                <CartProvider>
-                  <App />
-                </CartProvider>
-              </WishlistProvider>
-            </ChatProvider>
-          </NotificationProvider>
-        </StoreSettingsProvider>
-        </AuthProvider>
+        <NetworkProvider>
+          <StoreSettingsProvider>
+            <NotificationProvider>
+              <ChatProvider>
+                <WishlistProvider>
+                  <CartProvider>
+                    <App />
+                  </CartProvider>
+                </WishlistProvider>
+              </ChatProvider>
+            </NotificationProvider>
+          </StoreSettingsProvider>
+        </NetworkProvider>
+      </AuthProvider>
     </Router>
   </React.StrictMode>
 );

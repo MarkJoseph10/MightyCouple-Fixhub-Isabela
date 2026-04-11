@@ -1,8 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
-import { AlertTriangle, LoaderCircle, MessageSquare, Minus, Paperclip, Send, ShieldAlert, X } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
+import { AlertTriangle, Camera, ImagePlus, LoaderCircle, MessageSquare, Minus, Paperclip, Send, ShieldAlert, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useChat } from "../../context/ChatContext";
+import { captureImageFile, isNativeMediaAvailable, pickImageFile } from "../../utils/nativeMedia";
 import ChatConversationProductCard from "./ChatConversationProductCard";
 import ChatMessageAttachments from "./ChatMessageAttachments";
 import ChatPendingAttachments from "./ChatPendingAttachments";
@@ -74,6 +76,7 @@ export default function ChatWidget() {
   const [actionMessage, setActionMessage] = useState("");
   const [actionPending, setActionPending] = useState("");
   const fileInputRef = useRef(null);
+  const nativeMediaEnabled = Capacitor.isNativePlatform() && isNativeMediaAvailable();
 
   const hideOnDedicatedInbox = location.pathname === "/messages";
   const contextType = activeConversation?.contextType || (selectedRepairRequest ? "repair" : selectedOrder ? "order" : "product");
@@ -140,6 +143,32 @@ export default function ChatWidget() {
 
     return () => window.clearTimeout(timer);
   }, [activeConversation?._id, draft, isAuthenticated, selectedFiles.length, updateTyping]);
+
+  function appendFiles(incomingFiles = []) {
+    if (!incomingFiles.length) {
+      return;
+    }
+
+    setSelectedFiles((current) => [...current, ...incomingFiles].slice(0, 4));
+  }
+
+  async function handleCaptureImage() {
+    try {
+      const file = await captureImageFile("chat-camera");
+      appendFiles(file ? [file] : []);
+    } catch (requestError) {
+      setActionMessage(requestError?.message || "Unable to open the camera right now.");
+    }
+  }
+
+  async function handlePickImage() {
+    try {
+      const file = await pickImageFile("chat-gallery");
+      appendFiles(file ? [file] : []);
+    } catch (requestError) {
+      setActionMessage(requestError?.message || "Unable to open the gallery right now.");
+    }
+  }
 
   if (!isOpen || hideOnDedicatedInbox) {
     return null;
@@ -216,7 +245,7 @@ export default function ChatWidget() {
               </div>
             ) : null}
 
-            <div className="flex max-h-[300px] min-h-[220px] flex-col gap-3 overflow-y-auto px-4 py-4 text-sm text-slate-200">
+            <div className="flex max-h-[300px] min-h-[220px] flex-col gap-3 overflow-y-auto overscroll-contain px-4 py-4 text-sm text-slate-200">
               {readyingConversation ? (
                 <div className="flex h-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-5 text-slate-300">
                   <LoaderCircle size={16} className="animate-spin" />
@@ -393,21 +422,41 @@ export default function ChatWidget() {
                     accept="image/*,video/*"
                     multiple
                     className="hidden"
-                    onChange={(event) => {
-                      const pickedFiles = Array.from(event.target.files || []);
+                      onChange={(event) => {
+                        const pickedFiles = Array.from(event.target.files || []);
 
-                      if (!pickedFiles.length) {
-                        return;
-                      }
+                        if (!pickedFiles.length) {
+                          return;
+                        }
 
-                      setSelectedFiles((current) => [...current, ...pickedFiles].slice(0, 4));
-                      event.target.value = "";
-                    }}
-                  />
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
+                        appendFiles(pickedFiles);
+                        event.target.value = "";
+                      }}
+                    />
+                    <div className="flex items-center gap-2">
+                      {nativeMediaEnabled ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={handleCaptureImage}
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-100 transition hover:bg-white/10"
+                            title="Take photo"
+                          >
+                            <Camera size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handlePickImage}
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-100 transition hover:bg-white/10"
+                            title="Choose from gallery"
+                          >
+                            <ImagePlus size={15} />
+                          </button>
+                        </>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
                       className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-100 transition hover:bg-white/10"
                       title="Attach image or video"
                     >

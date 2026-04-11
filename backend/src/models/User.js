@@ -178,6 +178,28 @@ const userChatPreferenceSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const userPushTokenSchema = new mongoose.Schema(
+  {
+    token: {
+      type: String,
+      default: ""
+    },
+    platform: {
+      type: String,
+      default: "android"
+    },
+    deviceId: {
+      type: String,
+      default: ""
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now
+    }
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     firstName: {
@@ -323,6 +345,10 @@ const userSchema = new mongoose.Schema(
     chatPreferences: {
       type: userChatPreferenceSchema,
       default: () => ({})
+    },
+    pushTokens: {
+      type: [userPushTokenSchema],
+      default: []
     },
     wishlist: [
       {

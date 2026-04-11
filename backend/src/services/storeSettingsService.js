@@ -118,6 +118,12 @@ const defaultSettings = {
     appealSubmitted: true,
     appealResolved: true
   },
+  mobileApp: {
+    androidLatestVersion: "",
+    androidMinimumVersion: "",
+    androidUpdateUrl: "",
+    androidUpdateMessage: ""
+  },
   policyLinks: {
     privacyPolicyUrl: "/privacy-policy",
     shippingPolicyUrl: "/shipping-policy",
@@ -278,6 +284,15 @@ export function serializeStoreSettings(settings) {
       sellerSuspended: settings.notifications?.sellerSuspended ?? defaultSettings.notifications.sellerSuspended,
       appealSubmitted: settings.notifications?.appealSubmitted ?? defaultSettings.notifications.appealSubmitted,
       appealResolved: settings.notifications?.appealResolved ?? defaultSettings.notifications.appealResolved
+    },
+    mobileApp: {
+      androidLatestVersion:
+        settings.mobileApp?.androidLatestVersion || defaultSettings.mobileApp.androidLatestVersion,
+      androidMinimumVersion:
+        settings.mobileApp?.androidMinimumVersion || defaultSettings.mobileApp.androidMinimumVersion,
+      androidUpdateUrl: settings.mobileApp?.androidUpdateUrl || defaultSettings.mobileApp.androidUpdateUrl,
+      androidUpdateMessage:
+        settings.mobileApp?.androidUpdateMessage || defaultSettings.mobileApp.androidUpdateMessage
     },
     policyLinks: {
       privacyPolicyUrl: settings.policyLinks?.privacyPolicyUrl || defaultSettings.policyLinks.privacyPolicyUrl,

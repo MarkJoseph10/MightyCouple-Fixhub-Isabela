@@ -1,5 +1,6 @@
 import axios from "axios";
 import { resolveApiBaseUrl } from "./baseUrl";
+import { clearStoredAuthToken, getStoredAuthTokenSync } from "../utils/authStorage";
 
 const api = axios.create({
   baseURL: resolveApiBaseUrl()
@@ -8,7 +9,7 @@ const api = axios.create({
 let isHandlingUnauthorized = false;
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("shopverse-token");
+  const token = getStoredAuthTokenSync();
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -22,7 +23,7 @@ api.interceptors.response.use(
   (error) => {
     if (error?.response?.status === 401 && !isHandlingUnauthorized) {
       isHandlingUnauthorized = true;
-      localStorage.removeItem("shopverse-token");
+      void clearStoredAuthToken();
 
       if (typeof window !== "undefined" && !window.location.pathname.startsWith("/auth")) {
         const nextPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;

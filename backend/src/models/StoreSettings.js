@@ -219,6 +219,28 @@ const notificationSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const mobileAppSchema = new mongoose.Schema(
+  {
+    androidLatestVersion: {
+      type: String,
+      default: ""
+    },
+    androidMinimumVersion: {
+      type: String,
+      default: ""
+    },
+    androidUpdateUrl: {
+      type: String,
+      default: ""
+    },
+    androidUpdateMessage: {
+      type: String,
+      default: ""
+    }
+  },
+  { _id: false }
+);
+
 const policyLinksSchema = new mongoose.Schema(
   {
     privacyPolicyUrl: { type: String, default: "/privacy-policy" },
@@ -340,6 +362,10 @@ const storeSettingsSchema = new mongoose.Schema(
     },
     notifications: {
       type: notificationSchema,
+      default: () => ({})
+    },
+    mobileApp: {
+      type: mobileAppSchema,
       default: () => ({})
     },
     policyLinks: {

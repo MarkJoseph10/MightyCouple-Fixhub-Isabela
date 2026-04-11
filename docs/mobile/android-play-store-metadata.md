@@ -46,5 +46,5 @@ Version 1.0:
 
 ## Notes
 - Use the branded Android launcher icon and round icon from the native project.
-- Verify the installable PWA prompt for mobile users before Play Store submission.
+- Verify install, login, checkout, and notification flows on a real Android device before Play Store submission.
 - After upload, confirm package signing, version code, and release notes in Play Console.

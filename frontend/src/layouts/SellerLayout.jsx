@@ -1,8 +1,11 @@
 import { AnimatePresence, motion } from "framer-motion";
+import { Capacitor } from "@capacitor/core";
 import { Menu, X } from "lucide-react";
 import { Outlet, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
+import MobileBottomNav from "../components/layout/MobileBottomNav";
 import Navbar from "../components/layout/Navbar";
+import NativeAppHeader from "../components/layout/NativeAppHeader";
 import SellerSidebar from "../components/layout/SellerSidebar";
 import { useAuth } from "../context/AuthContext";
 
@@ -19,11 +22,26 @@ export default function SellerLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { refreshUser } = useAuth();
+  const isNativeApp = Capacitor.isNativePlatform();
   const currentLabel = useMemo(() => pageLabels[location.pathname] || "Seller Hub", [location.pathname]);
 
   useEffect(() => {
     refreshUser().catch(() => {});
   }, [location.pathname, refreshUser]);
+
+  if (isNativeApp) {
+    return (
+      <div className="min-h-screen pb-[calc(5rem+env(safe-area-inset-bottom))]">
+        <NativeAppHeader />
+        <div className="page-shell py-3">
+          <main className="min-w-0">
+            <Outlet />
+          </main>
+        </div>
+        <MobileBottomNav />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">

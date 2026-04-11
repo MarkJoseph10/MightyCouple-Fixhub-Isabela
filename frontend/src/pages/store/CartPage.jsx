@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
@@ -18,6 +19,7 @@ export default function CartPage() {
     removeItem
   } = useCart();
   const { settings } = useStoreSettings();
+  const isNativeApp = Capacitor.isNativePlatform();
   const discountSummary = calculateDiscountPreview(
     selectedItems,
     settings,
@@ -29,10 +31,10 @@ export default function CartPage() {
   const allSelected = items.length > 0 && selectedCartKeys.length === items.length;
 
   return (
-    <div className="page-shell py-10">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <section className="glass-panel rounded-[32px] p-6 shadow-ambient">
-          <h1 className="text-3xl font-semibold text-white">Your cart</h1>
+    <div className={`page-shell py-10 ${isNativeApp ? "py-3 pb-28" : ""}`}>
+      <div className={`grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] ${isNativeApp ? "gap-4" : ""}`}>
+        <section className={`glass-panel shadow-ambient ${isNativeApp ? "rounded-[24px] p-4" : "rounded-[32px] p-6"}`}>
+          <h1 className={`font-semibold text-white ${isNativeApp ? "text-[1.55rem]" : "text-3xl"}`}>Your cart</h1>
           {!!items.length && (
             <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
               <button
@@ -56,7 +58,7 @@ export default function CartPage() {
             {items.map((item) => (
               <div
                 key={item.cartKey || `${item._id}-${item.variantId || "default"}`}
-                className="flex flex-col gap-4 rounded-[28px] border border-white/10 bg-white/5 p-5 md:flex-row md:items-center md:justify-between"
+                className={`flex flex-col gap-4 border border-white/10 bg-white/5 ${isNativeApp ? "rounded-[22px] p-3" : "rounded-[28px] p-5"} ${isNativeApp ? "" : "md:flex-row md:items-center md:justify-between"}`}
               >
                 <div className="flex items-center gap-4">
                   <input
@@ -65,11 +67,11 @@ export default function CartPage() {
                     onChange={() => toggleSelected(item.cartKey)}
                     className="h-5 w-5 rounded border-white/20 bg-slate-950/40 text-brand-500"
                   />
-                  <img src={item.image} alt={item.name} className="h-20 w-20 rounded-2xl object-cover" />
+                  <img src={item.image} alt={item.name} className={`${isNativeApp ? "h-14 w-14 rounded-[16px]" : "h-20 w-20 rounded-2xl"} object-cover`} />
                   <div>
-                    <p className="font-semibold text-white">{item.name}</p>
-                    {item.variantLabel && <p className="text-xs text-slate-500">{item.variantLabel}</p>}
-                    <p className="text-sm text-slate-400">{peso(item.price)}</p>
+                    <p className={`font-semibold text-white ${isNativeApp ? "text-sm leading-5" : ""}`}>{item.name}</p>
+                    {item.variantLabel && <p className={`text-slate-500 ${isNativeApp ? "text-[11px]" : "text-xs"}`}>{item.variantLabel}</p>}
+                    <p className={`text-slate-400 ${isNativeApp ? "text-[12px]" : "text-sm"}`}>{peso(item.price)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -78,9 +80,9 @@ export default function CartPage() {
                     min="1"
                     value={item.quantity}
                     onChange={(event) => updateQuantity(item.cartKey, Number(event.target.value))}
-                    className="w-20 rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-white outline-none"
+                    className={`rounded-2xl border border-white/10 bg-slate-950/40 text-white outline-none ${isNativeApp ? "w-16 px-2 py-2 text-sm" : "w-20 px-3 py-2"}`}
                   />
-                  <button onClick={() => removeItem(item.cartKey)} className="rounded-2xl bg-rose-500/15 px-4 py-2 text-sm text-rose-200">
+                  <button onClick={() => removeItem(item.cartKey)} className={`rounded-2xl bg-rose-500/15 text-rose-200 ${isNativeApp ? "px-3 py-2 text-[12px]" : "px-4 py-2 text-sm"}`}>
                     Remove
                   </button>
                 </div>
@@ -89,7 +91,7 @@ export default function CartPage() {
           </div>
         </section>
 
-        <aside className="glass-panel h-fit rounded-[32px] p-6 shadow-ambient">
+        <aside className={`glass-panel h-fit shadow-ambient ${isNativeApp ? "rounded-[24px] p-4" : "rounded-[32px] p-6"}`}>
           <h2 className="text-xl font-semibold text-white">Summary</h2>
           <div className="mt-6 space-y-3 text-sm text-slate-300">
             <div className="flex justify-between"><span>Subtotal</span><span>{peso(selectedSubtotal)}</span></div>
@@ -136,6 +138,33 @@ export default function CartPage() {
           </Link>
         </aside>
       </div>
+      {isNativeApp ? (
+        <div
+          className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-slate-950/95 px-4 py-3 backdrop-blur-xl"
+          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+        >
+          <div className="mx-auto flex max-w-3xl items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Cart total</p>
+              <p className="text-lg font-semibold text-white">{peso(total)}</p>
+              <p className="text-xs text-slate-400">
+                {selectedItems.length
+                  ? `${selectedItems.length} selected for checkout`
+                  : "Select items before continuing"}
+              </p>
+            </div>
+            <Link
+              to={selectedItems.length ? (isAuthenticated ? "/checkout" : "/auth") : "/cart"}
+              state={selectedItems.length && !isAuthenticated ? { from: "/checkout", message: "Please log in to continue to checkout." } : undefined}
+              className={`inline-flex min-h-[50px] items-center justify-center rounded-2xl px-4 text-sm font-semibold text-white ${
+                selectedItems.length ? "bg-brand-500" : "pointer-events-none bg-slate-700"
+              }`}
+            >
+              {selectedItems.length ? (isAuthenticated ? "Checkout" : "Sign in") : "Select items"}
+            </Link>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -285,13 +285,12 @@ For local development, these are inserted automatically on first backend start w
 
 ## Deployment guide
 
-This repo now includes a root `render.yaml` file so you can deploy the frontend and backend as separate Render services from the same repository.
+This repo now uses a native-first deployment flow:
 
-### Recommended production setup
-
-- Frontend: Render static site
-- Backend: Render web service
+- Website download portal: Render static site
+- Backend API: Render web service
 - Database: MongoDB Atlas
+- Client app: Android build from the Capacitor project in `frontend/android`
 
 ### 1. Push the project to GitHub
 
@@ -319,7 +318,7 @@ In Render:
 That Blueprint creates:
 
 - `shopverse-api` for the Express backend
-- `shopverse-web` for the React frontend
+- `shopverse-web` for the Android download portal website
 
 ### 4. Set backend environment variables in Render
 
@@ -328,7 +327,7 @@ Add these values to `shopverse-api`:
 ```env
 MONGO_URI=mongodb+srv://<username>:<password>@<cluster-url>/shopverse?retryWrites=true&w=majority
 JWT_SECRET=replace-this-with-a-long-secret
-CLIENT_URL=https://shopverse-web.onrender.com
+CLIENT_URL=http://localhost:5173,https://shopverse-web.onrender.com
 ADMIN_NAME=ShopVerse Admin
 ADMIN_EMAIL=your-admin-email@example.com
 ADMIN_PASSWORD=replace-this-with-a-strong-password
@@ -363,10 +362,76 @@ ALERT_FROM_EMAIL=Mighty Couple <alerts@your-domain.com>
 ALERT_REPLY_TO_EMAIL=supportmightycouple@gmail.com
 ```
 
-If you want both local development and the live frontend to work with the same backend, `CLIENT_URL` can contain multiple comma-separated origins:
+For local browser development plus the live website portal, keep `CLIENT_URL` pointed at both the local frontend and the deployed download site. Native Android requests are already allowed by the backend CORS rules for Capacitor origins.
+
+### Website download portal
+
+The browser site is now a native app download portal, not the storefront itself. It reads the public Android package URL from admin settings:
+
+- `mobileApp.androidUpdateUrl`
+
+If that field is left blank, the website and native update prompt both fall back to:
+
+```text
+https://your-backend.onrender.com/downloads/mightycouple-release.apk
+```
+
+That makes it possible to host the signed APK from the backend while keeping the shopping experience inside the installed Android app.
+
+### Android push notifications (Firebase / FCM)
+
+Android push notifications are wired in the app and backend, but real remote push delivery only works after Firebase is configured.
+
+#### Backend env values
+
+Add these to `shopverse-api`:
 
 ```env
-CLIENT_URL=http://localhost:5173,https://shopverse-web.onrender.com
+FIREBASE_PROJECT_ID=your-firebase-project-id
+FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
+```
+
+If your host makes raw JSON hard to paste, use Base64 instead:
+
+```env
+FIREBASE_PROJECT_ID=your-firebase-project-id
+FIREBASE_SERVICE_ACCOUNT_BASE64=eyJ0eXBlIjoic2VydmljZV9hY2NvdW50IiwiLi4uIn0=
+```
+
+Use either `FIREBASE_SERVICE_ACCOUNT_JSON` or `FIREBASE_SERVICE_ACCOUNT_BASE64`.
+
+#### Android app file
+
+Download `google-services.json` from Firebase and place it here:
+
+```text
+frontend/android/app/google-services.json
+```
+
+This file is ignored by Git on purpose and should not be committed.
+
+#### Firebase setup flow
+
+1. Create a Firebase project for the Android app.
+2. Add an Android app with package name:
+
+```text
+com.mightycouple.commerce
+```
+
+3. Download `google-services.json` and copy it into `frontend/android/app/google-services.json`.
+4. In Firebase Console, open Cloud Messaging and make sure the project is enabled for FCM.
+5. In Google Cloud / Firebase service accounts, generate a service account JSON with permission to send Firebase Cloud Messaging requests.
+6. Add the service account JSON to the backend using one of the env vars above.
+
+#### After Firebase files are added
+
+Rebuild and sync Android:
+
+```bash
+cd frontend
+npm run build
+npx cap sync android
 ```
 
 ### 5. Set frontend environment variables in Render
@@ -377,20 +442,27 @@ Add this value to `shopverse-web`:
 VITE_API_URL=https://shopverse-api.onrender.com/api
 ```
 
-### 6. Redeploy after URLs are known
+### 6. Build and sync the Android app
 
-Deploy the backend first, copy its Render URL, then update `VITE_API_URL` in the frontend service and deploy the frontend.
+After the backend is live and your native API target is correct, rebuild the frontend bundle and sync it into Android:
 
-After the frontend URL is live, update `CLIENT_URL` in the backend service and redeploy the backend once more.
+```bash
+cd frontend
+npm run build
+npx cap sync android
+```
 
-### 7. Test the live app
+### 7. Test the live native app and website download portal
 
-Check these URLs after deployment:
+Check these before distribution:
 
-- Frontend home page
+- Website home/download page
 - Backend health check: `https://your-backend.onrender.com/api/health`
+- APK direct download: `https://your-backend.onrender.com/downloads/mightycouple-release.apk`
 - Login using the custom `ADMIN_EMAIL` and `ADMIN_PASSWORD` you set in Render
 - Product creation and checkout flow
+- Push notification registration and delivery on Android
+- APK or AAB install on a real device
 
 ### Production note about uploads
 

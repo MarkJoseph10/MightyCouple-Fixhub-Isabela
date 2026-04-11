@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/client";
@@ -90,6 +91,7 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [installmentAgreementAccepted, setInstallmentAgreementAccepted] = useState(false);
+  const isNativeApp = Capacitor.isNativePlatform();
 
   useEffect(() => {
     setAddress((current) => ({
@@ -226,24 +228,24 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="page-shell py-10">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
-        <form onSubmit={handleCheckout} className="glass-panel rounded-[32px] p-6 shadow-ambient">
+    <div className={`page-shell py-10 ${isNativeApp ? "py-3 pb-28" : ""}`}>
+      <div className={`grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] ${isNativeApp ? "gap-4" : ""}`}>
+        <form id="checkout-form" onSubmit={handleCheckout} className={`glass-panel shadow-ambient ${isNativeApp ? "rounded-[24px] p-4" : "rounded-[32px] p-6"}`}>
           <div className="flex flex-col gap-2">
-            <h1 className="text-3xl font-semibold text-white">Checkout</h1>
+            <h1 className={`font-semibold text-white ${isNativeApp ? "text-[1.55rem]" : "text-3xl"}`}>Checkout</h1>
             <p className="text-sm text-slate-400">Finish your order with secure account-based checkout, flexible payments, and a live shipping preview.</p>
           </div>
 
           <div className="mt-6">
             <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Purchase option</p>
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <div className={`mt-3 grid gap-3 ${isNativeApp ? "grid-cols-1" : "md:grid-cols-2"}`}>
               <button
                 type="button"
                 onClick={() => {
                   setPurchaseMode("full");
                   setInstallmentAgreementAccepted(false);
                 }}
-                className={`rounded-[24px] border px-4 py-4 text-left transition duration-300 ${
+                className={`border text-left transition duration-300 ${isNativeApp ? "rounded-[18px] px-3 py-3" : "rounded-[24px] px-4 py-4"} ${
                   purchaseMode === "full"
                     ? "border-brand-400 bg-brand-500/10"
                     : "border-white/10 bg-white/5 hover:border-white/20"
@@ -256,7 +258,7 @@ export default function CheckoutPage() {
                 type="button"
                 disabled={!canUseInstallment}
                 onClick={() => setPurchaseMode("installment")}
-                className={`rounded-[24px] border px-4 py-4 text-left transition duration-300 ${
+                className={`border text-left transition duration-300 ${isNativeApp ? "rounded-[18px] px-3 py-3" : "rounded-[24px] px-4 py-4"} ${
                   purchaseMode === "installment"
                     ? "border-cyan-400 bg-cyan-500/10"
                     : "border-white/10 bg-white/5 hover:border-white/20"
@@ -284,7 +286,7 @@ export default function CheckoutPage() {
             </div>
           ) : null}
 
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <div className={`mt-6 grid gap-4 md:grid-cols-2 ${isNativeApp ? "gap-3" : ""}`}>
             {Object.entries(address).map(([key, value]) => (
               <input
                 key={key}
@@ -299,13 +301,13 @@ export default function CheckoutPage() {
 
           <div className="mt-6">
             <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Payment method</p>
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <div className={`mt-3 grid gap-3 ${isNativeApp ? "grid-cols-1" : "md:grid-cols-2"}`}>
               {visiblePaymentMethods.map((method) => (
                 <button
                   key={method.value}
                   type="button"
                   onClick={() => setPaymentMethod(method.value)}
-                  className={`rounded-[24px] border px-4 py-4 text-left transition duration-300 ${
+                  className={`border px-4 text-left transition duration-300 ${isNativeApp ? "rounded-[18px] py-3" : "rounded-[24px] py-4"} ${
                     paymentMethod === method.value
                       ? "border-brand-400 bg-brand-500/10"
                       : "border-white/10 bg-white/5 hover:border-white/20"
@@ -319,7 +321,7 @@ export default function CheckoutPage() {
           </div>
 
           {paymentInstructionBlock && (
-            <div className="mt-4 rounded-[28px] border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+            <div className={`mt-4 border border-white/10 bg-white/5 text-slate-300 ${isNativeApp ? "rounded-[20px] p-3 text-[12px]" : "rounded-[28px] p-4 text-sm"}`}>
               <p className="font-semibold text-white">{paymentInstructionBlock.title}</p>
               <div className="mt-2 space-y-2">
                 {paymentInstructionBlock.lines.map((line) => (
@@ -330,7 +332,7 @@ export default function CheckoutPage() {
           )}
 
           {purchaseMode === "installment" && canUseInstallment && (
-            <div className="mt-4 rounded-[28px] border border-cyan-400/20 bg-cyan-500/10 p-4 text-sm text-cyan-50">
+            <div className={`mt-4 border border-cyan-400/20 bg-cyan-500/10 text-cyan-50 ${isNativeApp ? "rounded-[20px] p-3 text-[12px]" : "rounded-[28px] p-4 text-sm"}`}>
               <p className="font-semibold text-white">Installment summary</p>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 <p>Total with service fee: {peso(installmentPlan.totalWithServiceFee)}</p>
@@ -356,7 +358,7 @@ export default function CheckoutPage() {
             </div>
           )}
 
-          <div className="mt-6 grid gap-4 md:grid-cols-[minmax(0,1fr)_200px]">
+          <div className={`mt-6 grid gap-4 md:grid-cols-[minmax(0,1fr)_200px] ${isNativeApp ? "gap-3" : ""}`}>
             <input
               value={promoCode}
               onChange={(event) => setPromoCode(event.target.value.toUpperCase())}
@@ -387,7 +389,8 @@ export default function CheckoutPage() {
           {error && <div className="mt-6 rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{error}</div>}
           {statusMessage && <div className="mt-6 rounded-2xl bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">{statusMessage}</div>}
 
-          <button
+          {!isNativeApp ? (
+            <button
             disabled={!selectedItems.length || submitting}
             className="mt-6 rounded-2xl bg-brand-500 px-5 py-3 font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-brand-600 disabled:opacity-60"
           >
@@ -396,12 +399,13 @@ export default function CheckoutPage() {
               : purchaseMode === "installment"
                 ? "Start installment order"
                 : paymentMethod === "cod"
-                  ? "Place COD order"
-                  : "Place order"}
-          </button>
+                ? "Place COD order"
+                : "Place order"}
+            </button>
+          ) : null}
         </form>
 
-        <aside className="glass-panel h-fit rounded-[32px] p-6 shadow-ambient">
+        <aside className={`glass-panel h-fit shadow-ambient ${isNativeApp ? "rounded-[24px] p-4" : "rounded-[32px] p-6"}`}>
           <h2 className="text-xl font-semibold text-white">Order summary</h2>
           <div className="mt-6 space-y-3 text-sm text-slate-300">
             {selectedItems.map((item) => (
@@ -436,7 +440,7 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          <div className="mt-6 rounded-[28px] border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+          <div className={`mt-6 border border-white/10 bg-white/5 text-slate-300 ${isNativeApp ? "rounded-[20px] p-3 text-[12px]" : "rounded-[28px] p-4 text-sm"}`}>
             <p className="font-semibold text-white">
               {purchaseMode === "installment" ? "Installment plan" : visiblePaymentMethods.find((item) => item.value === paymentMethod)?.label}
             </p>
@@ -448,6 +452,30 @@ export default function CheckoutPage() {
           </div>
         </aside>
       </div>
+      {isNativeApp ? (
+        <div
+          className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-slate-950/95 px-4 py-3 backdrop-blur-xl"
+          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+        >
+          <div className="mx-auto flex max-w-3xl items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Order total</p>
+              <p className="text-lg font-semibold text-white">{peso(summary.total)}</p>
+              <p className="text-xs text-slate-400">
+                {purchaseMode === "installment" ? "Installment checkout" : visiblePaymentMethods.find((item) => item.value === paymentMethod)?.label || "Payment method"}
+              </p>
+            </div>
+            <button
+              type="submit"
+              form="checkout-form"
+              disabled={!selectedItems.length || submitting}
+              className="inline-flex min-h-[50px] items-center justify-center rounded-2xl bg-brand-500 px-4 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {submitting ? "Processing..." : purchaseMode === "installment" ? "Start plan" : "Place order"}
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

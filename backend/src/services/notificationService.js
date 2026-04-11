@@ -1,4 +1,5 @@
 import { Notification } from "../models/Notification.js";
+import { sendPushNotificationsForNotifications } from "./firebasePushService.js";
 import { publishRealtimeEvent } from "./realtimeService.js";
 
 function normalizeRecipient(recipient = {}) {
@@ -85,6 +86,8 @@ export async function createNotifications({
       }
     });
   });
+
+  await sendPushNotificationsForNotifications(insertedDocs).catch(() => {});
 
   return insertedDocs;
 }

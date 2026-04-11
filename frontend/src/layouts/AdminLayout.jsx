@@ -1,8 +1,11 @@
 import { AnimatePresence, motion } from "framer-motion";
+import { Capacitor } from "@capacitor/core";
 import { Menu, X } from "lucide-react";
 import { Outlet, useLocation } from "react-router-dom";
 import { useMemo, useState } from "react";
+import MobileBottomNav from "../components/layout/MobileBottomNav";
 import Navbar from "../components/layout/Navbar";
+import NativeAppHeader from "../components/layout/NativeAppHeader";
 import AdminSidebar from "../components/layout/AdminSidebar";
 
 const pageLabels = {
@@ -23,7 +26,22 @@ const pageLabels = {
 export default function AdminLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isNativeApp = Capacitor.isNativePlatform();
   const currentLabel = useMemo(() => pageLabels[location.pathname] || "Dashboard", [location.pathname]);
+
+  if (isNativeApp) {
+    return (
+      <div className="min-h-screen pb-[calc(5rem+env(safe-area-inset-bottom))]">
+        <NativeAppHeader />
+        <div className="page-shell py-3">
+          <main className="min-w-0">
+            <Outlet />
+          </main>
+        </div>
+        <MobileBottomNav />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">

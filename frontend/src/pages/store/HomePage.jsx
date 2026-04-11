@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -27,13 +28,15 @@ import { readRecentlyViewed } from "../../utils/recentlyViewed";
 import { getSiteUrl } from "../../utils/site";
 
 const HOME_PRODUCTS_CACHE_KEY = "shopverse-home-products-cache";
+const CATALOG_SEARCH_PENDING_KEY = "shopverse-native-catalog-search-pending";
 
 export default function HomePage() {
   const location = useLocation();
-const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Accessories", "Wearables", "Gaming"];
+  const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Accessories", "Wearables", "Gaming"];
   const { isAdmin } = useAuth();
   const { addToCart } = useCart();
   const { settings } = useStoreSettings();
+  const isNativeApp = Capacitor.isNativePlatform();
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
@@ -178,7 +181,17 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
   }, [search, category, sort, perPage]);
 
   useEffect(() => {
-    if (location.hash !== "#catalog-search") {
+    let shouldFocusSearch = location.hash === "#catalog-search";
+
+    if (!shouldFocusSearch) {
+      try {
+        shouldFocusSearch = window.sessionStorage.getItem(CATALOG_SEARCH_PENDING_KEY) === "1";
+      } catch {
+        shouldFocusSearch = false;
+      }
+    }
+
+    if (!shouldFocusSearch) {
       return;
     }
 
@@ -188,6 +201,12 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
 
       target?.scrollIntoView({ behavior: "smooth", block: "start" });
       input?.focus();
+
+      try {
+        window.sessionStorage.removeItem(CATALOG_SEARCH_PENDING_KEY);
+      } catch {
+        // Ignore storage access failures.
+      }
     }, 150);
 
     return () => window.clearTimeout(timer);
@@ -219,6 +238,7 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
       return Number(right.rating || 0) - Number(left.rating || 0);
     })
     .slice(0, 4);
+  const visibleBestSellers = isNativeApp ? bestSellers.slice(0, 3) : bestSellers;
   const featuredCategories = categories
     .map((item) => {
       const categoryProducts = products.filter((product) => product.category === item);
@@ -280,15 +300,19 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
   }
 
   return (
-    <div className="space-y-7 py-4 sm:py-5 lg:py-6">
+    <div className={`space-y-7 py-4 sm:py-5 lg:py-6 ${isNativeApp ? "space-y-5 py-3 sm:py-3" : ""}`}>
       {showPromoBanner && (
         <section className="page-shell">
-          <div className="glass-panel flex flex-col gap-3 rounded-[26px] border border-orange-400/20 bg-orange-500/10 px-4 py-3.5 text-orange-100 shadow-ambient md:flex-row md:items-center md:justify-between">
+          <div
+            className={`glass-panel flex flex-col gap-3 border border-orange-400/20 bg-orange-500/10 text-orange-100 shadow-ambient md:flex-row md:items-center md:justify-between ${
+              isNativeApp ? "rounded-[24px] px-4 py-3" : "rounded-[26px] px-4 py-3.5"
+            }`}
+          >
             <div className="flex items-start gap-3">
               <Sparkles className="mt-1 text-orange-300" size={18} />
               <div>
                 <p className="font-semibold text-white">{content.announcement || "Affordable gadget deals are live."}</p>
-                <p className="text-sm text-orange-100/85">
+                <p className={`text-orange-100/85 ${isNativeApp ? "text-[13px] leading-5" : "text-sm"}`}>
                   Browse phones, laptops, and trending tech with COD-ready checkout, social proof, and bundle savings.
                 </p>
               </div>
@@ -307,7 +331,11 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
       <section className="page-shell">
         <div className="glass-panel overflow-hidden rounded-[30px] shadow-ambient">
           <div
-            className="relative grid gap-5 bg-mesh px-5 py-6 sm:px-6 sm:py-7 lg:grid-cols-[minmax(0,0.96fr)_280px] lg:px-7 lg:py-8 xl:grid-cols-[minmax(0,0.98fr)_300px]"
+            className={`relative grid gap-5 bg-mesh ${
+              isNativeApp
+                ? "px-4 py-5"
+                : "px-5 py-6 sm:px-6 sm:py-7 lg:grid-cols-[minmax(0,0.96fr)_280px] lg:px-7 lg:py-8 xl:grid-cols-[minmax(0,0.98fr)_300px]"
+            }`}
             style={{
               backgroundImage: settings.heroImage?.url
                 ? `linear-gradient(180deg, rgba(2,6,23,0.45), rgba(2,6,23,0.82)), url('${heroVisualUrl}')`
@@ -333,13 +361,13 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
                 <Sparkles size={15} className="mr-2 text-orange-300" />
                 {content.heroEyebrow || "Affordable gadgets for every budget"}
               </div>
-              <h1 className="max-w-[13ch] text-[clamp(1.8rem,4.15vw,3.35rem)] font-semibold leading-[0.94] tracking-tight text-white">
+              <h1 className={`max-w-[13ch] font-semibold leading-[0.94] tracking-tight text-white ${isNativeApp ? "text-[2rem]" : "text-[clamp(1.8rem,4.15vw,3.35rem)]"}`}>
                 {content.heroTitle || `${settings.storeName} makes phones, laptops, and trending tech feel reachable.`}
               </h1>
-              <p className="max-w-[42rem] text-[0.92rem] leading-6 text-slate-300 sm:text-[0.98rem]">
+              <p className={`max-w-[42rem] text-slate-300 ${isNativeApp ? "text-sm leading-6" : "text-[0.92rem] leading-6 sm:text-[0.98rem]"}`}>
                 {content.heroDescription || "Sell brand-new or budget-friendly gadgets with stronger trust signals: ratings, real buyer counts, promo timers, flexible payments, and COD for Philippine customers."}
               </p>
-              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <div className={`flex gap-3 ${isNativeApp ? "flex-col" : "flex-col sm:flex-row sm:flex-wrap"}`}>
                 <a href="#catalog" className="inline-flex items-center justify-center rounded-full bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white">
                   {content.primaryCtaLabel || "Shop gadgets"}
                 </a>
@@ -347,23 +375,30 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
                   {content.secondaryCtaLabel || "Track an order"}
                 </Link>
               </div>
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className={`grid gap-3 ${isNativeApp ? "grid-cols-2" : "sm:grid-cols-3"}`}>
                 <div className="rounded-[22px] border border-white/10 bg-white/5 p-3">
                   <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Payments</p>
-                  <p className="mt-1.5 text-sm font-semibold leading-6 text-white sm:text-base">{enabledPaymentLabels.join(", ") || "Flexible payments"}</p>
+                  <p className="mt-1.5 text-sm font-semibold leading-6 text-white sm:text-base">
+                    {isNativeApp ? enabledPaymentLabels.slice(0, 3).join(", ") || "Flexible payments" : enabledPaymentLabels.join(", ") || "Flexible payments"}
+                  </p>
                 </div>
                 <div className="rounded-[22px] border border-white/10 bg-white/5 p-3">
                   <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Trust</p>
-                  <p className="mt-1.5 text-sm font-semibold leading-6 text-white sm:text-base">Ratings, reviews, verified buyers</p>
+                  <p className="mt-1.5 text-sm font-semibold leading-6 text-white sm:text-base">
+                    {isNativeApp ? "Ratings and buyer proof" : "Ratings, reviews, verified buyers"}
+                  </p>
                 </div>
-                <div className="rounded-[22px] border border-white/10 bg-white/5 p-3">
-                  <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Delivery</p>
-                  <p className="mt-1.5 text-sm font-semibold leading-6 text-white sm:text-base">Location-based shipping ready</p>
-                </div>
+                {!isNativeApp ? (
+                  <div className="rounded-[22px] border border-white/10 bg-white/5 p-3">
+                    <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Delivery</p>
+                    <p className="mt-1.5 text-sm font-semibold leading-6 text-white sm:text-base">Location-based shipping ready</p>
+                  </div>
+                ) : null}
               </div>
             </div>
 
-            <div className="space-y-4">
+            {!isNativeApp ? (
+              <div className="space-y-4">
               {limitedOffer?.enabled && limitedOffer?.endsAt && (
                 <CountdownTimer endDate={limitedOffer.endsAt} title={limitedOffer.title || "Limited time offer"} />
               )}
@@ -408,12 +443,14 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
                   </div>
                 </motion.div>
               </TiltCard>
-            </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </section>
 
-      <section className="page-shell grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {!isNativeApp ? (
+        <section className="page-shell grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {[
           {
             icon: SearchCheck,
@@ -439,20 +476,21 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
             </div>
           </TiltCard>
         ))}
-      </section>
+        </section>
+      ) : null}
 
       {!!featuredCategories.length && (
-        <section className="page-shell space-y-5">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <section className={`page-shell ${isNativeApp ? "space-y-3" : "space-y-5"}`}>
+          <div className={`flex flex-col gap-3 md:flex-row md:items-end md:justify-between ${isNativeApp ? "gap-2" : ""}`}>
             <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-slate-400">{content.featuredEyebrow || "Featured categories"}</p>
-              <h2 className="mt-2 text-2xl font-semibold text-white md:text-3xl">{content.featuredTitle || "Browse by gadget type"}</h2>
+              <p className={`uppercase tracking-[0.3em] text-slate-400 ${isNativeApp ? "text-[11px]" : "text-sm"}`}>{content.featuredEyebrow || "Featured categories"}</p>
+              <h2 className={`mt-2 font-semibold text-white ${isNativeApp ? "text-lg" : "text-2xl md:text-3xl"}`}>{content.featuredTitle || "Browse by gadget type"}</h2>
             </div>
-            <p className="max-w-2xl text-sm text-slate-400">
+            <p className={`max-w-2xl text-slate-400 ${isNativeApp ? "text-[12px] leading-5" : "text-sm"}`}>
               {content.featuredCaption || "Extra shortcut cards para mas mabilis makapunta ang buyers sa category na gusto nila, without changing your existing catalog flow."}
             </p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className={`grid gap-4 ${isNativeApp ? "grid-cols-2" : "sm:grid-cols-2 xl:grid-cols-4"}`}>
             {featuredCategories.map((item) => (
               <Link
                 key={item.name}
@@ -483,33 +521,35 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
       )}
 
       {!!bestSellers.length && (
-        <section className="page-shell space-y-5">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <section className={`page-shell ${isNativeApp ? "space-y-3" : "space-y-5"}`}>
+          <div className={`flex flex-col gap-3 md:flex-row md:items-end md:justify-between ${isNativeApp ? "gap-2" : ""}`}>
             <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Best sellers</p>
-              <h2 className="mt-2 text-2xl font-semibold text-white md:text-3xl">Shoppers keep picking these</h2>
+              <p className={`uppercase tracking-[0.3em] text-slate-400 ${isNativeApp ? "text-[11px]" : "text-sm"}`}>Best sellers</p>
+              <h2 className={`mt-2 font-semibold text-white ${isNativeApp ? "text-lg" : "text-2xl md:text-3xl"}`}>Shoppers keep picking these</h2>
             </div>
-            <a href="#catalog" className="inline-flex items-center rounded-full border border-white/10 px-4 py-2 text-sm text-slate-200 transition duration-300 hover:bg-white/5">
+            <a href="#catalog" className={`inline-flex items-center rounded-full border border-white/10 px-4 py-2 text-slate-200 transition duration-300 hover:bg-white/5 ${isNativeApp ? "text-[12px]" : "text-sm"}`}>
               See all products
             </a>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-            {bestSellers.map((product) => (
+          <div className={`grid ${isNativeApp ? "grid-cols-3 gap-2" : "gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"}`}>
+            {visibleBestSellers.map((product) => (
               <ProductCard key={`best-seller-${product._id}`} product={product} onAddToCart={addToCart} compact eagerImage />
             ))}
           </div>
         </section>
       )}
 
-      <section className="page-shell space-y-6" id="catalog">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <section className={`page-shell ${isNativeApp ? "space-y-3" : "space-y-6"}`} id="catalog">
+        <div className={`flex flex-col gap-4 md:flex-row md:items-end md:justify-between ${isNativeApp ? "gap-2" : ""}`}>
           <div className="min-w-0">
-            <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Storefront</p>
-            <h2 className="mt-2 text-2xl font-semibold text-white md:text-3xl xl:text-[2rem]">Affordable tech listings</h2>
+            <p className={`uppercase tracking-[0.3em] text-slate-400 ${isNativeApp ? "text-[11px]" : "text-sm"}`}>Storefront</p>
+            <h2 className={`mt-2 font-semibold text-white ${isNativeApp ? "text-lg" : "text-2xl md:text-3xl xl:text-[2rem]"}`}>Affordable tech listings</h2>
           </div>
-          <div className="inline-flex items-center rounded-full bg-orange-500/10 px-4 py-2 text-xs text-orange-200 sm:text-sm">
-            Popular gadgets with visible social proof and strong value offers
-          </div>
+          {!isNativeApp ? (
+            <div className="inline-flex items-center rounded-full bg-orange-500/10 px-4 py-2 text-xs text-orange-200 sm:text-sm">
+              Popular gadgets with visible social proof and strong value offers
+            </div>
+          ) : null}
         </div>
 
         <SearchFilters
@@ -524,25 +564,26 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
           onCategoryChange={setCategory}
           onSortChange={setSort}
           onPerPageChange={setPerPage}
+          nativeCompact={isNativeApp}
         />
 
         {error && <div className="rounded-3xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-200">{error}</div>}
 
         {loading ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <div className={`grid ${isNativeApp ? "grid-cols-3 gap-2" : "gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"}`}>
             {[...Array(10)].map((_, index) => (
-              <div key={index} className="glass-panel h-[360px] animate-pulse rounded-[26px]" />
+              <div key={index} className={`glass-panel animate-pulse ${isNativeApp ? "aspect-[0.76] rounded-[18px]" : "h-[360px] rounded-[26px]"}`} />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <div className={`grid ${isNativeApp ? "grid-cols-3 gap-2" : "gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"}`}>
             {paginatedProducts.map((product, index) => (
               <ProductCard
                 key={product._id}
                 product={product}
                 onAddToCart={addToCart}
                 compact
-                eagerImage={currentPage === 1 && index < 6}
+                eagerImage={currentPage === 1 && index < (isNativeApp ? 9 : 6)}
               />
             ))}
           </div>
@@ -556,7 +597,7 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
         )}
 
         {!loading && products.length > 0 && (
-          <div className="flex flex-col gap-3 rounded-[26px] border border-white/10 bg-white/5 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className={`rounded-[26px] border border-white/10 bg-white/5 px-4 py-4 ${isNativeApp ? "space-y-3" : "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"}`}>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
               <p className="text-sm text-slate-300">
                 Showing {(currentPage - 1) * perPage + 1}-
@@ -570,7 +611,7 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
                 Reset filters
               </button>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className={`flex items-center gap-2 ${isNativeApp ? "overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" : "flex-wrap"}`}>
               <button
                 type="button"
                 onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
@@ -625,7 +666,7 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
               </div>
               <p className="text-sm text-slate-400">Fast access for repeat shoppers comparing gadgets and prices.</p>
             </div>
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className={`mt-6 grid gap-4 ${isNativeApp ? "grid-cols-1" : "md:grid-cols-2 xl:grid-cols-3"}`}>
               {recentlyViewed.map((product) => (
                 <Link
                   key={product._id}
@@ -647,7 +688,8 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
         </section>
       )}
 
-      <section className="page-shell grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+      {!isNativeApp ? (
+        <section className="page-shell grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
         <div className="glass-panel rounded-[32px] p-6 shadow-ambient">
           <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Why shoppers stay</p>
           <h2 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">Extra trust cues that make the store feel more premium</h2>
@@ -703,8 +745,10 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
             ))}
           </div>
         </div>
-      </section>
+        </section>
+      ) : null}
 
+      {!isNativeApp ? (
       <section className="page-shell grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="glass-panel rounded-[32px] p-6 shadow-ambient">
           <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Next step</p>
@@ -749,7 +793,8 @@ const categories = ["Phones", "Laptops", "Computer", "Parts", "Gadgets", "Access
             Subscribe now
           </button>
         </form>
-      </section>
+        </section>
+      ) : null}
     </div>
   );
 }

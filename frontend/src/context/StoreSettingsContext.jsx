@@ -121,6 +121,12 @@ const fallbackSettings = {
     appealSubmitted: true,
     appealResolved: true
   },
+  mobileApp: {
+    androidLatestVersion: "",
+    androidMinimumVersion: "",
+    androidUpdateUrl: "",
+    androidUpdateMessage: ""
+  },
   policyLinks: {
     privacyPolicyUrl: "/privacy-policy",
     shippingPolicyUrl: "/shipping-policy",

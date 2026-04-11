@@ -16,6 +16,25 @@ body {
   background: #020617;
 }
 
+html.native-app,
+body.native-app {
+  width: 100%;
+  font-size: 14px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  min-height: 100%;
+}
+
+html.native-app,
+body.native-app,
+body.native-app #root {
+  overflow-x: hidden;
+}
+
+body.native-app #root {
+  min-height: 100dvh;
+}
+
 #root {
   min-height: 100vh;
 }
@@ -45,6 +64,62 @@ img {
 
 .admin-shell {
   @apply w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12;
+}
+
+body.native-app .page-shell,
+body.native-app .admin-shell {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  max-width: 100%;
+}
+
+body.native-app .dashboard-card-grid {
+  gap: 0.625rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.native-app .dashboard-card-span-2 {
+  grid-column: span 1;
+}
+
+body.native-app .native-screen-stack {
+  gap: 0.875rem;
+}
+
+body.native-app .native-screen-stack > * {
+  scroll-margin-top: 5rem;
+}
+
+body.native-app .native-summary-grid {
+  gap: 0.625rem;
+}
+
+body.native-app .native-summary-card {
+  border-radius: 1.125rem;
+  padding: 0.875rem;
+}
+
+body.native-app .native-tight-card {
+  border-radius: 1.25rem;
+  padding: 0.875rem;
+}
+
+body.native-app .native-tight-heading {
+  font-size: 1.75rem;
+  line-height: 1.05;
+}
+
+body.native-app .native-tight-subheading {
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+body.native-app .native-list-grid {
+  gap: 0.625rem;
+}
+
+body.native-app .native-chip-grid {
+  gap: 0.5rem;
 }
 
 @media (min-width: 1536px) {

@@ -1,5 +1,6 @@
+import { Capacitor } from "@capacitor/core";
 import { useLocation, useSearchParams } from "react-router-dom";
-import { AlertTriangle, Bell, Inbox, LoaderCircle, Mail, MessageSquare, Paperclip, Search, Send, ShieldAlert } from "lucide-react";
+import { AlertTriangle, Bell, Camera, ImagePlus, Inbox, LoaderCircle, Mail, MessageSquare, Paperclip, Search, Send, ShieldAlert } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import api from "../../api/client";
 import ChatConversationProductCard from "../../components/common/ChatConversationProductCard";
@@ -8,6 +9,7 @@ import ChatPendingAttachments from "../../components/common/ChatPendingAttachmen
 import { useAuth } from "../../context/AuthContext";
 import { useChat } from "../../context/ChatContext";
 import { useNotifications } from "../../context/NotificationContext";
+import { captureImageFile, isNativeMediaAvailable, pickImageFile } from "../../utils/nativeMedia";
 
 const customerQuickReplies = [
   "Available pa po ba ito?",
@@ -196,6 +198,7 @@ export default function MessagesPage() {
   const [actionPending, setActionPending] = useState("");
   const [updatingAlertPrefs, setUpdatingAlertPrefs] = useState(false);
   const fileInputRef = useRef(null);
+  const nativeMediaEnabled = Capacitor.isNativePlatform() && isNativeMediaAvailable();
 
   const copy = useMemo(() => getPageCopy(user, location.pathname), [location.pathname, user]);
   const selectedConversationId = searchParams.get("conversation") || "";
@@ -269,6 +272,32 @@ export default function MessagesPage() {
 
     return () => window.clearTimeout(timer);
   }, [activeConversation?._id, draft, selectedFiles.length, updateTyping]);
+
+  function appendFiles(incomingFiles = []) {
+    if (!incomingFiles.length) {
+      return;
+    }
+
+    setSelectedFiles((current) => [...current, ...incomingFiles].slice(0, 4));
+  }
+
+  async function handleCaptureImage() {
+    try {
+      const file = await captureImageFile("messages-camera");
+      appendFiles(file ? [file] : []);
+    } catch (requestError) {
+      setActionMessage(requestError?.message || "Unable to open the camera right now.");
+    }
+  }
+
+  async function handlePickImage() {
+    try {
+      const file = await pickImageFile("messages-gallery");
+      appendFiles(file ? [file] : []);
+    } catch (requestError) {
+      setActionMessage(requestError?.message || "Unable to open the gallery right now.");
+    }
+  }
 
   return (
     <section className="space-y-6 pb-8">
@@ -505,7 +534,7 @@ export default function MessagesPage() {
               </div>
 
               <div className="mt-5 flex min-h-[420px] flex-col">
-                <div className="flex-1 space-y-3 overflow-y-auto rounded-[28px] border border-white/10 bg-slate-950/20 p-4">
+                <div className="flex-1 space-y-3 overflow-y-auto overscroll-contain rounded-[28px] border border-white/10 bg-slate-950/20 p-4">
                   {activeConversation.messages?.length ? (
                     activeConversation.messages.map((message) => {
                       const mine = String(message.sender?._id || "") === String(user?._id || "");
@@ -666,21 +695,41 @@ export default function MessagesPage() {
                     accept="image/*,video/*"
                     multiple
                     className="hidden"
-                    onChange={(event) => {
-                      const pickedFiles = Array.from(event.target.files || []);
+                      onChange={(event) => {
+                        const pickedFiles = Array.from(event.target.files || []);
 
-                      if (!pickedFiles.length) {
-                        return;
-                      }
+                        if (!pickedFiles.length) {
+                          return;
+                        }
 
-                      setSelectedFiles((current) => [...current, ...pickedFiles].slice(0, 4));
-                      event.target.value = "";
-                    }}
-                  />
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
+                        appendFiles(pickedFiles);
+                        event.target.value = "";
+                      }}
+                    />
+                    <div className="flex items-center gap-3">
+                      {nativeMediaEnabled ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={handleCaptureImage}
+                            className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-100 transition hover:bg-white/10"
+                            title="Take photo"
+                          >
+                            <Camera size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handlePickImage}
+                            className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-100 transition hover:bg-white/10"
+                            title="Choose from gallery"
+                          >
+                            <ImagePlus size={16} />
+                          </button>
+                        </>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
                       className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-100 transition hover:bg-white/10"
                       title="Attach image or video"
                     >

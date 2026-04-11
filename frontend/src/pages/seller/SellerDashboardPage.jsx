@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import api from "../../api/client";
 import { peso } from "../../utils/commerce";
 import { resolveMediaUrl } from "../../utils/media";
@@ -21,36 +22,41 @@ function StatusBadge({ value }) {
 }
 
 function SectionShell({ title, description, aside, children }) {
+  const isNativeApp = Capacitor.isNativePlatform();
+
   return (
-    <section className="glass-panel rounded-[32px] p-6 shadow-ambient">
+    <section className={`glass-panel shadow-ambient ${isNativeApp ? "rounded-[22px] p-4" : "rounded-[32px] p-6"}`}>
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <p className="text-sm uppercase tracking-[0.28em] text-slate-400">{title}</p>
-          <p className="mt-2 text-sm leading-7 text-slate-300">{description}</p>
+          <p className={`mt-2 text-slate-300 ${isNativeApp ? "text-[12px] leading-5" : "text-sm leading-7"}`}>{description}</p>
         </div>
         {aside ? <div className="md:max-w-[320px]">{aside}</div> : null}
       </div>
-      <div className="mt-5">{children}</div>
+      <div className={isNativeApp ? "mt-4" : "mt-5"}>{children}</div>
     </section>
   );
 }
 
 function DashboardTabButton({ active, label, count, onClick }) {
+  const isNativeApp = Capacitor.isNativePlatform();
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-[22px] border px-4 py-3 text-left transition ${
+      className={`border text-left transition ${
         active ? "border-cyan-400/30 bg-cyan-500/10 text-cyan-50 shadow-ambient" : "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"
-      }`}
+      } ${isNativeApp ? "rounded-[18px] px-3 py-2.5" : "rounded-[22px] px-4 py-3"}`}
     >
       <p className="text-xs uppercase tracking-[0.24em] text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold">{count}</p>
+      <p className={`font-semibold ${isNativeApp ? "mt-1 text-lg" : "mt-1 text-2xl"}`}>{count}</p>
     </button>
   );
 }
 
 export default function SellerDashboardPage() {
+  const isNativeApp = Capacitor.isNativePlatform();
   const [summary, setSummary] = useState(null);
   const [profile, setProfile] = useState(null);
   const [message, setMessage] = useState("");
@@ -171,14 +177,14 @@ export default function SellerDashboardPage() {
   }
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className={`pb-10 ${isNativeApp ? "native-screen-stack space-y-4" : "space-y-6"}`}>
       <section className="glass-panel overflow-hidden rounded-[32px] shadow-ambient">
-        <div className="relative min-h-[220px] p-6">
+        <div className={`relative ${isNativeApp ? "min-h-[180px] p-4" : "min-h-[220px] p-6"}`}>
           {profile?.banner ? <img src={withAbsoluteUrl(profile.banner)} alt="Seller banner" className="absolute inset-0 h-full w-full object-cover opacity-30" /> : null}
           <div className="absolute inset-0 bg-slate-950/45" />
           <div className="relative z-10 flex flex-col gap-5 2xl:flex-row 2xl:items-start 2xl:justify-between">
             <div className="flex min-w-0 items-start gap-4">
-              <div className="h-20 w-20 overflow-hidden rounded-[28px] border border-white/10 bg-white/5">
+              <div className={`overflow-hidden border border-white/10 bg-white/5 ${isNativeApp ? "h-16 w-16 rounded-[20px]" : "h-20 w-20 rounded-[28px]"}`}>
                 {profile?.avatar ? (
                   <img src={withAbsoluteUrl(profile.avatar)} alt={profile.storeName || "Seller"} className="h-full w-full object-cover" />
                 ) : (
@@ -187,25 +193,25 @@ export default function SellerDashboardPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm uppercase tracking-[0.3em] text-slate-300">Seller hub</p>
-                <h1 className="mt-2 break-words text-3xl font-semibold text-white">{profile?.storeName || "Marketplace seller dashboard"}</h1>
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-200">
+                <h1 className={`break-words font-semibold text-white ${isNativeApp ? "mt-1.5 text-2xl leading-tight" : "mt-2 text-3xl"}`}>{profile?.storeName || "Marketplace seller dashboard"}</h1>
+                <p className={`max-w-2xl text-slate-200 ${isNativeApp ? "mt-2 text-[12px] leading-5" : "mt-3 text-sm leading-7"}`}>
                   Track listing approvals, review earnings after the 10% platform commission, and manage your payout flow in one cleaner seller workspace.
                 </p>
-                {profile?.statusNote ? <p className="mt-3 text-sm text-cyan-100">{profile.statusNote}</p> : null}
+                {profile?.statusNote ? <p className={`text-cyan-100 ${isNativeApp ? "mt-2 text-[12px] leading-5" : "mt-3 text-sm"}`}>{profile.statusNote}</p> : null}
               </div>
             </div>
-            <div className="grid w-full gap-3 sm:grid-cols-2 2xl:w-[420px] 2xl:grid-cols-3">
-              <div className="rounded-[24px] border border-cyan-400/20 bg-cyan-500/10 p-4">
+            <div className={`grid w-full ${isNativeApp ? "grid-cols-3 gap-2" : "gap-3 sm:grid-cols-2 2xl:w-[420px] 2xl:grid-cols-3"}`}>
+              <div className={`rounded-[24px] border border-cyan-400/20 bg-cyan-500/10 ${isNativeApp ? "p-3" : "p-4"}`}>
                 <p className="text-[11px] uppercase tracking-[0.2em] text-cyan-100/70">Net revenue</p>
-                <p className="mt-2 break-words text-xl font-semibold text-cyan-50 sm:text-2xl">{peso(summary?.netRevenue || 0)}</p>
+                <p className={`break-words font-semibold text-cyan-50 ${isNativeApp ? "mt-1.5 text-base" : "mt-2 text-xl sm:text-2xl"}`}>{peso(summary?.netRevenue || 0)}</p>
               </div>
-              <div className="rounded-[24px] border border-amber-400/20 bg-amber-500/10 p-4">
+              <div className={`rounded-[24px] border border-amber-400/20 bg-amber-500/10 ${isNativeApp ? "p-3" : "p-4"}`}>
                 <p className="text-[11px] uppercase tracking-[0.2em] text-amber-100/70">Available payout</p>
-                <p className="mt-2 break-words text-xl font-semibold text-amber-50 sm:text-2xl">{peso(summary?.availableForPayout || 0)}</p>
+                <p className={`break-words font-semibold text-amber-50 ${isNativeApp ? "mt-1.5 text-base" : "mt-2 text-xl sm:text-2xl"}`}>{peso(summary?.availableForPayout || 0)}</p>
               </div>
-              <div className="rounded-[24px] border border-emerald-400/20 bg-emerald-500/10 p-4">
+              <div className={`rounded-[24px] border border-emerald-400/20 bg-emerald-500/10 ${isNativeApp ? "p-3" : "p-4"}`}>
                 <p className="text-[11px] uppercase tracking-[0.2em] text-emerald-100/70">Paid out</p>
-                <p className="mt-2 break-words text-xl font-semibold text-emerald-50 sm:text-2xl">{peso(summary?.paidOut || 0)}</p>
+                <p className={`break-words font-semibold text-emerald-50 ${isNativeApp ? "mt-1.5 text-base" : "mt-2 text-xl sm:text-2xl"}`}>{peso(summary?.paidOut || 0)}</p>
               </div>
             </div>
           </div>
@@ -215,7 +221,7 @@ export default function SellerDashboardPage() {
       {message ? <div className="rounded-2xl bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">{message}</div> : null}
       {error ? <div className="rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-200">{error}</div> : null}
 
-      <section className="grid gap-3 sm:grid-cols-3">
+      <section className={`grid ${isNativeApp ? "native-chip-grid grid-cols-3" : "gap-3 sm:grid-cols-3"}`}>
         {tabs.map((tab) => (
           <DashboardTabButton key={tab.key} active={activeTab === tab.key} label={tab.label} count={tab.count} onClick={() => setActiveTab(tab.key)} />
         ))}
@@ -223,32 +229,32 @@ export default function SellerDashboardPage() {
 
       {activeTab === "overview" ? (
         <>
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <div className="glass-panel rounded-[28px] p-5 shadow-ambient">
+      <section className={`grid ${isNativeApp ? "native-summary-grid grid-cols-2" : "gap-4 md:grid-cols-2 xl:grid-cols-5"}`}>
+        <div className={`glass-panel shadow-ambient ${isNativeApp ? "native-summary-card rounded-[20px]" : "rounded-[28px] p-5"}`}>
           <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Products</p>
-          <p className="mt-2 text-3xl font-semibold text-white">{summary?.productsCount || 0}</p>
+          <p className={`font-semibold text-white ${isNativeApp ? "mt-1.5 text-xl" : "mt-2 text-3xl"}`}>{summary?.productsCount || 0}</p>
         </div>
-        <div className="glass-panel rounded-[28px] p-5 shadow-ambient">
+        <div className={`glass-panel shadow-ambient ${isNativeApp ? "native-summary-card rounded-[20px]" : "rounded-[28px] p-5"}`}>
           <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Approved</p>
-          <p className="mt-2 text-3xl font-semibold text-white">{summary?.approvedProductsCount || 0}</p>
+          <p className={`font-semibold text-white ${isNativeApp ? "mt-1.5 text-xl" : "mt-2 text-3xl"}`}>{summary?.approvedProductsCount || 0}</p>
         </div>
-        <div className="glass-panel rounded-[28px] p-5 shadow-ambient">
+        <div className={`glass-panel shadow-ambient ${isNativeApp ? "native-summary-card rounded-[20px]" : "rounded-[28px] p-5"}`}>
           <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Pending review</p>
-          <p className="mt-2 text-3xl font-semibold text-white">{summary?.pendingProductsCount || 0}</p>
+          <p className={`font-semibold text-white ${isNativeApp ? "mt-1.5 text-xl" : "mt-2 text-3xl"}`}>{summary?.pendingProductsCount || 0}</p>
         </div>
-        <div className="glass-panel rounded-[28px] p-5 shadow-ambient">
+        <div className={`glass-panel shadow-ambient ${isNativeApp ? "native-summary-card rounded-[20px]" : "rounded-[28px] p-5"}`}>
           <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Rejected</p>
-          <p className="mt-2 text-3xl font-semibold text-white">{summary?.rejectedProductsCount || 0}</p>
+          <p className={`font-semibold text-white ${isNativeApp ? "mt-1.5 text-xl" : "mt-2 text-3xl"}`}>{summary?.rejectedProductsCount || 0}</p>
         </div>
-        <div className="glass-panel rounded-[28px] p-5 shadow-ambient">
+        <div className={`glass-panel shadow-ambient ${isNativeApp ? "native-summary-card rounded-[20px]" : "rounded-[28px] p-5"}`}>
           <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Commission kept</p>
-          <p className="mt-2 text-3xl font-semibold text-white">{peso(summary?.totalCommission || 0)}</p>
+          <p className={`font-semibold text-white ${isNativeApp ? "mt-1.5 text-xl" : "mt-2 text-3xl"}`}>{peso(summary?.totalCommission || 0)}</p>
         </div>
       </section>
         </>
       ) : null}
 
-      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_420px]">
+      <div className={`grid ${isNativeApp ? "gap-4" : "gap-6 2xl:grid-cols-[minmax(0,1fr)_420px]"}`}>
         <div className="space-y-6">
           {activeTab === "overview" ? (
           <section className="glass-panel rounded-[32px] p-6 shadow-ambient">

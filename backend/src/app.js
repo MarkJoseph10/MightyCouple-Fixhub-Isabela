@@ -78,6 +78,7 @@ export function createApp() {
   app.use(express.json({ limit: "1mb" }));
   app.use(morgan("dev"));
   app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+  app.use("/downloads", express.static(path.join(__dirname, "../public/downloads")));
 
   app.get("/api/health", (_, res) => {
     res.json({ status: isRuntimeReady() ? "ok" : "booting" });

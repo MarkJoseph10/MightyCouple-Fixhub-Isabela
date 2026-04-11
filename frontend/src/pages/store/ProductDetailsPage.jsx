@@ -1,4 +1,5 @@
-import { Heart, MessageSquare, ShieldCheck, ShoppingBag, Star, TrendingUp, Users, Video } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
+import { Heart, MessageSquare, Share2, ShieldCheck, ShoppingBag, Star, TrendingUp, Users, Video } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import api from "../../api/client";
@@ -14,6 +15,7 @@ import { useWishlist } from "../../context/WishlistContext";
 import { peso } from "../../utils/commerce";
 import { calculateInstallmentPlan, formatInstallmentBreakdown } from "../../utils/installments";
 import { resolveMediaUrl } from "../../utils/media";
+import { shareContent } from "../../utils/nativeShare";
 import { pushRecentlyViewed } from "../../utils/recentlyViewed";
 import { getSiteUrl } from "../../utils/site";
 
@@ -35,6 +37,7 @@ export default function ProductDetailsPage() {
   const { openChat } = useChat();
   const { settings } = useStoreSettings();
   const { isWishlisted, toggleWishlist } = useWishlist();
+  const isNativeApp = Capacitor.isNativePlatform();
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [selectedVariantId, setSelectedVariantId] = useState("");
@@ -256,6 +259,19 @@ export default function ProductDetailsPage() {
     }
   }
 
+  async function handleNativeShare() {
+    if (!product) {
+      return;
+    }
+
+    await shareContent({
+      title: product.name,
+      text: product.shortDescription || product.description || `${product.name} is available on ${settings.storeName}.`,
+      url: getSiteUrl(window.location.pathname + window.location.search),
+      dialogTitle: "Share product"
+    });
+  }
+
   async function handleReviewSubmit(event) {
     event.preventDefault();
 
@@ -289,36 +305,36 @@ export default function ProductDetailsPage() {
   }
 
   return (
-    <div className="page-shell space-y-8 py-10">
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_460px]">
-        <div className="space-y-6">
-          <div className="glass-panel overflow-hidden rounded-[36px] shadow-ambient">
+    <div className={`page-shell space-y-8 py-10 ${isNativeApp ? "space-y-4 py-3 pb-28" : ""}`}>
+      <div className={`grid gap-8 lg:grid-cols-[minmax(0,1fr)_460px] ${isNativeApp ? "gap-4" : ""}`}>
+        <div className={`space-y-6 ${isNativeApp ? "space-y-4" : ""}`}>
+          <div className={`glass-panel overflow-hidden shadow-ambient ${isNativeApp ? "rounded-[24px]" : "rounded-[36px]"}`}>
             {selectedMedia?.type === "video" ? (
               <video
                 src={selectedMedia.url}
                 poster={selectedMedia.poster}
                 controls
-                className="h-full min-h-[420px] w-full bg-slate-950 object-contain"
+                className={`h-full w-full bg-slate-950 object-contain ${isNativeApp ? "min-h-[280px]" : "min-h-[420px]"}`}
               />
             ) : (
-              <div className="flex min-h-[420px] items-center justify-center bg-slate-950/30 p-4 sm:p-6">
+              <div className={`flex items-center justify-center bg-slate-950/30 ${isNativeApp ? "min-h-[280px] p-2" : "min-h-[420px] p-4 sm:p-6"}`}>
                 <img
                   src={selectedMedia?.url || withAbsoluteUrl(product.images?.[0]?.url)}
                   alt={selectedMedia?.alt || product.images?.[0]?.alt || product.name}
-                  className="max-h-[520px] w-full object-scale-down"
+                  className={`w-full object-scale-down ${isNativeApp ? "max-h-[320px]" : "max-h-[520px]"}`}
                 />
               </div>
             )}
           </div>
 
           {!!mediaItems.length && (
-            <div className="grid gap-3 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
+            <div className={`gap-3 ${isNativeApp ? "flex overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" : "grid sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4"}`}>
               {mediaItems.map((item) => (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => setSelectedMediaId(item.id)}
-                  className={`group overflow-hidden rounded-[24px] border transition ${
+                  className={`group overflow-hidden border transition ${isNativeApp ? "w-20 shrink-0 rounded-[18px]" : "rounded-[24px]"} ${
                     selectedMedia?.id === item.id
                       ? "border-brand-400 bg-brand-500/10"
                       : "border-white/10 bg-white/5 hover:border-white/20"
@@ -330,17 +346,17 @@ export default function ProductDetailsPage() {
                         <img
                           src={item.poster || withAbsoluteUrl(product.images?.[0]?.url)}
                           alt={item.alt}
-                          className="h-24 w-full bg-slate-950/30 object-scale-down sm:h-28"
+                          className={`w-full bg-slate-950/30 object-scale-down ${isNativeApp ? "h-16" : "h-24 sm:h-28"}`}
                         />
                         <div className="absolute inset-0 flex items-center justify-center bg-slate-950/35 text-white">
-                          <Video size={20} />
+                          <Video size={isNativeApp ? 15 : 20} />
                         </div>
                       </>
                     ) : (
-                      <img src={item.url} alt={item.alt} className="h-24 w-full bg-slate-950/30 object-scale-down sm:h-28" />
+                      <img src={item.url} alt={item.alt} className={`w-full bg-slate-950/30 object-scale-down ${isNativeApp ? "h-16" : "h-24 sm:h-28"}`} />
                     )}
                   </div>
-                  <div className="px-3 py-2 text-left text-xs font-medium text-slate-300">
+                  <div className={`text-left font-medium text-slate-300 ${isNativeApp ? "px-2 py-1 text-[10px]" : "px-3 py-2 text-xs"}`}>
                     {item.type === "video" ? "Product video" : "Product image"}
                   </div>
                 </button>
@@ -348,36 +364,36 @@ export default function ProductDetailsPage() {
             </div>
           )}
 
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="glass-panel rounded-[28px] p-5 shadow-ambient">
+          <div className={`grid gap-4 ${isNativeApp ? "grid-cols-3 gap-2" : "md:grid-cols-3"}`}>
+            <div className={`glass-panel shadow-ambient ${isNativeApp ? "rounded-[20px] p-3" : "rounded-[28px] p-5"}`}>
               <div className="flex items-center gap-3 text-amber-300">
-                <Star size={18} />
-                <span className="text-sm uppercase tracking-[0.28em] text-slate-400">Average rating</span>
+                <Star size={isNativeApp ? 14 : 18} />
+                <span className={`uppercase tracking-[0.28em] text-slate-400 ${isNativeApp ? "text-[9px]" : "text-sm"}`}>Average rating</span>
               </div>
-              <p className="mt-3 text-3xl font-semibold text-white">{Number(product.rating || 0).toFixed(1)}</p>
-              <p className="mt-1 text-sm text-slate-300">{product.reviewCount || 0} review(s)</p>
+              <p className={`font-semibold text-white ${isNativeApp ? "mt-2 text-lg" : "mt-3 text-3xl"}`}>{Number(product.rating || 0).toFixed(1)}</p>
+              <p className={`text-slate-300 ${isNativeApp ? "mt-1 text-[10px]" : "mt-1 text-sm"}`}>{product.reviewCount || 0} review(s)</p>
             </div>
-            <div className="glass-panel rounded-[28px] p-5 shadow-ambient">
+            <div className={`glass-panel shadow-ambient ${isNativeApp ? "rounded-[20px] p-3" : "rounded-[28px] p-5"}`}>
               <div className="flex items-center gap-3 text-orange-300">
-                <Users size={18} />
-                <span className="text-sm uppercase tracking-[0.28em] text-slate-400">Buyers</span>
+                <Users size={isNativeApp ? 14 : 18} />
+                <span className={`uppercase tracking-[0.28em] text-slate-400 ${isNativeApp ? "text-[9px]" : "text-sm"}`}>Buyers</span>
               </div>
-              <p className="mt-3 text-3xl font-semibold text-white">{product.soldCount || 0}</p>
-              <p className="mt-1 text-sm text-slate-300">Units sold overall</p>
+              <p className={`font-semibold text-white ${isNativeApp ? "mt-2 text-lg" : "mt-3 text-3xl"}`}>{product.soldCount || 0}</p>
+              <p className={`text-slate-300 ${isNativeApp ? "mt-1 text-[10px]" : "mt-1 text-sm"}`}>Units sold overall</p>
             </div>
-            <div className="glass-panel rounded-[28px] p-5 shadow-ambient">
+            <div className={`glass-panel shadow-ambient ${isNativeApp ? "rounded-[20px] p-3" : "rounded-[28px] p-5"}`}>
               <div className="flex items-center gap-3 text-cyan-300">
-                <TrendingUp size={18} />
-                <span className="text-sm uppercase tracking-[0.28em] text-slate-400">Last 24 hours</span>
+                <TrendingUp size={isNativeApp ? 14 : 18} />
+                <span className={`uppercase tracking-[0.28em] text-slate-400 ${isNativeApp ? "text-[9px]" : "text-sm"}`}>Last 24 hours</span>
               </div>
-              <p className="mt-3 text-3xl font-semibold text-white">{product.recentSales24h || 0}</p>
-              <p className="mt-1 text-sm text-slate-300">Units moved today</p>
+              <p className={`font-semibold text-white ${isNativeApp ? "mt-2 text-lg" : "mt-3 text-3xl"}`}>{product.recentSales24h || 0}</p>
+              <p className={`text-slate-300 ${isNativeApp ? "mt-1 text-[10px]" : "mt-1 text-sm"}`}>Units moved today</p>
             </div>
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="glass-panel rounded-[36px] p-8 shadow-ambient">
+        <div className={`space-y-6 ${isNativeApp ? "space-y-4" : ""}`}>
+          <div className={`glass-panel shadow-ambient ${isNativeApp ? "rounded-[24px] p-4" : "rounded-[36px] p-8"}`}>
             <div className="flex flex-wrap items-center gap-3">
               <span className="rounded-full bg-slate-900/70 px-3 py-1 text-xs font-semibold text-white">
                 {product.category}
@@ -390,20 +406,20 @@ export default function ProductDetailsPage() {
               </span>
             </div>
 
-            <h1 className="mt-4 text-4xl font-semibold text-white">{product.name}</h1>
-            <p className="mt-4 text-lg text-slate-300">{product.description}</p>
+            <h1 className={`mt-3 font-semibold text-white ${isNativeApp ? "text-[1.2rem] leading-snug" : "text-4xl"}`}>{product.name}</h1>
+            <p className={`mt-2 text-slate-300 ${isNativeApp ? "text-[12px] leading-5" : "mt-4 text-lg"}`}>{product.description}</p>
 
-            <div className="mt-6 flex items-center justify-between">
+            <div className={`mt-4 flex justify-between ${isNativeApp ? "flex-col items-start gap-2" : "items-center"}`}>
               <div>
                 <p className="text-sm text-slate-400">Price</p>
-                <div className="flex items-end gap-3">
-                  <p className="text-3xl font-semibold text-brand-50">{peso(activePrice)}</p>
+                <div className={`flex items-end gap-3 ${isNativeApp ? "mt-1" : ""}`}>
+                  <p className={`font-semibold text-brand-50 ${isNativeApp ? "text-[1.65rem]" : "text-3xl"}`}>{peso(activePrice)}</p>
                   {product.compareAtPrice > activePrice && (
-                    <p className="pb-1 text-sm text-slate-500 line-through">{peso(product.compareAtPrice)}</p>
+                    <p className={`text-slate-500 line-through ${isNativeApp ? "pb-0.5 text-xs" : "pb-1 text-sm"}`}>{peso(product.compareAtPrice)}</p>
                   )}
                 </div>
               </div>
-              <div className={`rounded-2xl px-4 py-3 text-sm ${
+              <div className={`rounded-2xl px-4 py-3 ${isNativeApp ? "text-xs" : "text-sm"} ${
                 !activeStock
                   ? "bg-rose-500/15 text-rose-100"
                   : isLowStock
@@ -415,7 +431,7 @@ export default function ProductDetailsPage() {
             </div>
 
             {canUseInstallment ? (
-              <div className="mt-4 rounded-[28px] border border-cyan-400/20 bg-cyan-500/10 p-4 text-sm text-cyan-50">
+              <div className={`mt-4 border border-cyan-400/20 bg-cyan-500/10 text-cyan-50 ${isNativeApp ? "rounded-[22px] p-3 text-[12px]" : "rounded-[28px] p-4 text-sm"}`}>
                 <p className="font-semibold text-white">Installment / Paluwagan available</p>
                 <p className="mt-2">{formatInstallmentBreakdown(installmentPlan)}</p>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -430,7 +446,7 @@ export default function ProductDetailsPage() {
                 </div>
               </div>
             ) : installmentPlan.configured ? (
-              <div className="mt-4 rounded-[28px] border border-rose-400/20 bg-rose-500/10 p-4 text-sm text-rose-100">
+              <div className={`mt-4 border border-rose-400/20 bg-rose-500/10 text-rose-100 ${isNativeApp ? "rounded-[22px] p-3 text-[12px]" : "rounded-[28px] p-4 text-sm"}`}>
                 <p className="font-semibold text-white">Installment / Paluwagan unavailable</p>
                 <p className="mt-2">
                   {product?.vendorType === "seller"
@@ -441,7 +457,7 @@ export default function ProductDetailsPage() {
             ) : null}
 
             {isLowStock ? (
-              <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+              <div className={`mt-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-amber-100 ${isNativeApp ? "text-[12px]" : "text-sm"}`}>
                 Low stock alert: only {activeStock} item{activeStock === 1 ? "" : "s"} left for this selection.
               </div>
             ) : null}
@@ -449,7 +465,7 @@ export default function ProductDetailsPage() {
             {!!product.variants?.length && (
               <div className="mt-6">
                 <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Choose variant</p>
-                <div className="mt-3 grid gap-3">
+                <div className={`mt-3 grid gap-3 ${isNativeApp ? "gap-2" : ""}`}>
                   {product.variants.map((variant) => {
                     const label = [variant.name, variant.color, variant.storage, variant.model].filter(Boolean).join(" | ");
 
@@ -458,7 +474,9 @@ export default function ProductDetailsPage() {
                         key={variant._id}
                         type="button"
                         onClick={() => setSelectedVariantId(String(variant._id))}
-                        className={`rounded-[24px] border px-4 py-4 text-left transition duration-300 ${
+                        className={`border text-left transition duration-300 ${
+                          isNativeApp ? "rounded-[18px] px-3 py-3" : "rounded-[24px] px-4 py-4"
+                        } ${
                           String(selectedVariantId) === String(variant._id)
                             ? "border-brand-400 bg-brand-500/10"
                             : "border-white/10 bg-white/5 hover:border-white/20"
@@ -466,12 +484,12 @@ export default function ProductDetailsPage() {
                       >
                         <div className="flex items-center justify-between gap-4">
                           <div>
-                            <p className="font-medium text-white">{label || "Default variant"}</p>
-                            <p className="mt-1 text-sm text-slate-400">SKU: {variant.sku || "N/A"}</p>
+                            <p className={`font-medium text-white ${isNativeApp ? "text-sm leading-5" : ""}`}>{label || "Default variant"}</p>
+                            <p className={`text-slate-400 ${isNativeApp ? "mt-1 text-[11px]" : "mt-1 text-sm"}`}>SKU: {variant.sku || "N/A"}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-brand-100">{peso(variant.price || product.price)}</p>
-                            <p className="text-sm text-slate-400">{variant.stock} left</p>
+                            <p className={`font-semibold text-brand-100 ${isNativeApp ? "text-sm" : ""}`}>{peso(variant.price || product.price)}</p>
+                            <p className={`text-slate-400 ${isNativeApp ? "text-[11px]" : "text-sm"}`}>{variant.stock} left</p>
                           </div>
                         </div>
                       </button>
@@ -481,16 +499,17 @@ export default function ProductDetailsPage() {
               </div>
             )}
 
-            <div className="mt-6 grid gap-4 rounded-[28px] border border-white/10 bg-white/5 p-5">
+            <div className={`mt-5 grid gap-4 border border-white/10 bg-white/5 ${isNativeApp ? "rounded-[22px] gap-3 p-4" : "rounded-[28px] p-5"}`}>
               {(product.attributes || []).map((attribute) => (
-                <div key={attribute.label} className="flex items-center justify-between gap-4 text-sm text-slate-300">
+                <div key={attribute.label} className={`flex items-center justify-between gap-4 text-slate-300 ${isNativeApp ? "text-[12px]" : "text-sm"}`}>
                   <span>{attribute.label}</span>
                   <span className="font-medium text-white">{attribute.value}</span>
                 </div>
               ))}
             </div>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-[110px_minmax(0,1fr)_minmax(0,1fr)_58px]">
+            {!isNativeApp ? (
+              <div className="mt-6 grid gap-3 sm:grid-cols-[110px_minmax(0,1fr)_minmax(0,1fr)_58px]">
               <div className="w-full shrink-0">
                 <input
                   type="number"
@@ -529,12 +548,34 @@ export default function ProductDetailsPage() {
               >
                 <Heart size={18} fill={wished ? "currentColor" : "none"} />
               </button>
-            </div>
+              </div>
+            ) : (
+              <div className="mt-5 grid grid-cols-[70px_minmax(0,1fr)] gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max={Math.max(activeStock, 1)}
+                    value={quantity}
+                    onChange={(event) => setQuantity(Math.max(1, Number(event.target.value || 1)))}
+                    className="min-h-[48px] w-full rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-center text-sm text-white outline-none"
+                  />
+                <button
+                  type="button"
+                  onClick={handleWishlistClick}
+                  className={`inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition duration-300 ${
+                    wished ? "border-rose-400 bg-rose-500/10 text-rose-100" : "border-white/10 bg-white/5 text-white"
+                  }`}
+                >
+                  <Heart size={18} fill={wished ? "currentColor" : "none"} />
+                  {wished ? "Saved" : "Save"}
+                </button>
+              </div>
+            )}
 
-            <button
-              type="button"
-                onClick={async () => {
-                  if (!isAuthenticated) {
+              <button
+                type="button"
+                  onClick={async () => {
+                    if (!isAuthenticated) {
                     setAccessPrompt({
                       title: "Please log in to continue",
                       message: "Please log in first so the seller can reply to your product chat."
@@ -552,14 +593,24 @@ export default function ProductDetailsPage() {
 
                 await openChat(product);
               }}
-              className="mt-4 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/10"
-            >
-              <MessageSquare size={16} className="text-brand-200" />
-              Chat about this product
-            </button>
+              className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/10 ${isNativeApp ? "min-h-[44px] py-2" : "min-h-[52px] py-3"}`}
+              >
+                <MessageSquare size={16} className="text-brand-200" />
+                Chat about this product
+              </button>
+              {isNativeApp ? (
+                <button
+                  type="button"
+                  onClick={() => handleNativeShare().catch(() => {})}
+                  className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/10"
+                >
+                  <Share2 size={16} className="text-brand-200" />
+                  Share this product
+                </button>
+              ) : null}
 
-            {reviewStatus && (
-              <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+              {reviewStatus && (
+                <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
                 {reviewStatus}
               </div>
             )}
@@ -572,7 +623,7 @@ export default function ProductDetailsPage() {
               )}
 
               {settings.promotions?.bundle?.enabled && (
-                <div className="glass-panel rounded-[28px] p-5 shadow-ambient">
+                <div className={`glass-panel shadow-ambient ${isNativeApp ? "rounded-[22px] p-4" : "rounded-[28px] p-5"}`}>
                   <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Bundle savings</p>
                   <p className="mt-2 font-semibold text-white">{settings.promotions.bundle.label || "Bundle deal"}</p>
                   <p className="mt-1 text-sm text-slate-300">
@@ -583,7 +634,7 @@ export default function ProductDetailsPage() {
               )}
 
               {settings.promotions?.freeGift?.enabled && (
-                <div className="glass-panel rounded-[28px] p-5 shadow-ambient">
+                <div className={`glass-panel shadow-ambient ${isNativeApp ? "rounded-[22px] p-4" : "rounded-[28px] p-5"}`}>
                   <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Free gift</p>
                   <p className="mt-2 font-semibold text-white">Buy {settings.promotions.freeGift.buyQuantity}, get 1 free</p>
                   <p className="mt-1 text-sm text-slate-300">
@@ -596,19 +647,19 @@ export default function ProductDetailsPage() {
         </div>
       </div>
 
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <section className="glass-panel rounded-[36px] p-8 shadow-ambient">
+      <div className={`grid gap-8 xl:grid-cols-[minmax(0,1fr)_420px] ${isNativeApp ? "gap-4" : ""}`}>
+        <section className={`glass-panel shadow-ambient ${isNativeApp ? "rounded-[24px] p-4" : "rounded-[36px] p-8"}`}>
           <div className="flex items-center gap-3">
             <MessageSquare className="text-brand-100" size={18} />
             <div>
-              <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Customer reviews</p>
-              <h2 className="mt-1 text-2xl font-semibold text-white">Buyer comments and social proof</h2>
+              <p className={`uppercase tracking-[0.28em] text-slate-400 ${isNativeApp ? "text-[11px]" : "text-sm"}`}>Customer reviews</p>
+              <h2 className={`mt-1 font-semibold text-white ${isNativeApp ? "text-lg" : "text-2xl"}`}>Buyer comments and social proof</h2>
             </div>
           </div>
 
           <div className="mt-6 space-y-4">
             {reviews.map((review) => (
-              <div key={review._id} className="rounded-[28px] border border-white/10 bg-white/5 p-5">
+              <div key={review._id} className={`border border-white/10 bg-white/5 ${isNativeApp ? "rounded-[20px] p-4" : "rounded-[28px] p-5"}`}>
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div>
                     <div className="flex items-center gap-3">
@@ -644,9 +695,9 @@ export default function ProductDetailsPage() {
           </div>
         </section>
 
-        <section className="glass-panel rounded-[36px] p-8 shadow-ambient">
-          <p className="text-sm uppercase tracking-[0.28em] text-slate-400">Leave a review</p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">Share what buyers should know</h2>
+        <section className={`glass-panel shadow-ambient ${isNativeApp ? "rounded-[24px] p-4" : "rounded-[36px] p-8"}`}>
+          <p className={`uppercase tracking-[0.28em] text-slate-400 ${isNativeApp ? "text-[11px]" : "text-sm"}`}>Leave a review</p>
+          <h2 className={`mt-2 font-semibold text-white ${isNativeApp ? "text-lg" : "text-2xl"}`}>Share what buyers should know</h2>
           {!isAuthenticated ? (
             <div className="mt-6 rounded-[28px] border border-white/10 bg-white/5 p-5 text-slate-300">
               Sign in to leave a review and build trust for other gadget buyers.
@@ -656,7 +707,7 @@ export default function ProductDetailsPage() {
             </div>
           ) : (
             <form onSubmit={handleReviewSubmit} className="mt-6 space-y-4">
-              <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
+              <div className={`border border-white/10 bg-white/5 ${isNativeApp ? "rounded-[20px] p-4" : "rounded-[28px] p-5"}`}>
                 <p className="text-sm text-slate-400">Posting as</p>
                 <p className="mt-1 font-semibold text-white">{user?.name}</p>
               </div>
@@ -690,11 +741,11 @@ export default function ProductDetailsPage() {
         <section className="space-y-6">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Related tech</p>
-            <h2 className="mt-2 text-3xl font-semibold text-white">Customers also viewed</h2>
+            <h2 className={`mt-2 font-semibold text-white ${isNativeApp ? "text-xl" : "text-3xl"}`}>Customers also viewed</h2>
           </div>
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+          <div className={`grid gap-6 md:grid-cols-2 xl:grid-cols-4 ${isNativeApp ? "grid-cols-3 gap-2" : ""}`}>
             {product.relatedProducts.map((item) => (
-              <ProductCard key={item._id} product={item} onAddToCart={addToCart} />
+              <ProductCard key={item._id} product={item} onAddToCart={addToCart} compact={isNativeApp} />
             ))}
           </div>
         </section>
@@ -706,6 +757,37 @@ export default function ProductDetailsPage() {
         returnTo={location.pathname}
         message={accessPrompt.message}
       />
+      {isNativeApp ? (
+        <div
+          className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-slate-950/95 px-4 py-3 backdrop-blur-xl"
+          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+        >
+          <div className="mx-auto flex max-w-3xl items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs uppercase tracking-[0.22em] text-slate-500">Ready to checkout</p>
+              <p className="truncate text-lg font-semibold text-white">{peso(activePrice)}</p>
+              <p className="text-xs text-slate-400">{!activeStock ? "Sold out" : `${activeStock} in stock`}</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={!activeStock}
+              className="inline-flex min-h-[54px] items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              <ShoppingBag size={16} />
+              Cart
+            </button>
+            <button
+              type="button"
+              onClick={handleBuyNow}
+              disabled={!activeStock}
+              className="inline-flex min-h-[54px] items-center justify-center rounded-2xl bg-brand-500 px-5 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              Buy now
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
