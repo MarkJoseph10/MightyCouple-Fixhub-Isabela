@@ -1,8 +1,10 @@
-import { Download, ExternalLink, LogIn } from "lucide-react";
+import { Download, ExternalLink, LayoutDashboard, LogIn } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { useStoreSettings } from "../context/StoreSettingsContext";
 import { resolveMediaUrl } from "../utils/media";
 import { resolveAndroidDownloadUrl } from "../utils/androidDownload";
+import { getRoleHomePath } from "../utils/authRedirect";
 
 const portalLinks = [
   { to: "/download", label: "Download" },
@@ -30,9 +32,12 @@ function PortalLink({ to, label }) {
 
 export default function WebDownloadLayout() {
   const { settings } = useStoreSettings();
+  const { user, isAuthenticated } = useAuth();
   const downloadUrl = resolveAndroidDownloadUrl(settings);
   const logoUrl = resolveMediaUrl(settings.logo?.url || "");
   const storeName = settings.storeName || "Mighty Couple";
+  const accountPath = getRoleHomePath(user);
+  const accountLabel = user?.role === "admin" ? "Admin Dashboard" : user?.role === "seller" ? "Seller Dashboard" : "My Account";
 
   return (
     <div className="min-h-screen">
@@ -69,13 +74,23 @@ export default function WebDownloadLayout() {
                 <Download size={16} />
                 Download APK
               </a>
-              <NavLink
-                to="/auth"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
-              >
-                <LogIn size={16} />
-                Login / Sign up
-              </NavLink>
+              {isAuthenticated ? (
+                <NavLink
+                  to={accountPath}
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+                >
+                  <LayoutDashboard size={16} />
+                  {accountLabel}
+                </NavLink>
+              ) : (
+                <NavLink
+                  to="/auth"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+                >
+                  <LogIn size={16} />
+                  Login / Sign up
+                </NavLink>
+              )}
             </div>
           </div>
         </div>
