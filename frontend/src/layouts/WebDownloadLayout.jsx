@@ -5,7 +5,7 @@ import { resolveMediaUrl } from "../utils/media";
 import { resolveAndroidDownloadUrl } from "../utils/androidDownload";
 
 const portalLinks = [
-  { to: "/", label: "Download" },
+  { to: "/download", label: "Download" },
   { to: "/auth", label: "Login" },
   { to: "/privacy-policy", label: "Privacy" },
   { to: "/shipping-policy", label: "Shipping" },

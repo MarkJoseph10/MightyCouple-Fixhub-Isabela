@@ -4,6 +4,7 @@ import {
   ChevronDown,
   CircleHelp,
   CreditCard,
+  Download,
   Heart,
   Home,
   LayoutDashboard,
@@ -18,6 +19,7 @@ import {
   UserRound,
   Wrench
 } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
@@ -73,6 +75,7 @@ export default function Navbar() {
   const { settings } = useStoreSettings();
   const location = useLocation();
   const navigate = useNavigate();
+  const isNativeApp = Capacitor.isNativePlatform();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const initials = settings.storeName
@@ -143,6 +146,15 @@ export default function Navbar() {
         ]
       }
     ];
+
+    if (!isNativeApp) {
+      sections[0].items.push({
+        label: "Download app",
+        description: "Open the Android APK download page",
+        to: "/download",
+        icon: Download
+      });
+    }
 
     if (!user) {
       sections.push({
@@ -303,7 +315,7 @@ export default function Navbar() {
     });
 
     return sections;
-  }, [isAdmin, isRepairTechnician, isSeller, itemCount, messagesRoute, user, wishlistIds.length]);
+  }, [isAdmin, isNativeApp, isRepairTechnician, isSeller, itemCount, messagesRoute, user, wishlistIds.length]);
 
   function handleCatalogSearchJump() {
     if (location.pathname === "/") {
@@ -359,6 +371,7 @@ export default function Navbar() {
 
           <nav className="order-3 hidden w-full flex-wrap items-center gap-1.5 text-[13px] text-slate-300 lg:order-2 lg:flex lg:min-w-0 lg:flex-nowrap lg:justify-center lg:gap-2 lg:overflow-x-auto lg:pb-1 xl:overflow-visible">
             <NavLink to="/" end className={navPillClass}>Store</NavLink>
+            {!isNativeApp ? <NavLink to="/download" className={navPillClass}>Download App</NavLink> : null}
             <NavLink to="/track-order" className={navPillClass}>Track Order</NavLink>
             {user && <NavLink to="/orders" className={navPillClass}>My Orders</NavLink>}
             {user && !isAdmin && !isSellerAccount && <NavLink to="/become-seller" className={navPillClass}>Become Seller</NavLink>}
