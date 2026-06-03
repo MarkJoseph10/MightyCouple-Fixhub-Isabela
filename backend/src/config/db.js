@@ -1,0 +1,12 @@
+import mongoose from "mongoose";
+
+export async function connectDB(mongoUri) {
+  try {
+    await mongoose.connect(mongoUri);
+    console.log(`MongoDB connected: ${mongoose.connection.host}`);
+  } catch (error) {
+    console.error("MongoDB connection failed", error.message);
+    process.exit(1);
+  }
+}
+
